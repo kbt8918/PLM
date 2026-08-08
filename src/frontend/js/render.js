@@ -1167,7 +1167,7 @@
           '<select style="height:32px;min-width:180px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>전체(글로벌 트렌드/신기술 자료/기술개발 제안)</option></select>' +
           '<input placeholder="태그 검색" style="height:32px;min-width:140px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 10px" />' +
           '<div class="filter-spacer"></div>' +
-          '<button type="button" class="btn btn-primary">+ 등록</button>' +
+          '<button type="button" class="btn btn-primary" data-action="open-modal" data-modal-id="trendRegister">+ 등록</button>' +
         '</div>' +
         renderCardGrid(cards) +
       '</div>'

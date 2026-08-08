@@ -29,13 +29,11 @@
 
   // 근거: design_handoff_pndes_portal 최종 스크린샷 기준 실제 좌측 메뉴 순서는
   // 공정 자동화 현황:[SCR-001~005], 중장기 방향성 공유:[MTRM-MAIN, SCR-006(하위:SCR-007/008), SCR-009~014]이며
-  // DASH-AUTO/DASH-MTRM(통합 대시보드)은 최종 내비게이션에서 제외되었습니다.
-  // 다만 본 프로젝트 범위(CLAUDE.md 산출물 목록)는 두 대시보드 화면 구현을 명시적으로 요구하므로,
-  // 완전히 도달 불가능한 화면이 되지 않도록 각 그룹 마지막에 유지합니다(디자인 원본과의 의도적 차이).
+  // DASH-AUTO/DASH-MTRM(통합 대시보드)은 최종 내비게이션에서 제외됩니다(사용자 확인 화면 캡처 기준).
   var NAV = [
     { title: '가이드', items: ['FLOW-MAP'] },
-    { title: '공정 자동화 현황', items: ['SCR-001', 'SCR-002', 'SCR-003', 'SCR-004', 'SCR-005', 'DASH-AUTO'] },
-    { title: '중장기 방향성 공유', items: ['MTRM-MAIN', 'SCR-006', 'SCR-007', 'SCR-008', 'SCR-009', 'SCR-010', 'SCR-011', 'SCR-012', 'SCR-013', 'SCR-014', 'DASH-MTRM'] },
+    { title: '공정 자동화 현황', items: ['SCR-001', 'SCR-002', 'SCR-003', 'SCR-004', 'SCR-005'] },
+    { title: '중장기 방향성 공유', items: ['MTRM-MAIN', 'SCR-006', 'SCR-007', 'SCR-008', 'SCR-009', 'SCR-010', 'SCR-011', 'SCR-012', 'SCR-013', 'SCR-014'] },
   ];
 
   // SCR-006(통합 로드맵)의 하위 메뉴: 우측 화살표 클릭 시 펼침/접힘 (state: navSubOpen, 기본 펼침)
@@ -450,6 +448,13 @@
       { label: '상세 설명', required: false, type: 'textarea' },
       { label: '첨부 문서', required: false, type: 'file' },
       { label: '첨부 동영상', required: false, type: 'file' },
+    ] },
+    trendRegister: { title: '기술동향 등록', confirm: '등록', size: 640, fields: [
+      { label: '제목', required: true, type: 'text' },
+      { label: '구분', required: true, type: 'select' },
+      { label: '태그', required: false, type: 'text' },
+      { label: '내용', required: true, type: 'textarea' },
+      { label: '첨부파일', required: false, type: 'file' },
     ] },
     councilRegister: { title: '협의체 등록', confirm: '등록', size: 480, fields: [
       { label: '협의체명', required: true, type: 'text' },
