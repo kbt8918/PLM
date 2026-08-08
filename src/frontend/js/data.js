@@ -449,6 +449,12 @@
       { label: '첨부 문서', required: false, type: 'file' },
       { label: '첨부 동영상', required: false, type: 'file' },
     ] },
+    mtrmRegister: { title: 'mTRM 등록', confirm: '등록', size: 480, fields: [
+      { label: 'mTRM명', required: true, type: 'text' },
+      { label: '분과', required: true, type: 'select' },
+      { label: '상태', required: true, type: 'select' },
+      { label: '등록일', required: true, type: 'date' },
+    ] },
     trendRegister: { title: '기술동향 등록', confirm: '등록', size: 640, fields: [
       { label: '제목', required: true, type: 'text' },
       { label: '구분', required: true, type: 'select' },

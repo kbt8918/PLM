@@ -1084,7 +1084,7 @@
           '<input placeholder="mTRM명 검색" style="height:32px;min-width:220px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 10px" />' +
           '<button type="button" class="btn btn-primary" data-action="run-search">조회</button>' +
           '<div class="filter-spacer"></div>' +
-          '<button type="button" class="btn btn-primary">+ mTRM 등록</button>' +
+          '<button type="button" class="btn btn-primary" data-action="open-modal" data-modal-id="mtrmRegister">+ mTRM 등록</button>' +
         '</div>' +
         renderTable([
           { label: 'mTRM명' }, { label: '분과' }, { label: '상태', align: 'center' }, { label: '등록일' }, { label: '관리', align: 'center' },
