@@ -96,19 +96,39 @@
     return true;
   }
 
-  function renderGnbSide(currentScreen) {
+  // SCR-006(통합 로드맵)처럼 하위 메뉴가 있는 항목은 화살표 클릭 시 펼침/접힘(state.navSubOpen)
+  function renderGnbSide(currentScreen, navSubOpen) {
+    navSubOpen = navSubOpen || {};
+    var NAV_CHILDREN = global.PNDES.NAV_CHILDREN || {};
+    var childIds = {};
+    Object.keys(NAV_CHILDREN).forEach(function (pid) { NAV_CHILDREN[pid].forEach(function (cid) { childIds[cid] = true; }); });
+
     var html = '';
     global.PNDES.NAV.forEach(function (group) {
-      var items = group.items.filter(isNavItemVisible);
+      var items = group.items.filter(isNavItemVisible).filter(function (id) { return !childIds[id]; });
       if (!items.length) return;
       html += '<div class="gnb-group"><div class="gnb-group-title">' + esc(group.title) + '</div>';
       items.forEach(function (id) {
         var meta = SCREENS[id];
-        var active = id === currentScreen ? ' active' : '';
-        html += '<div class="gnb-item' + active + '" data-action="select-screen" data-screen-id="' + id + '">' +
+        var children = NAV_CHILDREN[id];
+        var isOpen = !!navSubOpen[id];
+        var active = id === currentScreen || (children && children.indexOf(currentScreen) !== -1);
+        html += '<div class="gnb-item' + (active ? ' active' : '') + '" data-action="select-screen" data-screen-id="' + id + '">' +
           '<span>' + esc(meta.name) + '</span>' +
-          (meta.admin ? '<span class="admin-mark">A</span>' : '') +
+          '<span class="gnb-item-right">' +
+            (meta.admin ? '<span class="admin-mark">A</span>' : '') +
+            (children ? '<span class="gnb-chevron' + (isOpen ? '' : ' collapsed') + '" data-action="toggle-nav-sub" data-screen-id="' + id + '">&#9662;</span>' : '') +
+          '</span>' +
         '</div>';
+        if (children && isOpen) {
+          children.forEach(function (cid) {
+            var cMeta = SCREENS[cid];
+            html += '<div class="gnb-item gnb-item-child' + (cid === currentScreen ? ' active' : '') + '" data-action="select-screen" data-screen-id="' + cid + '">' +
+              '<span>' + esc(cMeta.name) + '</span>' +
+              (cMeta.admin ? '<span class="admin-mark">A</span>' : '') +
+            '</div>';
+          });
+        }
       });
       html += '</div>';
     });
@@ -221,35 +241,24 @@
   }
 
   // ---------- DASH-AUTO ----------
-  // SCR-001 요약현황(자동화율 행)·공정별 상세(현재 상태)를 단일 소스로 삼아 라이브 계산합니다.
-  // (데이터 정합성 유지: SCR-001에서 값이 바뀌면 대시보드도 함께 바뀝니다)
-
-  function findSummaryRow(label) {
-    return D.scr001SummaryRows.filter(function (r) { return r.label === label; })[0];
-  }
-
-  function currentRatePctOf(cellVal) {
-    return cellVal.value != null ? cellVal.value : cellVal.before;
-  }
-
-  function computeDashAutoRateBars() {
-    var rateRow = findSummaryRow('자동화율');
-    return D.scr001SummaryCols.map(function (col) {
-      var v = rateRow.values[col.id];
-      return { label: col.label, value: currentRatePctOf(v), emphasis: !!col.bp };
-    });
-  }
-
-  function computeOverallRate(rateBars) {
-    var sum = 0;
-    rateBars.forEach(function (r) { sum += r.value; });
-    return Math.round(sum / rateBars.length);
-  }
+  // 근거: Claude Design PNDES Portal Prototype.dc.html — DASH-AUTO는 SCR-001/003의 9~5개 라인 전체가 아니라
+  // 요약된 별도 mock 값(dashAutoRateBars/overallRate)을 사용합니다(디자인 원본 그대로 포팅, 라이브 계산 아님).
 
   function renderDashAutoMatrixBar() {
+    // 근거: 디자인 원본은 "현재 상태(4건)"가 아니라 확대전개계획 매트릭스 전체 셀(4행 x 8열)을 순회하며
+    // 라벨에 '자동'이 포함되면 자동, '협의'/'가능'이 포함되면 수동(추진필요)으로 집계합니다.
     var autoCount = 0, manualCount = 0;
+    var KIND_LABEL = {
+      auto: '자동', na: '미해당',
+    };
     D.scr001ProcessDetail.forEach(function (row) {
-      if (row.current.kind === 'auto') autoCount++; else if (row.current.kind === 'manual') manualCount++;
+      Object.keys(row.cells).forEach(function (colId) {
+        var cell = row.cells[colId];
+        if (cell.kind === 'auto') { autoCount++; return; }
+        if (cell.kind === 'na') { return; }
+        // possible/agree/agreeUnrecoverable/review 모두 "협의" 또는 "가능" 문구를 포함하는 추진필요 항목
+        manualCount++;
+      });
     });
     var total = autoCount + manualCount;
     var autoPct = Math.round((autoCount / total) * 100);
@@ -265,34 +274,20 @@
     return { html: bar + legend, total: total };
   }
 
-  // SCR-003 요약현황('자동공정 / 총 공정' 행)을 단일 소스로 삼아 모듈 공정 막대그래프를 라이브 계산합니다.
-  function findScr003Row(label) {
-    return D.scr003SummaryRows.filter(function (r) { return r.label === label; })[0];
-  }
-
+  // 근거: 디자인 원본 moduleAutoBars — scr003LineDefs(5개 라인)의 autoTotal("자동/총공정")로부터 계산.
   function computeModuleAutoBars() {
-    var row = findScr003Row('자동공정 / 총 공정');
-    var bars = [];
-    D.scr003LineCols.forEach(function (col) {
-      if (col.bp || col.id === 'total') return;
-      var v = row.values[col.id];
-      if (!v) return;
-      var parts = v.split('/').map(function (n) { return parseInt(n, 10); });
+    return D.scr003LineDefs.map(function (l) {
+      var parts = l.autoTotal.split('/').map(function (n) { return parseInt(n, 10); });
       var pct = Math.round((parts[0] / parts[1]) * 100);
-      bars.push({ label: col.label, pct: pct, ratio: v.replace(/\s/g, '') });
+      return { label: l.label.replace('[BP] ', ''), pct: pct, ratio: l.autoTotal };
     });
-    return bars;
   }
 
+  // 근거: 디자인 원본 moduleDirectStaff = 21 + 10 + 8 + 4 + 8 (scr003SummaryRows '조립 인원 (직접)' 행의 5개 값 합)
   function computeModuleDirectStaff() {
-    var row = findScr003Row('조립 인원 (직접)');
+    var row = D.scr003SummaryRows.filter(function (r) { return r.label === '조립 인원 (직접)'; })[0];
     var sum = 0;
-    D.scr003LineCols.forEach(function (col) {
-      if (col.id === 'total') return;
-      var v = row.values[col.id];
-      if (!v) return;
-      sum += parseInt(v, 10) || 0;
-    });
+    row.cells.forEach(function (v) { sum += parseInt(v, 10) || 0; });
     return sum;
   }
 
@@ -325,8 +320,8 @@
   }
 
   function renderDASHAUTO() {
-    var rateBarsData = computeDashAutoRateBars();
-    var overallRate = computeOverallRate(rateBarsData);
+    var rateBarsData = D.dashAutoRateBars;
+    var overallRate = D.overallRate;
     var moduleBarsData = computeModuleAutoBars();
     var moduleDirectStaff = computeModuleDirectStaff();
 
@@ -451,6 +446,58 @@
     );
   }
 
+  // ---------- MTRM-MAIN 메인 대시보드 ----------
+  // 근거: 중장기 방향성 공유 그룹의 최종 랜딩 화면 — KPI 3개(SCR-006과 동일 데이터) + 통합 로드맵
+  // 미니 간트(행 클릭 시 SCR-008) + 생산기술 Tech PR 미리보기(3개, SCR-009와 동일 유형 배지/썸네일) + 최근 기술동향(3개)
+
+  function renderMtrmMainGantt() {
+    var quarters = D.ganttQuarters.map(function (q) { return '<div class="mini-gantt-quarter-cell">' + esc(q) + '</div>'; }).join('');
+    var rows = D.ganttRowsFull.filter(function (r) { return r.top; }).map(function (r, i) {
+      return '<div class="mini-gantt-row" style="cursor:pointer;background:' + (i % 2 === 0 ? 'var(--color-surface)' : 'var(--color-zebra-bg)') + '" data-action="select-screen" data-screen-id="SCR-008">' +
+        '<div class="mini-gantt-row-label">' + esc(r.label) + '</div>' +
+        '<div class="mini-gantt-track"><div class="gantt-bar ' + r.barClass + '" style="left:' + r.left + '%;width:' + r.width + '%"></div></div>' +
+      '</div>';
+    }).join('');
+    return (
+      '<div class="panel" style="margin-bottom:var(--sp-xl);padding:0">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;padding:20px 20px 16px">' +
+          '<div class="panel-title" style="margin-bottom:0">통합 로드맵</div>' +
+          '<a href="#" data-action="select-screen" data-screen-id="SCR-006">통합 로드맵 보기 &rsaquo;</a>' +
+        '</div>' +
+        '<div class="mini-gantt-head"><div class="mini-gantt-label-col">로드맵</div><div class="mini-gantt-quarters">' + quarters + '</div></div>' +
+        rows +
+        '<div style="height:16px"></div>' +
+      '</div>'
+    );
+  }
+
+  function renderMTRMMAIN() {
+    var techPrPreview = D.techPrCards.slice(0, 3).map(function (c, i) { return renderTechPrCard(c, i, false); }).join('');
+    var trendPreview = D.trendsData.slice(0, 3).map(function (t, i) {
+      return '<div class="log-row" style="cursor:pointer" data-action="trend-detail" data-index="' + i + '">' +
+        '<span>' + esc(t.title) + '</span><span style="color:var(--color-text-faint)">' + esc(t.date) + ' &middot; 조회 ' + t.views + '</span>' +
+      '</div>';
+    }).join('');
+    return (
+      '<div data-screen-label="MTRM-MAIN 메인 대시보드">' +
+        '<div class="section-title" style="margin-bottom:2px">메인 대시보드</div>' +
+        '<div class="screen-subtitle">통합 로드맵·생산기술 Tech PR·기술동향을 한 화면에서 확인</div>' +
+        renderStatGrid(computeScr006Stats()) +
+        renderMtrmMainGantt() +
+        '<div class="panel-row">' +
+          '<div class="panel" style="flex:1">' +
+            '<div class="panel-head-row"><div class="panel-title" style="margin-bottom:0">생산기술 Tech PR</div><a href="#" class="panel-link" data-action="select-screen" data-screen-id="SCR-009">전체보기 &rsaquo;</a></div>' +
+            '<div class="card-grid card-grid-3">' + techPrPreview + '</div>' +
+          '</div>' +
+          '<div class="panel" style="flex:1">' +
+            '<div class="panel-head-row"><div class="panel-title" style="margin-bottom:0">최근 기술동향</div><a href="#" class="panel-link" data-action="select-screen" data-screen-id="SCR-014">전체보기 &rsaquo;</a></div>' +
+            trendPreview +
+          '</div>' +
+        '</div>' +
+      '</div>'
+    );
+  }
+
   // ---------- SCR-001 / SCR-003 (탭 화면) ----------
 
   function renderTabs(active) {
@@ -487,94 +534,70 @@
     return '<table class="data-table"><thead><tr>' + head + '</tr></thead><tbody>' + rows + '</tbody></table>';
   }
 
-  function renderExpansionCell(cell, rowspan) {
-    var rs = rowspan > 1 ? ' rowspan="' + rowspan + '"' : '';
+  // 근거: 디자인 원본 확대전개계획 매트릭스 셀은 클릭 불가(정적 배지)입니다. "현재=자동" 상태만 동영상 모달을 엽니다.
+  function renderExpansionCell(cell) {
     switch (cell.kind) {
       case 'auto':
-        return '<td class="matrix-cell auto"' + rs + ' data-action="open-modal" data-modal-id="cellDetail"><span>&#9679;</span> <span>자동</span></td>';
+        return '<td class="matrix-cell auto"><span>&#9679;</span> <span>자동</span></td>';
       case 'na':
-        return '<td class="matrix-cell none"' + rs + '>미해당</td>';
+        return '<td class="matrix-cell none">미해당</td>';
       case 'possible':
-        return '<td class="al-c"' + rs + ' style="padding:10px 16px;border-bottom:1px solid var(--color-table-row-border)">' + badge("가능('" + cell.year + ')', 'info') + '</td>';
+        return '<td class="al-c" style="padding:10px 16px;border-bottom:1px solid var(--color-table-row-border)">' + badge("가능('" + cell.year + ')', 'info') + '</td>';
       case 'agree':
-        return '<td class="al-c"' + rs + ' style="padding:10px 16px;border-bottom:1px solid var(--color-table-row-border)">' + badge('협의必(ROI ' + cell.roi + ') ' + cell.headcount + '명', 'warning') + '</td>';
+        return '<td class="al-c" style="padding:10px 16px;border-bottom:1px solid var(--color-table-row-border)">' + badge('협의必(ROI ' + cell.roi + ') ' + cell.headcount + '명', 'warning') + '</td>';
       case 'agreeUnrecoverable':
-        return '<td class="al-c"' + rs + ' style="padding:10px 16px;border-bottom:1px solid var(--color-table-row-border)">' + badge('협의必(회수불가) ' + cell.headcount + '명', 'warning') + '</td>';
+        return '<td class="al-c" style="padding:10px 16px;border-bottom:1px solid var(--color-table-row-border)">' + badge('협의必(회수불가) ' + cell.headcount + '명', 'warning') + '</td>';
       case 'review':
-        return '<td class="al-c"' + rs + ' style="padding:10px 16px;border-bottom:1px solid var(--color-table-row-border)">' + badge('미적용(협의中) ' + cell.headcount + '명', 'neutral') + '</td>';
+        return '<td class="al-c" style="padding:10px 16px;border-bottom:1px solid var(--color-table-row-border)">' + badge('미적용(협의中) ' + cell.headcount + '명', 'neutral') + '</td>';
       default:
-        return '<td class="matrix-cell none"' + rs + '>-</td>';
+        return '<td class="matrix-cell none">-</td>';
     }
   }
 
-  // 현재/개선/주요내용이 동일한 연속 행을 하나의 그룹으로 묶어 rowspan 병합 렌더링
-  // (to-be 초안: 인풋툴 조립/컬럼 조립처럼 같은 개선내용을 공유하는 공정은 셀을 합쳐서 표기)
-  function groupProcessRows(rows) {
-    var groups = [];
-    var i = 0;
-    while (i < rows.length) {
-      var row = rows[i];
-      var group = [row];
-      var j = i + 1;
-      while (
-        j < rows.length &&
-        rows[j].current.label === row.current.label &&
-        rows[j].improve.label === row.improve.label &&
-        rows[j].mainContent === row.mainContent
-      ) {
-        group.push(rows[j]);
-        j++;
-      }
-      groups.push(group);
-      i = j;
-    }
-    return groups;
-  }
-
+  // 근거: 디자인 원본 헤더는 "현재"가 colspan=2(상태뱃지 + 인원수)로, 개선/주요내용과 함께 4개 리프컬럼을 이룹니다.
+  // "현재" 상태 셀 자체는 절대 rowspan 병합되지 않고 매 행 독립 렌더링되며, 인원수/개선/주요내용만
+  // showCount/showImprovement가 true인 행에서 countRowSpan/groupRowSpan만큼 병합됩니다.
   function renderScr001ProcessDetailTable() {
-    // 확대전개계획 매트릭스 컬럼: [BP]창원2C 라인(bp)은 현재/개선/주요내용 그룹으로 이미 표현되므로 제외
-    var bpCol = D.scr001SummaryCols.filter(function (c) { return c.bp; })[0];
     var matrixCols = D.scr001SummaryCols.filter(function (c) { return !c.bp; });
     var head =
       '<tr>' +
         '<th rowspan="2" style="min-width:60px">NO</th><th rowspan="2" style="min-width:140px">공정</th>' +
-        '<th class="al-c" colspan="3" style="background:var(--badge-info-bg)">' + esc(bpCol.detailLabel || bpCol.label) + '</th>' +
+        '<th class="al-c" colspan="4" style="background:var(--badge-info-bg)">[BP]창원2C 라인</th>' +
         matrixCols.map(function (c) { return '<th rowspan="2" class="al-c" style="min-width:120px">' + esc(c.label) + '</th>'; }).join('') +
       '</tr>' +
       '<tr>' +
-        '<th class="al-c" style="min-width:90px">현재</th><th class="al-c" style="min-width:90px">개선</th>' +
+        '<th class="al-c" colspan="2" style="min-width:170px">현재</th>' +
+        '<th class="al-c" style="min-width:90px">개선</th>' +
         '<th style="min-width:200px">주요 내용</th>' +
       '</tr>';
 
-    var groups = groupProcessRows(D.scr001ProcessDetail);
-    var rowsHtml = groups.map(function (group) {
-      var rowspan = group.length;
-      return group.map(function (row, idx) {
-        var mergedCells = '';
-        if (idx === 0) {
-          var currentBadgeKind = row.current.kind === 'auto' ? 'success' : 'neutral';
-          var currentSymbol = row.current.kind === 'auto' ? '&#9679; ' : '';
-          var currentAttrs = row.hasVideo ? ' style="cursor:pointer" data-action="open-modal" data-modal-id="processVideo" data-no="' + row.no + '"' : '';
-          mergedCells =
-            '<td class="al-c" rowspan="' + rowspan + '"' + currentAttrs + '>' +
-              '<span class="badge badge-' + currentBadgeKind + '">' + currentSymbol + esc(row.current.label) + '</span>' +
-              (row.current.count ? ' <span style="margin-left:6px;color:var(--color-text-muted);font-size:13px">' + esc(row.current.count) + '</span>' : '') +
-              (row.hasVideo ? ' <span style="margin-left:2px">&#9658;</span>' : '') +
-            '</td>' +
-            '<td class="al-c" rowspan="' + rowspan + '">' + esc(row.improve.label) + '</td>' +
-            '<td class="muted" rowspan="' + rowspan + '">' + esc(row.mainContent) + '</td>';
-        }
-        // 현재/개선/주요내용은 그룹 병합되지만, 확대전개계획 매트릭스는 행마다 개별 값을 가지므로 매 행 렌더링
-        var expansionCells = matrixCols.map(function (col) { return renderExpansionCell(row.cells[col.id], 1); }).join('');
-        var processLabel = '<strong>' + esc(row.process) + '</strong>' +
-          (row.processNote ? ' <span style="color:var(--color-text-faint);font-size:12px">(' + esc(row.processNote) + ')</span>' : '');
-        return '<tr>' +
-          td(row.no, 'center') +
-          td(processLabel) +
-          mergedCells +
-          expansionCells +
-        '</tr>';
-      }).join('');
+    var rowsHtml = D.scr001ProcessDetail.map(function (row) {
+      var currentBadgeKind = row.current.kind === 'auto' ? 'success' : 'neutral';
+      var currentSymbol = row.current.kind === 'auto' ? '&#9679; ' : '';
+      var currentAttrs = row.hasVideo ? ' style="cursor:pointer" data-action="open-video" data-process="' + esc(row.process) + '"' : '';
+      var currentCell =
+        '<td class="al-c"' + currentAttrs + '>' +
+          '<span class="badge badge-' + currentBadgeKind + '">' + currentSymbol + esc(row.current.label) + '</span>' +
+          (row.hasVideo ? ' <span style="margin-left:2px">&#9658;</span>' : '') +
+        '</td>';
+      var countCell = row.showCount
+        ? '<td class="al-c" rowspan="' + row.countRowSpan + '" style="padding:10px 16px;border-bottom:1px solid var(--color-table-row-border)"><span style="font-size:12px;color:var(--color-text-muted)">' + esc(row.countText) + '</span></td>'
+        : '';
+      var improvementNoteCells = row.showImprovement
+        ? '<td class="al-c" rowspan="' + row.groupRowSpan + '">' + esc(row.improvement) + '</td>' +
+          '<td class="muted" rowspan="' + row.groupRowSpan + '">' + esc(row.note) + '</td>'
+        : '';
+      var expansionCells = matrixCols.map(function (col) { return renderExpansionCell(row.cells[col.id]); }).join('');
+      var processLabel = '<strong>' + esc(row.process) + '</strong>' +
+        (row.processNote ? ' <span style="color:var(--color-text-faint);font-size:12px">(' + esc(row.processNote) + ')</span>' : '');
+      return '<tr>' +
+        td(row.no, 'center') +
+        td(processLabel) +
+        currentCell +
+        countCell +
+        improvementNoteCells +
+        expansionCells +
+      '</tr>';
     }).join('');
 
     return '<table class="data-table"><thead>' + head + '</thead><tbody>' + rowsHtml + '</tbody></table>';
@@ -601,49 +624,45 @@
   }
 
   function scr003Value(v) {
-    return v == null ? '<span class="muted">-</span>' : esc(v);
+    return v == null || v === '-' ? '<span class="muted">-</span>' : esc(v);
   }
 
+  // 근거: scr003SummaryCols(7열: Best Practice/국내외종합(계)/조지아 대표차종/울산 차종명/차종명x3)과
+  // scr003SummaryRows.cells(동일 순서 7개 값)를 그대로 인덱스 매핑합니다.
   function renderScr003SummaryTable() {
-    var head = '<th>구분</th>' + D.scr003LineCols.map(function (c) {
+    var head = '<th>구분</th>' + D.scr003SummaryCols.map(function (c) {
       var style = c.bp ? ' style="background:var(--badge-warning-bg)"' : '';
-      var label = c.sub
-        ? esc(c.label) + '<br><span style="font-weight:400;font-size:11px;color:var(--color-text-muted)">' + esc(c.sub) + '</span>'
-        : esc(c.label);
-      return '<th class="al-c"' + style + '>' + label + '</th>';
+      return '<th class="al-c"' + style + '>' + esc(c.label) + '</th>';
     }).join('');
 
     var rows = D.scr003SummaryRows.map(function (row) {
-      var cells = D.scr003LineCols.map(function (col) {
-        return '<td class="al-c">' + scr003Value(row.values[col.id]) + '</td>';
-      }).join('');
+      var cells = row.cells.map(function (v) { return '<td class="al-c">' + scr003Value(v) + '</td>'; }).join('');
       return '<tr><td><strong>' + esc(row.label) + '</strong></td>' + cells + '</tr>';
     }).join('');
 
     return '<table class="data-table"><thead><tr>' + head + '</tr></thead><tbody>' + rows + '</tbody></table>';
   }
 
-  function renderScr003ExpansionCell(kind) {
+  // 근거: scr003ProcessDetail.cells(5열: 조지아/울산/차종명x3) — auto는 클릭 가능한 "● 자동" 필,
+  // manual은 텍스트 "X 수동"(클릭 불가), null은 '-'.
+  function renderScr003ExpansionCell(kind, row) {
     switch (kind) {
       case 'auto':
-        return '<td class="matrix-cell auto" data-action="open-modal" data-modal-id="cellDetail"><span>&#9679;</span> <span>자동</span></td>';
+        var attrs = row.hasVideo ? ' style="cursor:pointer" data-action="open-video" data-process="' + esc(row.task) + '"' : '';
+        return '<td class="al-c"' + attrs + ' style="padding:10px 16px;border-bottom:1px solid var(--color-table-row-border)"><span class="badge badge-success">&#9679; 자동</span></td>';
       case 'manual':
-        return '<td class="matrix-cell manual"><span>X</span> <span>수동</span></td>';
-      case 'partial':
-        return '<td class="al-c" style="padding:10px 16px;border-bottom:1px solid var(--color-table-row-border)">' + badge('개발중', 'warning') + '</td>';
+        return '<td class="al-c" style="padding:10px 16px;border-bottom:1px solid var(--color-table-row-border);color:var(--color-text-sub)">X 수동</td>';
       default:
         return '<td class="matrix-cell none">-</td>';
     }
   }
 
   function renderScr003ProcessDetailTable() {
-    // 확대전개계획 매트릭스: Best Practice/국내외종합(계)는 기술현황·상세계획 그룹으로 이미 표현되므로 제외
-    var matrixCols = D.scr003LineCols.filter(function (c) { return !c.bp && c.id !== 'total'; });
     var head =
       '<tr>' +
         '<th rowspan="2" style="min-width:60px">NO</th><th rowspan="2" style="min-width:220px">작업내용</th>' +
         '<th class="al-c" colspan="2" style="background:var(--badge-warning-bg)">Best Practice</th>' +
-        matrixCols.map(function (c) { return '<th rowspan="2" class="al-c" style="min-width:110px">' + esc(c.label) + '</th>'; }).join('') +
+        D.scr003DetailCols.map(function (c) { return '<th rowspan="2" class="al-c" style="min-width:110px">' + esc(c) + '</th>'; }).join('') +
       '</tr>' +
       '<tr>' +
         '<th class="al-c" style="min-width:80px">기술 현황</th><th style="min-width:240px">상세 계획</th>' +
@@ -652,11 +671,12 @@
     var rowsHtml = D.scr003ProcessDetail.map(function (row) {
       var techSymbol = row.tech === 'auto' ? '&#9679;' : row.tech === 'partial' ? '&#9650;' : 'X';
       var techKind = row.tech === 'auto' ? 'success' : row.tech === 'partial' ? 'warning' : 'neutral';
-      var expansionCells = matrixCols.map(function (col) { return renderScr003ExpansionCell(row.cells[col.id]); }).join('');
+      var techAttrs = row.tech === 'auto' && row.hasVideo ? ' style="cursor:pointer" data-action="open-video" data-process="' + esc(row.task) + '"' : '';
+      var expansionCells = row.cells.map(function (kind) { return renderScr003ExpansionCell(kind, row); }).join('');
       return '<tr>' +
         td(row.no, 'center') +
         td('<strong>' + esc(row.task) + '</strong>') +
-        '<td class="al-c"><span class="badge badge-' + techKind + '">' + techSymbol + '</span></td>' +
+        '<td class="al-c"' + techAttrs + '><span class="badge badge-' + techKind + '">' + techSymbol + '</span></td>' +
         '<td class="muted">' + esc(row.plan) + '</td>' +
         expansionCells +
       '</tr>';
@@ -769,41 +789,64 @@
     );
   }
 
-  // ---------- SCR-006 통합 로드맵 관리 ----------
+  // ---------- SCR-006 통합 로드맵 ----------
+
+  // 근거: scr006Stats = [등록 로드맵(전체 건수), 진행중(파랑), 계획(주황)] — scr006Rows로부터 집계
+  function computeScr006Stats() {
+    var total = D.scr006Rows.length;
+    var inProgress = D.scr006Rows.filter(function (r) { return r.status === '진행중'; }).length;
+    var planned = D.scr006Rows.filter(function (r) { return r.status === '계획'; }).length;
+    return [
+      { label: '등록 로드맵', value: total + '건', color: '' },
+      { label: '진행중', value: inProgress + '건', color: 'var(--color-primary)' },
+      { label: '계획', value: planned + '건', color: 'var(--badge-warning-text)' },
+    ];
+  }
+
+  function renderStatGrid(stats) {
+    return '<div class="stat-grid">' + stats.map(function (s) {
+      return '<div class="stat-card"><div class="stat-value" style="' + (s.color ? 'color:' + s.color : '') + '">' + esc(s.value) + '</div><div class="stat-label">' + esc(s.label) + '</div></div>';
+    }).join('') + '</div>';
+  }
 
   function renderSCR006() {
     var rows = D.scr006Rows.map(function (r) {
-      return '<tr>' +
-        '<td style="cursor:pointer;color:var(--color-primary);font-weight:500" data-action="select-screen" data-screen-id="SCR-007" data-roadmap-id="' + r.roadmapId + '">' + esc(r.section) + '</td>' +
-        '<td style="cursor:pointer" data-action="select-screen" data-screen-id="SCR-007" data-roadmap-id="' + r.roadmapId + '">' + esc(r.name) + '</td>' +
+      return '<tr class="row-clickable" data-action="select-screen" data-screen-id="SCR-007" data-roadmap-id="' + r.roadmapId + '">' +
+        '<td style="color:var(--color-primary);font-weight:600">' + esc(r.section) + '</td>' +
+        '<td style="font-weight:500">' + esc(r.name) + '</td>' +
         td(esc(r.period), null, 'muted') + td(esc(r.task)) +
         td(badge(r.status, r.statusKind), 'center') +
         td('<button type="button" class="btn-outline-sm" data-action="open-modal" data-modal-id="history">이력보기</button>', 'center') +
       '</tr>';
     }).join('');
     return (
-      '<div data-screen-label="SCR-006 통합 로드맵 관리">' +
+      '<div data-screen-label="SCR-006 통합 로드맵">' +
+        '<div class="section-title" style="margin-bottom:2px">통합 로드맵</div>' +
+        '<div class="screen-subtitle">분과별 중장기 자동화 로드맵 등록/조회 · 로드맵명 선택 시 상세 이동</div>' +
+        renderStatGrid(computeScr006Stats()) +
         '<div style="display:flex;align-items:center;gap:var(--sp-sm);margin-bottom:var(--sp-lg)">' +
           '<select style="height:32px;min-width:120px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>전체 분과</option></select>' +
           '<select style="height:32px;min-width:120px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>전체 상태</option></select>' +
           '<div class="filter-spacer"></div>' +
+          '<a href="#" data-action="go-to-gantt" style="font-size:13px;font-weight:600;margin-right:8px">간트차트로 보기 &rsaquo;</a>' +
           '<button type="button" class="btn btn-primary" data-action="open-modal" data-modal-id="roadmapRegister">+ 로드맵 등록</button>' +
         '</div>' +
         renderTable([
           { label: '분과' }, { label: '로드맵명' }, { label: '기간' }, { label: '대표과제' }, { label: '상태', align: 'center' }, { label: '개정이력', align: 'center' },
         ], rows) +
-        '<div style="text-align:right"><a href="#" data-action="go-to-gantt">간트차트로 보기 &rsaquo;</a></div>' +
       '</div>'
     );
   }
 
   // ---------- SCR-007 상세과제 로드맵 관리 ----------
 
+  // 근거: SCR-007은 드롭다운이 아니라 세그먼트 탭(pill) 형태로 소속 통합 로드맵을 전환합니다.
+  // 빈 상태(과제 없음)에는 안내문 + "+ 상세과제 등록" CTA 버튼을 함께 노출합니다.
   function renderSCR007(state) {
     var selected = state.selectedParentRoadmap;
     var rows = D.scr007Data[selected] || [];
-    var options = D.roadmapOptions.map(function (o) {
-      return '<option value="' + o.id + '"' + (o.id === selected ? ' selected' : '') + '>' + esc(o.label) + '</option>';
+    var tabs = D.roadmapOptions.map(function (o) {
+      return '<div class="tab-pill' + (o.id === selected ? ' active' : '') + '" data-action="select-parent-roadmap" data-roadmap-id="' + o.id + '">' + esc(o.label) + '</div>';
     }).join('');
     var body = rows.length
       ? rows.map(function (r) {
@@ -812,13 +855,17 @@
             td('<button type="button" class="btn-outline-sm">수정</button>', 'center') +
           '</tr>';
         }).join('')
-      : '<tr><td colspan="5" class="empty-row-cell">등록된 상세과제가 없습니다</td></tr>';
+      : '<tr><td colspan="5" class="empty-row-cell">' +
+          '<div style="margin-bottom:12px">등록된 상세과제가 없습니다</div>' +
+          '<button type="button" class="btn btn-primary" data-action="open-modal" data-modal-id="detailTaskRegister">+ 상세과제 등록</button>' +
+        '</td></tr>';
 
     return (
       '<div data-screen-label="SCR-007 상세과제 로드맵 관리">' +
-        '<div style="display:flex;align-items:center;gap:var(--sp-sm);margin-bottom:var(--sp-lg)">' +
-          '<label style="font-size:12px;color:var(--color-text-muted)">소속 통합 로드맵</label>' +
-          '<select data-role="parent-roadmap" style="height:32px;min-width:220px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff">' + options + '</select>' +
+        '<div class="section-title" style="margin-bottom:2px">상세과제 로드맵 관리</div>' +
+        '<div class="screen-subtitle">통합 로드맵에 속한 세부 과제의 담당자·기간·진행상태 관리</div>' +
+        '<div style="display:flex;align-items:center;gap:var(--sp-md);margin-bottom:var(--sp-lg)">' +
+          '<div class="tab-pill-group">' + tabs + '</div>' +
           '<div class="filter-spacer"></div>' +
           '<button type="button" class="btn btn-primary" data-action="open-modal" data-modal-id="detailTaskRegister">+ 상세과제 등록</button>' +
         '</div>' +
@@ -831,27 +878,39 @@
 
   // ---------- SCR-008 mTRM 통합 로드맵 대시보드(간트) ----------
 
+  // 근거: SCR-008은 (1) 분과 색상 범례(차체=파랑/조립=주황), (2) 분기 헤더 위 연도 그룹 헤더 행,
+  // (3) 요약본/전체보기 토글(state.ganttView)로 부모행만/부모+자식행 필터링, (4) 지그재그(줄무늬) 행 배경을 포함합니다.
+  var GANTT_YEARS = [{ label: "'26년", span: 4 }, { label: "'27년", span: 4 }, { label: "'28년", span: 4 }];
+
   function renderSCR008(state) {
     var full = state.ganttView === 'full';
+    var yearHeader = GANTT_YEARS.map(function (y) { return '<div class="gantt-year-cell" style="flex:' + y.span + '">' + esc(y.label) + '</div>'; }).join('');
     var quarters = D.ganttQuarters.map(function (q) { return '<div class="gantt-quarter-cell">' + esc(q) + '</div>'; }).join('');
-    var rows = D.ganttRowsFull.filter(function (r) { return full || r.top; }).map(function (r) {
-      return '<div class="gantt-row">' +
+    var rows = D.ganttRowsFull.filter(function (r) { return full || r.top; }).map(function (r, i) {
+      return '<div class="gantt-row" style="background:' + (i % 2 === 0 ? 'var(--color-surface)' : 'var(--color-zebra-bg)') + '">' +
         '<div class="gantt-row-label" style="padding-left:' + r.indent + 'px;font-weight:' + (r.top ? 600 : 400) + '">' + esc(r.label) + '</div>' +
         '<div class="gantt-track"><div class="gantt-bar ' + r.barClass + '" style="left:' + r.left + '%;width:' + r.width + '%" data-action="open-modal" data-modal-id="' + r.modal + '"></div></div>' +
       '</div>';
     }).join('');
     return (
-      '<div data-screen-label="SCR-008 mTRM 통합 로드맵 대시보드">' +
+      '<div data-screen-label="SCR-008 통합 로드맵 차트">' +
+        '<div class="section-title" style="margin-bottom:2px">통합 로드맵 차트</div>' +
+        '<div class="screen-subtitle">분과별 로드맵·과제 일정을 간트차트로 조회 · 막대 선택 시 상세 팝업</div>' +
         '<div class="gantt-toolbar">' +
           '<select style="height:32px;min-width:120px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>전체 분과</option></select>' +
           '<span style="font-size:12px;color:var(--color-text-muted)">2026 ~ 2028</span>' +
           '<div class="filter-spacer"></div>' +
+          '<div class="gantt-legend">' +
+            '<span class="gantt-legend-item"><span class="legend-dot" style="border-radius:2px;background:var(--gantt-top-progress)"></span>차체</span>' +
+            '<span class="gantt-legend-item"><span class="legend-dot" style="border-radius:2px;background:var(--gantt-top-pending)"></span>조립</span>' +
+          '</div>' +
           '<div class="gantt-view-toggle">' +
             '<label data-action="set-gantt-view" data-view="summary"><input type="radio" ' + (!full ? 'checked' : '') + ' readonly /> 요약본</label>' +
             '<label data-action="set-gantt-view" data-view="full"><input type="radio" ' + (full ? 'checked' : '') + ' readonly /> 전체보기</label>' +
           '</div>' +
         '</div>' +
         '<div class="gantt-container">' +
+          '<div class="gantt-header-row"><div class="gantt-label-col"></div><div class="gantt-quarters">' + yearHeader + '</div></div>' +
           '<div class="gantt-header-row"><div class="gantt-label-col">로드맵 / 과제</div><div class="gantt-quarters">' + quarters + '</div></div>' +
           rows +
         '</div>' +
@@ -860,14 +919,51 @@
   }
 
   // ---------- SCR-009 생산기술 Tech PR ----------
+  // 근거: 자료 유형(동영상/파일/텍스트/복합자료)별로 썸네일이 다르고, 카드 클릭 시 공용 모달 시스템과는
+  // 별도인 커스텀 상세 오버레이(techPrDetailIndex state)가 열립니다 (MTRM-MAIN 미리보기도 동일 로직 재사용).
+  var TECH_PR_TYPE = global.PNDES.TECH_PR_TYPE;
+
+  function techPrThumb(c, big) {
+    var playSize = big ? '44px' : '34px';
+    var iconSize = big ? '34' : '26';
+    if (c.type === 'video') {
+      return '<div class="media-thumb"><div class="play-btn" style="width:' + playSize + ';height:' + playSize + '">&#9658;</div></div>';
+    }
+    if (c.type === 'file') {
+      return '<div class="media-thumb media-thumb-file">' +
+        '<svg width="' + iconSize + '" height="' + iconSize + '" viewBox="0 0 24 24" fill="none" stroke="#B45309" stroke-width="1.6"><path d="M6 3h9l5 5v13a1 1 0 01-1 1H6a1 1 0 01-1-1V4a1 1 0 011-1z"></path><path d="M15 3v5h5"></path></svg>' +
+        (big ? '<span class="media-thumb-filename">' + esc(c.fileName) + '</span>' : '') +
+      '</div>';
+    }
+    if (c.type === 'text') {
+      return '<div class="media-thumb media-thumb-text"><div class="media-thumb-text-body">' + esc(c.body) + '</div></div>';
+    }
+    // multi
+    var count = c.items ? c.items.length : 0;
+    return '<div class="media-thumb media-thumb-multi">' +
+      '<div class="multi-icon-row">' +
+        '<span class="multi-icon multi-icon-video">&#9658;</span>' +
+        '<span class="multi-icon multi-icon-file">&#128196;</span>' +
+        '<span class="multi-icon multi-icon-text">&#8801;</span>' +
+      '</div>' +
+      '<span class="multi-count">자료 ' + count + '건 등록</span>' +
+    '</div>';
+  }
+
+  function renderTechPrCard(c, i, big) {
+    var typeInfo = TECH_PR_TYPE[c.type];
+    return '<div class="media-card" data-action="open-techpr-detail" data-index="' + i + '">' +
+      techPrThumb(c, big) +
+      '<div class="media-body">' +
+        '<span class="tech-pr-type-badge" style="color:' + typeInfo.color + ';background:' + typeInfo.bg + '">' + esc(typeInfo.label) + '</span>' +
+        '<div class="media-title">' + esc(c.title) + '</div>' +
+        '<div class="media-meta">' + esc(c.section) + ' &middot; ' + esc(c.date) + '</div>' +
+      '</div>' +
+    '</div>';
+  }
 
   function renderSCR009() {
-    var cards = D.techPrCards.map(function (c) {
-      return '<div class="media-card">' +
-        '<div class="media-thumb"><div class="play-btn">&#9658;</div></div>' +
-        '<div class="media-body"><div class="media-title">' + esc(c.title) + '</div><div class="media-meta">' + esc(c.section) + '</div></div>' +
-      '</div>';
-    }).join('');
+    var cards = D.techPrCards.map(function (c, i) { return renderTechPrCard(c, i, true); }).join('');
     return (
       '<div data-screen-label="SCR-009 생산기술 Tech PR">' +
         '<div style="display:flex;align-items:center;gap:var(--sp-sm);margin-bottom:var(--sp-lg)">' +
@@ -877,7 +973,53 @@
           '<div class="filter-spacer"></div>' +
           '<button type="button" class="btn btn-primary" data-action="open-modal" data-modal-id="techPrInquiry">기술 문의/제안</button>' +
         '</div>' +
-        renderCardGrid(cards) +
+        '<div class="card-grid card-grid-5">' + cards + '</div>' +
+      '</div>'
+    );
+  }
+
+  // SCR-009 카드 클릭 시 열리는 커스텀 상세 오버레이 (공용 activeModal 모달 시스템과 별도)
+  function renderTechPrDetailOverlay(index) {
+    var c = D.techPrCards[index];
+    if (!c) return '';
+    var typeInfo = TECH_PR_TYPE[c.type];
+    var body;
+    if (c.type === 'video') {
+      body = '<div class="techpr-video-frame"><div class="play-btn" style="width:64px;height:64px;font-size:24px">&#9658;</div></div>' +
+        '<div class="techpr-desc">' + esc(c.desc) + '</div>';
+    } else if (c.type === 'file') {
+      body = '<div class="techpr-file-row">' +
+        '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#B45309" stroke-width="1.5"><path d="M6 3h9l5 5v13a1 1 0 01-1 1H6a1 1 0 01-1-1V4a1 1 0 011-1z"></path><path d="M15 3v5h5"></path></svg>' +
+        '<div class="techpr-file-meta"><div class="techpr-file-name">' + esc(c.fileName) + '</div><div class="techpr-file-size">' + esc(c.fileSize) + '</div></div>' +
+        '<button type="button" class="btn btn-primary">다운로드</button>' +
+      '</div>';
+    } else if (c.type === 'text') {
+      body = '<div class="techpr-desc" style="white-space:pre-line">' + esc(c.body) + '</div>';
+    } else {
+      body = c.items.map(function (it) {
+        var itInfo = TECH_PR_TYPE[it.type];
+        var inner = it.type === 'video'
+          ? '<div class="techpr-video-frame" style="margin-bottom:10px"><div class="play-btn" style="width:52px;height:52px;font-size:20px">&#9658;</div></div><div class="techpr-desc">' + esc(it.desc) + '</div>'
+          : it.type === 'file'
+            ? '<div class="techpr-file-row"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#B45309" stroke-width="1.6"><path d="M6 3h9l5 5v13a1 1 0 01-1 1H6a1 1 0 01-1-1V4a1 1 0 011-1z"></path><path d="M15 3v5h5"></path></svg><div class="techpr-file-meta"><div class="techpr-file-name">' + esc(it.fileName) + '</div><div class="techpr-file-size">' + esc(it.fileSize) + '</div></div><button type="button" class="btn btn-primary">다운로드</button></div>'
+            : '<div class="techpr-desc">' + esc(it.body) + '</div>';
+        return '<div class="techpr-multi-item"><span class="tech-pr-type-badge" style="color:' + itInfo.color + ';background:' + itInfo.bg + '">' + esc(itInfo.label) + '</span>' + inner + '</div>';
+      }).join('');
+    }
+    return (
+      '<div class="techpr-overlay">' +
+        '<div class="techpr-overlay-box">' +
+          '<div class="techpr-overlay-head">' +
+            '<span class="tech-pr-type-badge" style="color:' + typeInfo.color + ';background:' + typeInfo.bg + '">' + esc(typeInfo.label) + '</span>' +
+            '<div class="modal-title" style="flex:1">' + esc(c.title) + '</div>' +
+            '<div class="modal-close" data-action="close-techpr-detail">&#10005;</div>' +
+          '</div>' +
+          '<div class="techpr-overlay-body">' +
+            '<div class="techpr-overlay-meta">분과 &middot; ' + esc(c.section) + ' &nbsp; 등록일 &middot; ' + esc(c.date) + ' &nbsp; 담당자 &middot; ' + esc(c.owner) + '</div>' +
+            body +
+          '</div>' +
+          '<div class="modal-footer"><button type="button" class="btn btn-secondary" style="height:36px" data-action="close-techpr-detail">닫기</button></div>' +
+        '</div>' +
       '</div>'
     );
   }
@@ -1045,16 +1187,16 @@
     }
   }
 
-  // SCR-001: 공정별 상세 "현재(자동)" 요소 선택 시 등록된 자동화 설비 동영상을 팝업으로 노출
-  function renderProcessVideoModal(state) {
-    var row = D.scr001ProcessDetail.filter(function (r) { return r.no === state.scr001SelectedVideo; })[0];
-    if (!row) return '';
+  // 근거: openVideo(process) — SCR-001 "현재=자동" 배지 및 SCR-003 "기술현황=●" 배지 클릭 시
+  // 동일한 공용 동영상 모달을 열며, 제목은 "자동화 설비 동영상 — {process}" 형식입니다.
+  function renderAutoVideoModal(state) {
+    var process = state.videoProcess || '';
     return (
-      '<div class="modal-box" style="width:640px">' +
-        '<div class="modal-header"><div class="modal-title">' + esc(row.videoLabel) + '</div><div class="modal-close" data-action="close-modal">&#10005;</div></div>' +
+      '<div class="modal-box" style="width:720px">' +
+        '<div class="modal-header"><div class="modal-title">자동화 설비 동영상 &mdash; ' + esc(process) + '</div><div class="modal-close" data-action="close-modal">&#10005;</div></div>' +
         '<div class="modal-body">' +
-          '<div class="media-thumb" style="width:100%;aspect-ratio:16/9"><div class="play-btn">&#9658;</div></div>' +
-          '<div style="font-size:12px;color:var(--color-text-muted);margin-top:var(--sp-md)">공정: ' + esc(row.process) + ' · 현재 상태: ' + esc(row.current.label) + '</div>' +
+          '<div class="modal-field"><label>공정</label><div class="modal-field-control"><div class="plaintext">' + esc(process) + '</div></div></div>' +
+          '<div class="modal-field"><label>설비 영상</label><div class="modal-field-control"><div class="media-thumb" style="aspect-ratio:16/9"><div class="play-btn" style="width:56px;height:56px;font-size:20px">&#9658;</div></div></div></div>' +
         '</div>' +
         '<div class="modal-footer"><button type="button" class="btn btn-primary" style="height:36px" data-action="close-modal">닫기</button></div>' +
       '</div>'
@@ -1063,7 +1205,7 @@
 
   function renderModal(state) {
     if (!state.activeModal) return '';
-    if (state.activeModal === 'processVideo') return renderProcessVideoModal(state);
+    if (state.activeModal === 'autoVideo') return renderAutoVideoModal(state);
     var modal = MODALS[state.activeModal];
     if (!modal) return '';
     var fields = modal.fields.map(function (f) {
@@ -1102,6 +1244,7 @@
     'SCR-012': renderSCR012,
     'SCR-013': renderSCR013,
     'SCR-014': renderSCR014,
+    'MTRM-MAIN': renderMTRMMAIN,
   };
 
   global.PNDES.render = {
@@ -1112,5 +1255,8 @@
       return fn ? fn(state) : '';
     },
     modal: renderModal,
+    techPrDetail: function (state) {
+      return state.techPrDetailIndex != null ? renderTechPrDetailOverlay(state.techPrDetailIndex) : '';
+    },
   };
 })(window);

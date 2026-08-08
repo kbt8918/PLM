@@ -48,6 +48,13 @@
   /* Admin 구분색 (design-style-guide.md 3.5) */
   --color-admin-bar: #1F2937;
 
+  /* 지그재그(줄무늬) 배경 - 간트차트 행 (SCR-008/MTRM-MAIN) */
+  --color-zebra-bg: #FAFBFC;
+
+  /* 복합자료 배지 (design_handoff_pndes_portal README Design Tokens) */
+  --color-purple: #6B46C1;
+  --color-purple-bg: #F1EAFB;
+
   /* Spacing tokens (design-style-guide.md 2.3) */
   --sp-xs: 4px;
   --sp-sm: 8px;
@@ -130,6 +137,10 @@ button { font-family: inherit; }
 .gnb-item:hover { background: #EEF1F4; }
 .gnb-item.active { background: #E9F0FD; color: var(--color-primary); font-weight: 600; }
 .gnb-item .admin-mark { font-size: 10px; color: #A3ABB5; }
+.gnb-item-right { display: flex; align-items: center; gap: 4px; }
+.gnb-chevron { font-size: 10px; color: #9CA3AF; transition: transform .15s; display: inline-block; cursor: pointer; }
+.gnb-chevron.collapsed { transform: rotate(-90deg); }
+.gnb-item-child { padding-left: 22px; font-size: 12.5px; }
 
 #content { flex: 1; min-width: 0; overflow-y: auto; padding: var(--sp-lg) var(--sp-lg) 64px; }
 
@@ -243,6 +254,17 @@ table.data-table tr.row-clickable { cursor: pointer; }
 .log-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--color-table-row-border); font-size: 12px; }
 .log-row .time { color: var(--color-text-muted); }
 
+/* ---------- KPI 스타일 통계 그리드(SCR-006/MTRM-MAIN 3열) ---------- */
+.stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-md); margin-bottom: var(--sp-lg); }
+.stat-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); padding: 16px 20px; }
+.stat-value { font-size: 22px; font-weight: 700; }
+.stat-label { font-size: 12px; color: var(--color-text-muted); margin-top: 4px; }
+
+/* ---------- 세그먼트 탭 pill (SCR-007) ---------- */
+.tab-pill-group { display: flex; gap: 4px; background: var(--color-bg); border: 1px solid var(--color-border); border-radius: 8px; padding: 4px; }
+.tab-pill { padding: 8px 16px; border-radius: 6px; font-size: 13px; cursor: pointer; color: var(--badge-neutral-text); }
+.tab-pill.active { font-weight: 700; color: var(--color-primary); background: var(--badge-info-bg); }
+
 .link-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-md); }
 .link-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); padding: 20px; cursor: pointer; }
 .link-card:hover { border-color: var(--color-primary); }
@@ -250,7 +272,10 @@ table.data-table tr.row-clickable { cursor: pointer; }
 .link-card-desc { font-size: 12px; color: var(--color-text-faint); }
 
 /* ---------- Gantt 간트차트 (design-style-guide.md 5.8) ---------- */
-.gantt-toolbar { display: flex; align-items: center; gap: var(--sp-md); margin-bottom: var(--sp-lg); }
+.gantt-toolbar { display: flex; align-items: center; gap: var(--sp-md); margin-bottom: var(--sp-lg); flex-wrap: wrap; }
+.gantt-legend { display: flex; align-items: center; gap: 14px; font-size: 11px; color: var(--color-text-muted); }
+.gantt-legend-item { display: flex; align-items: center; gap: 5px; }
+.gantt-year-cell { text-align: center; padding: 4px 2px; font-size: 11px; font-weight: 700; color: var(--badge-neutral-text); border-left: 1px solid var(--color-border); }
 .gantt-view-toggle { display: flex; align-items: center; gap: 12px; font-size: 13px; }
 .gantt-view-toggle label { display: flex; align-items: center; gap: var(--sp-xs); cursor: pointer; }
 .gantt-container { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); overflow: hidden; }
@@ -283,6 +308,8 @@ table.data-table tr.row-clickable { cursor: pointer; }
 
 /* ---------- 카드형 그리드 (design-style-guide.md 5.7) ---------- */
 .card-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-lg); }
+.card-grid-5 { grid-template-columns: repeat(5, 1fr); gap: 20px; }
+.card-grid-3 { grid-template-columns: repeat(3, 1fr); gap: 14px; }
 .media-card { border: 1px solid var(--color-border); border-radius: var(--radius); overflow: hidden; cursor: pointer; background: var(--color-surface); }
 .media-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
 .media-thumb { position: relative; aspect-ratio: 16/9; background: repeating-linear-gradient(135deg,#EEF1F4,#EEF1F4 10px,#E1E5EA 10px,#E1E5EA 20px); display: flex; align-items: center; justify-content: center; }
@@ -291,6 +318,38 @@ table.data-table tr.row-clickable { cursor: pointer; }
 .media-title { font-size: 15px; font-weight: 600; margin-bottom: var(--sp-xs); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .media-meta { font-size: 12px; color: var(--color-text-faint); }
 .media-meta + .media-meta { margin-top: 6px; }
+
+/* ---------- Tech PR 유형별 썸네일 (SCR-009/MTRM-MAIN, design_handoff README 참고) ---------- */
+.media-thumb-file, .media-thumb-text, .media-thumb-multi { background: var(--color-bg); flex-direction: column; gap: 6px; }
+.media-thumb-filename { font-size: 11px; color: var(--color-text-faint); }
+.media-thumb-text { padding: 12px; align-items: flex-start; }
+.media-thumb-text-body {
+  font-size: 11px; color: var(--badge-neutral-text); line-height: 16px; overflow: hidden;
+  display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical;
+  border-left: 3px solid var(--badge-success-text); padding-left: 8px;
+}
+.multi-icon-row { display: flex; gap: 6px; }
+.multi-icon { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; }
+.multi-icon-video { background: var(--badge-info-bg); color: var(--badge-info-text); }
+.multi-icon-file { background: var(--badge-warning-bg); color: var(--badge-warning-text); }
+.multi-icon-text { background: var(--badge-success-bg); color: var(--badge-success-text); }
+.multi-count { font-size: 10px; color: var(--color-purple); font-weight: 600; }
+.tech-pr-type-badge { display: inline-block; font-size: 9px; font-weight: 700; padding: 2px 8px; border-radius: 9px; margin-bottom: 5px; }
+
+/* ---------- Tech PR 상세 오버레이 (공용 모달 시스템과 별도, techPrDetailIndex state) ---------- */
+.techpr-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 110; }
+.techpr-overlay-box { width: 720px; max-width: 92vw; max-height: 86vh; background: var(--color-surface); border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; }
+.techpr-overlay-head { height: 56px; flex-shrink: 0; display: flex; align-items: center; gap: 10px; padding: 0 24px; border-bottom: 1px solid var(--color-border); }
+.techpr-overlay-body { padding: var(--sp-lg); overflow-y: auto; flex: 1; }
+.techpr-overlay-meta { display: flex; gap: 20px; font-size: 12px; color: var(--color-text-faint); margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--color-table-row-border); }
+.techpr-video-frame { aspect-ratio: 16/9; background: repeating-linear-gradient(135deg,#EEF1F4,#EEF1F4 10px,#E1E5EA 10px,#E1E5EA 20px); border-radius: 6px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
+.techpr-desc { font-size: 14px; color: var(--color-text-sub); line-height: 24px; }
+.techpr-file-row { display: flex; align-items: center; gap: 16px; border: 1px solid var(--color-border); border-radius: 6px; padding: 20px; }
+.techpr-file-meta { flex: 1; }
+.techpr-file-name { font-size: 14px; font-weight: 600; }
+.techpr-file-size { font-size: 12px; color: var(--color-text-faint); margin-top: 2px; }
+.techpr-multi-item { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--color-table-row-border); }
+.techpr-multi-item:last-child { border-bottom: none; }
 
 /* ---------- Admin 전용 구분(design-style-guide.md 3.5) ---------- */
 .admin-screen { border-left: 3px solid var(--color-admin-bar); padding-left: 21px; }

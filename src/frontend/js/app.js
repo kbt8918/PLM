@@ -21,7 +21,9 @@
     selectedParentRoadmap: 'body',
     trendView: 'list',
     trendIndex: 0,
-    scr001SelectedVideo: null, // SCR-001: 공정별 상세 "현재" 자동 요소 클릭 시 자동화 설비 동영상 노출 대상 공정 no
+    videoProcess: null, // SCR-001 "현재=자동"/SCR-003 "기술현황=●" 클릭 시 자동화 설비 동영상 모달에 표시할 공정/작업명
+    navSubOpen: { 'SCR-006': true }, // 하위 메뉴(SCR-006 -> SCR-007/008) 펼침 상태
+    techPrDetailIndex: null, // SCR-009/MTRM-MAIN Tech PR 카드 클릭 시 표시할 커스텀 상세 오버레이 인덱스
   };
 
   function setState(patch) {
@@ -31,7 +33,7 @@
 
   function renderAll() {
     $('#gnb-top').html(render.gnbTop(state.currentScreen));
-    $('#gnb-side').html(render.gnbSide(state.currentScreen));
+    $('#gnb-side').html(render.gnbSide(state.currentScreen, state.navSubOpen));
     $('#content').html(render.screen(state));
 
     var modalHtml = render.modal(state);
@@ -41,6 +43,11 @@
     } else {
       $modalRoot.empty().removeClass('open');
     }
+
+    // SCR-009/MTRM-MAIN Tech PR 카드 상세: 공용 modal-root와 별개의 오버레이 컨테이너
+    var $techPrRoot = $('#techpr-detail-root');
+    var techPrHtml = render.techPrDetail ? render.techPrDetail(state) : '';
+    if (techPrHtml) { $techPrRoot.html(techPrHtml); } else { $techPrRoot.empty(); }
   }
 
   function selectScreen(id, roadmapId) {
@@ -59,13 +66,29 @@
           selectScreen($el.data('screenId'), $el.data('roadmapId'));
           break;
         case 'open-modal':
-          var modalPatch = { activeModal: $el.data('modalId') };
-          // SCR-001: 공정별 상세 "현재(자동)" 셀은 어떤 공정의 동영상을 열지 함께 전달
-          if ($el.data('no') != null) modalPatch.scr001SelectedVideo = Number($el.data('no'));
-          setState(modalPatch);
+          setState({ activeModal: $el.data('modalId') });
           break;
         case 'close-modal':
           setState({ activeModal: null });
+          break;
+        case 'open-video':
+          // SCR-001 "현재=자동" 배지 / SCR-003 "기술현황=●" 배지 클릭 -> 공용 동영상 모달
+          setState({ activeModal: 'autoVideo', videoProcess: $el.data('process') });
+          break;
+        case 'toggle-nav-sub':
+          var subId = $el.data('screenId');
+          var navSubOpen = $.extend({}, state.navSubOpen);
+          navSubOpen[subId] = !navSubOpen[subId];
+          setState({ navSubOpen: navSubOpen });
+          break;
+        case 'select-parent-roadmap':
+          setState({ selectedParentRoadmap: $el.data('roadmapId') });
+          break;
+        case 'open-techpr-detail':
+          setState({ techPrDetailIndex: Number($el.data('index')) });
+          break;
+        case 'close-techpr-detail':
+          setState({ techPrDetailIndex: null });
           break;
         case 'run-search':
           // 프로토타입 단계: 실 연동 시 조회조건 기반 API 호출로 교체
@@ -104,9 +127,9 @@
       if (e.target.id === 'modal-root') setState({ activeModal: null });
     });
 
-    // SCR-007: 소속 통합 로드맵 변경
-    $(document).on('change', '[data-role="parent-roadmap"]', function () {
-      setState({ selectedParentRoadmap: $(this).val() });
+    // Tech PR 상세 오버레이 바깥 클릭 시 닫기
+    $(document).on('click', '.techpr-overlay', function (e) {
+      if ($(e.target).is('.techpr-overlay')) setState({ techPrDetailIndex: null });
     });
 
     renderAll();
