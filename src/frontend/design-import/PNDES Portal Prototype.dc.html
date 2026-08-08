@@ -1,0 +1,2188 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { margin: 0; background: #F8F9FA; }
+    a { color: #1A56DB; }
+    a:hover { color: #14449E; }
+    * { box-sizing: border-box; }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-thumb { background: #C9CFD6; border-radius: 4px; }
+  </style>
+</helmet>
+
+<div style="width:1920px;min-height:1080px;display:flex;flex-direction:column;font-family:'Noto Sans KR','Malgun Gothic','Apple SD Gothic Neo',sans-serif;background:#F8F9FA;color:#1F2937;font-size:13px">
+
+  <div style="height:60px;flex-shrink:0;background:#fff;border-bottom:1px solid #E1E5EA;display:flex;align-items:center;justify-content:space-between;padding:0 24px">
+    <div style="display:flex;align-items:center;gap:18px">
+      <div style="font-weight:700;font-size:18px;color:#1A56DB;letter-spacing:-0.02em">PNDES</div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:13px;color:#6B7280">
+        <span>생기포털</span><span style="color:#C9CFD6">›</span><span>{{ currentMeta.group }}</span><span style="color:#C9CFD6">›</span><span style="color:#1F2937;font-weight:600">{{ currentMeta.name }}</span>
+        <sc-if value="{{ currentMeta.admin }}" hint-placeholder-val="{{ false }}">
+          <span style="margin-left:10px;background:#1F2937;color:#fff;font-size:11px;font-weight:600;padding:2px 9px;border-radius:11px">관리자</span>
+        </sc-if>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:14px;font-size:13px;color:#374151">
+      <span>홍길동 님</span><span style="color:#C9CFD6">|</span><a href="#" style="color:#6B7280;text-decoration:none;font-size:13px">로그아웃</a>
+    </div>
+  </div>
+
+  <div style="display:flex;flex:1;min-height:0">
+
+    <div style="width:240px;flex-shrink:0;background:#F8F9FA;border-right:1px solid #E1E5EA;overflow-y:auto;padding:16px 8px">
+      <sc-for list="{{ navGroups }}" as="group" hint-placeholder-count="2">
+        <div style="margin-bottom:14px">
+          <div style="font-size:11px;font-weight:700;color:#A3ABB5;letter-spacing:0.03em;padding:8px 8px 4px">{{ group.title }}</div>
+          <sc-for list="{{ group.items }}" as="item" hint-placeholder-count="6">
+            <div onClick="{{ item.onClick }}" style="{{ item.rowStyle }}">
+              <span>{{ item.label }}</span>
+              <span style="display:flex;align-items:center;gap:4px">
+                <sc-if value="{{ item.admin }}" hint-placeholder-val="{{ false }}">
+                  <span style="font-size:10px;color:#A3ABB5">A</span>
+                </sc-if>
+                <sc-if value="{{ item.hasChildren }}" hint-placeholder-val="{{ false }}">
+                  <span onClick="{{ item.onToggle }}" style="{{ item.chevronStyle }}">▾</span>
+                </sc-if>
+              </span>
+            </div>
+            <sc-for list="{{ item.children }}" as="child" hint-placeholder-count="0">
+              <div onClick="{{ child.onClick }}" style="{{ child.rowStyle }}">
+                <span>{{ child.label }}</span>
+                <sc-if value="{{ child.admin }}" hint-placeholder-val="{{ false }}">
+                  <span style="font-size:10px;color:#A3ABB5">A</span>
+                </sc-if>
+              </div>
+            </sc-for>
+          </sc-for>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="flex:1;min-width:0;overflow-y:auto;padding:24px 24px 64px">
+
+      <sc-if value="{{ isFLOWMAP }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="FLOW-MAP 전체 프로세스 흐름도">
+          <div style="font-size:16px;font-weight:600;margin-bottom:4px">공정 자동화 현황 흐름</div>
+          <div style="font-size:12px;color:#9CA3AF;margin-bottom:16px">생기 업무담당자 · 공장/라인 현장담당자</div>
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:40px">
+            <sc-for list="{{ flowAuto }}" as="node" hint-placeholder-count="6">
+              <div style="display:flex;align-items:center;gap:8px">
+                <div onClick="{{ node.onClick }}" style="width:150px;cursor:pointer;background:#fff;border:1px solid #E1E5EA;border-radius:4px;overflow:hidden">
+                  <div style="height:70px;background:#F8F9FA;padding:8px;display:flex;flex-direction:column;gap:4px">
+                    <sc-if value="{{ node.isDashboard }}" hint-placeholder-val="{{ false }}">
+                      <div style="display:flex;gap:4px;margin-bottom:4px">
+                        <div style="flex:1;height:16px;background:#E1E5EA;border-radius:2px"></div>
+                        <div style="flex:1;height:16px;background:#E1E5EA;border-radius:2px"></div>
+                        <div style="flex:1;height:16px;background:#E1E5EA;border-radius:2px"></div>
+                      </div>
+                      <div style="display:flex;align-items:flex-end;gap:3px;height:28px">
+                        <div style="width:8px;height:60%;background:#1A56DB;border-radius:1px"></div>
+                        <div style="width:8px;height:90%;background:#1A56DB;border-radius:1px"></div>
+                        <div style="width:8px;height:40%;background:#1A56DB;border-radius:1px"></div>
+                        <div style="width:8px;height:70%;background:#1A56DB;border-radius:1px"></div>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{ node.isTable }}" hint-placeholder-val="{{ false }}">
+                      <div style="height:8px;background:#DEE2E6;border-radius:2px"></div>
+                      <div style="height:5px;width:85%;background:#E1E5EA;border-radius:2px"></div>
+                      <div style="height:5px;width:70%;background:#E1E5EA;border-radius:2px"></div>
+                      <div style="height:5px;width:90%;background:#E1E5EA;border-radius:2px"></div>
+                      <div style="height:5px;width:60%;background:#E1E5EA;border-radius:2px"></div>
+                    </sc-if>
+                    <sc-if value="{{ node.isCards }}" hint-placeholder-val="{{ false }}">
+                      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;height:100%">
+                        <div style="background:#E1E5EA;border-radius:2px"></div>
+                        <div style="background:#E1E5EA;border-radius:2px"></div>
+                        <div style="background:#E1E5EA;border-radius:2px"></div>
+                        <div style="background:#E1E5EA;border-radius:2px"></div>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{ node.isGantt }}" hint-placeholder-val="{{ false }}">
+                      <div style="height:8px;width:60%;background:#5B8DEF;border-radius:2px;margin-bottom:6px"></div>
+                      <div style="height:8px;width:80%;margin-left:14px;background:#F2A65A;border-radius:2px;margin-bottom:6px"></div>
+                      <div style="height:8px;width:45%;margin-left:28px;background:#9DC0F7;border-radius:2px"></div>
+                    </sc-if>
+                    <sc-if value="{{ node.isForm }}" hint-placeholder-val="{{ false }}">
+                      <div style="height:6px;width:100%;background:#E1E5EA;border-radius:2px"></div>
+                      <div style="height:6px;width:100%;background:#E1E5EA;border-radius:2px"></div>
+                      <div style="height:6px;width:100%;background:#E1E5EA;border-radius:2px"></div>
+                      <div style="align-self:flex-end;width:36%;height:10px;background:#1A56DB;border-radius:2px;margin-top:4px"></div>
+                    </sc-if>
+                  </div>
+                  <div style="padding:8px 10px;border-top:1px solid #E1E5EA">
+                    <div style="font-size:10px;color:#9CA3AF;margin-bottom:2px">{{ node.screenId }}</div>
+                    <div style="font-size:12px;font-weight:600;line-height:15px">{{ node.label }}</div>
+                  </div>
+                </div>
+                <sc-if value="{{ node.isLast }}" hint-placeholder-val="{{ true }}">
+                  <span></span>
+                </sc-if>
+              </div>
+              <sc-if value="{{ node.isLast }}" hint-placeholder-val="{{ true }}">
+                <span></span>
+              </sc-if>
+            </sc-for>
+          </div>
+
+          <div style="font-size:16px;font-weight:600;margin-bottom:4px">중장기 방향성 공유 흐름</div>
+          <div style="font-size:12px;color:#9CA3AF;margin-bottom:16px">생기 업무담당자 · 분과 담당자/의사결정자</div>
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px">
+            <sc-for list="{{ flowMtrm }}" as="node" hint-placeholder-count="10">
+              <div style="display:flex;align-items:center;gap:8px">
+                <div onClick="{{ node.onClick }}" style="width:150px;cursor:pointer;background:#fff;border:1px solid #E1E5EA;border-radius:4px;overflow:hidden">
+                  <div style="height:70px;background:#F8F9FA;padding:8px;display:flex;flex-direction:column;gap:4px">
+                    <sc-if value="{{ node.isDashboard }}" hint-placeholder-val="{{ false }}">
+                      <div style="display:flex;gap:4px;margin-bottom:4px">
+                        <div style="flex:1;height:16px;background:#E1E5EA;border-radius:2px"></div>
+                        <div style="flex:1;height:16px;background:#E1E5EA;border-radius:2px"></div>
+                        <div style="flex:1;height:16px;background:#E1E5EA;border-radius:2px"></div>
+                      </div>
+                      <div style="display:flex;align-items:flex-end;gap:3px;height:28px">
+                        <div style="width:8px;height:60%;background:#1A56DB;border-radius:1px"></div>
+                        <div style="width:8px;height:90%;background:#1A56DB;border-radius:1px"></div>
+                        <div style="width:8px;height:40%;background:#1A56DB;border-radius:1px"></div>
+                        <div style="width:8px;height:70%;background:#1A56DB;border-radius:1px"></div>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{ node.isTable }}" hint-placeholder-val="{{ false }}">
+                      <div style="height:8px;background:#DEE2E6;border-radius:2px"></div>
+                      <div style="height:5px;width:85%;background:#E1E5EA;border-radius:2px"></div>
+                      <div style="height:5px;width:70%;background:#E1E5EA;border-radius:2px"></div>
+                      <div style="height:5px;width:90%;background:#E1E5EA;border-radius:2px"></div>
+                      <div style="height:5px;width:60%;background:#E1E5EA;border-radius:2px"></div>
+                    </sc-if>
+                    <sc-if value="{{ node.isCards }}" hint-placeholder-val="{{ false }}">
+                      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;height:100%">
+                        <div style="background:#E1E5EA;border-radius:2px"></div>
+                        <div style="background:#E1E5EA;border-radius:2px"></div>
+                        <div style="background:#E1E5EA;border-radius:2px"></div>
+                        <div style="background:#E1E5EA;border-radius:2px"></div>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{ node.isGantt }}" hint-placeholder-val="{{ false }}">
+                      <div style="height:8px;width:60%;background:#5B8DEF;border-radius:2px;margin-bottom:6px"></div>
+                      <div style="height:8px;width:80%;margin-left:14px;background:#F2A65A;border-radius:2px;margin-bottom:6px"></div>
+                      <div style="height:8px;width:45%;margin-left:28px;background:#9DC0F7;border-radius:2px"></div>
+                    </sc-if>
+                    <sc-if value="{{ node.isForm }}" hint-placeholder-val="{{ false }}">
+                      <div style="height:6px;width:100%;background:#E1E5EA;border-radius:2px"></div>
+                      <div style="height:6px;width:100%;background:#E1E5EA;border-radius:2px"></div>
+                      <div style="height:6px;width:100%;background:#E1E5EA;border-radius:2px"></div>
+                      <div style="align-self:flex-end;width:36%;height:10px;background:#1A56DB;border-radius:2px;margin-top:4px"></div>
+                    </sc-if>
+                  </div>
+                  <div style="padding:8px 10px;border-top:1px solid #E1E5EA">
+                    <div style="font-size:10px;color:#9CA3AF;margin-bottom:2px">{{ node.screenId }}</div>
+                    <div style="font-size:12px;font-weight:600;line-height:15px">{{ node.label }}</div>
+                  </div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="font-size:16px;font-weight:600;margin-top:40px;margin-bottom:4px">자료 등록·조회 프로세스</div>
+          <div style="font-size:12px;color:#9CA3AF;margin-bottom:20px">현장 등록부터 경영진 조회·의사결정까지의 데이터 흐름</div>
+
+          <div style="background:#fff;border:1px solid #E1E5EA;border-radius:4px;padding:24px 20px;margin-bottom:16px">
+            <div style="font-size:13px;font-weight:600;color:#1A56DB;margin-bottom:20px">등록 프로세스</div>
+            <div style="display:flex;align-items:flex-start">
+              <sc-for list="{{ flowRegister }}" as="st" hint-placeholder-count="4">
+                <div style="display:flex;align-items:flex-start">
+                  <div style="display:flex;flex-direction:column;align-items:center;width:180px">
+                    <div onClick="{{ st.onClick }}" style="{{ st.circleStyle }}">{{ st.step }}</div>
+                    <div style="font-size:12px;font-weight:600;text-align:center;margin-top:10px;line-height:16px;padding:0 6px">{{ st.label }}</div>
+                    <div style="font-size:11px;color:#9CA3AF;margin-top:4px">{{ st.role }}</div>
+                  </div>
+                  <sc-if value="{{ st.hasNext }}" hint-placeholder-val="{{ false }}">
+                    <div style="width:24px;height:36px;display:flex;align-items:center;justify-content:center;color:#C9CFD6;font-size:16px">→</div>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="background:#fff;border:1px solid #E1E5EA;border-radius:4px;padding:24px 20px">
+            <div style="font-size:13px;font-weight:600;color:#1E8E3E;margin-bottom:20px">조회 프로세스</div>
+            <div style="display:flex;align-items:flex-start">
+              <sc-for list="{{ flowLookup }}" as="st" hint-placeholder-count="4">
+                <div style="display:flex;align-items:flex-start">
+                  <div style="display:flex;flex-direction:column;align-items:center;width:180px">
+                    <div onClick="{{ st.onClick }}" style="{{ st.circleStyle }}">{{ st.step }}</div>
+                    <div style="font-size:12px;font-weight:600;text-align:center;margin-top:10px;line-height:16px;padding:0 6px">{{ st.label }}</div>
+                    <div style="font-size:11px;color:#9CA3AF;margin-top:4px">{{ st.role }}</div>
+                  </div>
+                  <sc-if value="{{ st.hasNext }}" hint-placeholder-val="{{ false }}">
+                    <div style="width:24px;height:36px;display:flex;align-items:center;justify-content:center;color:#C9CFD6;font-size:16px">→</div>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isNAVOPT }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="NAV-OPT 사이드 내비게이션 개선안">
+          <div style="font-size:16px;font-weight:600;margin-bottom:4px">사이드 내비게이션 개선안 (옵션)</div>
+          <div style="font-size:12px;color:#9CA3AF;margin-bottom:24px">기존 화면 구조는 유지하고, 접근성·사용성 개선안을 비교용으로 제공합니다</div>
+          <div style="display:flex;gap:24px;align-items:flex-start">
+            <div style="flex:1;max-width:280px">
+              <div style="font-size:13px;font-weight:600;color:#6B7280;margin-bottom:10px">현재</div>
+              <div style="background:#F8F9FA;border:1px solid #E1E5EA;border-radius:4px;padding:16px 8px">
+                <sc-for list="{{ navGroups }}" as="group" hint-placeholder-count="2">
+                  <div style="margin-bottom:14px">
+                    <div style="font-size:11px;font-weight:700;color:#A3ABB5;letter-spacing:0.03em;padding:8px 8px 4px">{{ group.title }}</div>
+                    <sc-for list="{{ group.items }}" as="item" hint-placeholder-count="6">
+                      <div onClick="{{ item.onClick }}" style="{{ item.rowStyle }}">
+                        <span>{{ item.label }}</span>
+                        <sc-if value="{{ item.admin }}" hint-placeholder-val="{{ false }}">
+                          <span style="font-size:10px;color:#A3ABB5">A</span>
+                        </sc-if>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="flex:1;max-width:300px">
+              <div style="font-size:13px;font-weight:600;color:#1A56DB;margin-bottom:10px">개선안</div>
+              <div style="background:#fff;border:1px solid #E1E5EA;border-radius:4px;padding:12px 8px">
+                <sc-for list="{{ navOptGroups }}" as="group" hint-placeholder-count="2">
+                  <div style="margin-bottom:6px">
+                    <div onClick="{{ group.onToggle }}" tabIndex="0" style="display:flex;align-items:center;gap:6px;padding:8px 10px;cursor:pointer;border-radius:6px" style-focus="outline:2px solid #1A56DB;outline-offset:2px">
+                      <span style="{{ group.chevronStyle }}">▾</span>
+                      <span style="font-size:11px;font-weight:700;color:#6B7280;letter-spacing:0.03em">{{ group.title }}</span>
+                    </div>
+                    <sc-for list="{{ group.items }}" as="item" hint-placeholder-count="6">
+                      <div onClick="{{ item.onClick }}" tabIndex="0" style="{{ item.rowStyle }}" style-focus="outline:2px solid #1A56DB;outline-offset:-2px" style-hover="background:#F1F4FA">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style="flex-shrink:0;opacity:0.75">
+                          <path d="{{ item.iconPath }}"></path>
+                        </svg>
+                        <span style="flex:1">{{ item.label }}</span>
+                        <sc-if value="{{ item.admin }}" hint-placeholder-val="{{ false }}">
+                          <span title="관리자 전용 메뉴입니다" style="font-size:10px;font-weight:700;color:#B45309;background:#FEF3E2;border-radius:9px;padding:2px 6px;cursor:help">A</span>
+                        </sc-if>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="flex:1;min-width:260px;background:#fff;border:1px solid #E1E5EA;border-radius:4px;padding:20px">
+              <div style="font-size:13px;font-weight:600;margin-bottom:12px">개선 내용</div>
+              <div style="display:flex;flex-direction:column;gap:10px;font-size:12px;color:#4B5563;line-height:18px">
+                <div>• 현재 메뉴에 좌측 강조선 + 배경색 + 굵은 글씨로 위치 인지 강화</div>
+                <div>• 그룹 헤더 클릭 시 접기/펼치기로 목록이 길어져도 스캔 용이</div>
+                <div>• 항목별 아이콘 추가로 화면 유형(대시보드/표/폼 등) 한눈에 구분</div>
+                <div>• 클릭 영역을 44px 이상으로 확대해 터치·마우스 오조작 방지</div>
+                <div>• 키보드 Tab 이동 시 포커스 아웃라인 표시(마우스 없이도 탐색 가능)</div>
+                <div>• 'A' 배지에 툴팁 추가 — "관리자 전용 메뉴입니다"로 의미 명확화</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isDASHAUTO }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="DASH-AUTO 공정 자동화 현황 통합 대시보드">
+          <div style="font-size:16px;font-weight:600;margin-bottom:12px">요약 지표</div>
+          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:32px">
+            <sc-for list="{{ dashAutoKpis }}" as="kpi" hint-placeholder-count="5">
+              <div style="background:#fff;border:1px solid #E1E5EA;border-radius:4px;padding:20px">
+                <div style="font-size:28px;font-weight:700;line-height:34px;color:{{ kpi.color }}">{{ kpi.value }}</div>
+                <div style="font-size:13px;color:#6B7280;margin-top:6px">{{ kpi.label }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex;gap:16px;margin-bottom:32px">
+            <div style="flex:1;background:#fff;border:1px solid #E1E5EA;border-radius:4px;padding:20px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+                <div style="font-size:14px;font-weight:600">부품 공정 — 공장/라인별 자동화율</div>
+                <a href="#" onClick="{{ goToSCR001 }}" style="font-size:12px;font-weight:600">부품 공정 ›</a>
+              </div>
+              <sc-for list="{{ dashAutoRateBars }}" as="rb" hint-placeholder-count="3">
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+                  <div style="{{ rb.labelStyle }}">{{ rb.label }}</div>
+                  <div style="{{ rb.trackStyle }}"><div style="{{ rb.barStyle }}"></div></div>
+                  <div style="{{ rb.valueStyle }}">{{ rb.pct }}</div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="flex:1;background:#fff;border:1px solid #E1E5EA;border-radius:4px;padding:20px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+                <div style="font-size:14px;font-weight:600">모듈 공정 — 차종별 자동공정/총공정</div>
+                <a href="#" onClick="{{ goToSCR003 }}" style="font-size:12px;font-weight:600">모듈 공정 ›</a>
+              </div>
+              <sc-for list="{{ moduleAutoBars }}" as="rb" hint-placeholder-count="5">
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+                  <div style="{{ rb.labelStyle }}">{{ rb.label }}</div>
+                  <div style="{{ rb.trackStyle }}"><div style="{{ rb.barStyle }}"></div></div>
+                  <div style="{{ rb.valueStyle }}">{{ rb.ratio }}</div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="flex:0.6;background:#fff;border:1px solid #E1E5EA;border-radius:4px;padding:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px">
+              <div style="font-size:14px;font-weight:600;align-self:flex-start">전체 자동화율</div>
+              <div style="{{ dashAutoDonutStyle }}">
+                <div style="{{ dashAutoDonutInnerStyle }}">
+                  <div style="font-size:24px;font-weight:700;color:#1A56DB">{{ overallRate }}%</div>
+                  <div style="font-size:11px;color:#9CA3AF">자동화</div>
+                </div>
+              </div>
+              <div style="font-size:11px;color:#9CA3AF;text-align:center">모듈 조립 직접인원 합계 {{ moduleDirectStaff }}명</div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:16px;margin-bottom:32px">
+            <div style="flex:1;background:#fff;border:1px solid #E1E5EA;border-radius:4px;padding:20px">
+              <div style="font-size:14px;font-weight:600;margin-bottom:16px">공정별 상세 매트릭스 — 자동/수동 비율 ({{ matrixTotal }}건)</div>
+              <div style="display:flex;height:16px;border-radius:8px;overflow:hidden;margin-bottom:10px">
+                <sc-for list="{{ dashAutoMatrixBar }}" as="seg" hint-placeholder-count="2">
+                  <div style="{{ seg.segStyle }}"></div>
+                </sc-for>
+              </div>
+              <div style="display:flex;gap:20px">
+                <sc-for list="{{ dashAutoMatrixBar }}" as="seg" hint-placeholder-count="2">
+                  <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#374151">
+                    <span style="width:8px;height:8px;border-radius:50%;background:{{ seg.color }};display:inline-block"></span>
+                    <span>{{ seg.label }} {{ seg.count }}건 ({{ seg.pct }}%)</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="flex:1;background:#fff;border:1px solid #E1E5EA;border-radius:4px;padding:20px">
+              <div style="font-size:14px;font-weight:600;margin-bottom:16px">최근 I/F 실행결과</div>
+              <sc-for list="{{ recentIfLogs }}" as="log" hint-placeholder-count="3">
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #EEF1F4;font-size:12px">
+                  <span style="color:#6B7280">{{ log.time }}</span>
+                  <span>{{ log.ifId }}</span>
+                  <span style="{{ log.resultStyle }}">{{ log.result }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="background:#fff;border:1px solid #E1E5EA;border-radius:4px;padding:20px;margin-bottom:32px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+              <div style="font-size:14px;font-weight:600">중장기 확대 전개 로드맵</div>
+              <a href="#" onClick="{{ goToSCR001 }}" style="font-size:12px;font-weight:600">상세 보기 ›</a>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:24px">
+              <sc-for list="{{ scr001Expansion }}" as="exp" hint-placeholder-count="4">
+                <div>
+                  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                    <span style="font-size:13px;font-weight:600">{{ exp.line }}</span>
+                    <span style="{{ exp.statusStyle }}">{{ exp.status }}</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+                    <div style="{{ exp.trackStyle }}"><div style="{{ exp.barStyle }}"></div></div>
+                    <span style="font-size:12px;color:#6B7280;width:34px;text-align:right">{{ exp.pct }}%</span>
+                  </div>
+                  <div style="font-size:11px;color:#9CA3AF">목표 완료: {{ exp.target }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="font-size:16px;font-weight:600;margin-bottom:12px">바로가기</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+            <sc-for list="{{ dashAutoLinks }}" as="lnk" hint-placeholder-count="5">
+              <div onClick="{{ lnk.onClick }}" style="background:#fff;border:1px solid #E1E5EA;border-radius:4px;padding:20px;cursor:pointer">
+                <div style="font-size:15px;font-weight:600;margin-bottom:6px">{{ lnk.label }}</div>
+                <div style="font-size:12px;color:#9CA3AF">{{ lnk.desc }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isDASHMTRM }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="DASH-MTRM 중장기 방향성 공유 통합 대시보드">
+          <div style="font-size:16px;font-weight:600;margin-bottom:12px">요약 지표</div>
+          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:32px">
+            <sc-for list="{{ dashMtrmKpis }}" as="kpi" hint-placeholder-count="5">
+              <div style="background:#fff;border:1px solid #E1E5EA;border-radius:4px;padding:20px">
+                <div style="font-size:28px;font-weight:700;line-height:34px;color:{{ kpi.color }}">{{ kpi.value }}</div>
+                <div style="font-size:13px;color:#6B7280;margin-top:6px">{{ kpi.label }}</div>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="background:#fff;border:1px solid #E1E5EA;border-radius:4px;padding:20px;margin-bottom:32px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+              <div style="font-size:14px;font-weight:600">통합 로드맵 간트 미리보기</div>
+              <a href="#" onClick="{{ goToGantt }}" style="font-size:12px;font-weight:600">전체 보기 ›</a>
+            </div>
+            <div style="display:flex;background:#EEF1F4;border-radius:4px 4px 0 0">
+              <div style="width:160px;flex-shrink:0;padding:6px 12px;font-size:11px;color:#6B7280;font-weight:600">로드맵</div>
+              <div style="flex:1;display:flex">
+                <sc-for list="{{ ganttQuarters }}" as="q" hint-placeholder-count="12">
+                  <div style="flex:1;text-align:center;padding:6px 2px;font-size:10px;color:#9CA3AF;border-left:1px solid #E1E5EA">{{ q }}</div>
+                </sc-for>
+              </div>
+            </div>
+            <sc-for list="{{ dashMtrmGanttRows }}" as="row" hint-placeholder-count="2">
+              <div style="display:flex;align-items:center;min-height:32px;border-bottom:1px solid #EEF1F4">
+                <div style="width:160px;flex-shrink:0;padding:0 12px;font-size:12px;font-weight:600">{{ row.label }}</div>
+                <div style="flex:1;position:relative;height:16px;margin:6px 0">
+                  <div style="{{ row.barStyle }}"></div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="display:flex;gap:16px;margin-bottom:32px">
+            <div style="flex:1;background:#fff;border:1px solid #E1E5EA;border-radius:4px;padding:20px">
+              <div style="font-size:14px;font-weight:600;margin-bottom:16px">로드맵 진행률</div>
+              <sc-for list="{{ roadmapProgress }}" as="rp" hint-placeholder-count="2">
+                <div style="margin-bottom:16px">
+                  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+                    <span style="font-size:13px;font-weight:500">{{ rp.name }}</span>
+                    <span style="{{ rp.statusStyle }}">{{ rp.status }}</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:10px">
+                    <div style="{{ rp.trackStyle }}"><div style="{{ rp.barStyle }}"></div></div>
+                    <span style="font-size:12px;color:#6B7280;width:32px;text-align:right">{{ rp.pct }}%</span>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="flex:1;background:#fff;border:1px solid #E1E5EA;border-radius:4px;padding:20px">
+              <div style="font-size:14px;font-weight:600;margin-bottom:16px">최근 기술동향</div>
+              <sc-for list="{{ dashTrendPreview }}" as="t" hint-placeholder-count="3">
+                <div onClick="{{ t.onClick }}" style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #EEF1F4;font-size:12px;cursor:pointer">
+                  <span>{{ t.title }}</span>
+                  <span style="color:#9CA3AF">{{ t.date }} · 조회 {{ t.views }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="font-size:16px;font-weight:600;margin-bottom:12px">바로가기</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+            <sc-for list="{{ dashMtrmLinks }}" as="lnk" hint-placeholder-count="9">
+              <div onClick="{{ lnk.onClick }}" style="background:#fff;border:1px solid #E1E5EA;border-radius:4px;padding:20px;cursor:pointer">
+                <div style="font-size:15px;font-weight:600;margin-bottom:6px">{{ lnk.label }}</div>
+                <div style="font-size:12px;color:#9CA3AF">{{ lnk.desc }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isSCR001 }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="SCR-001 부품 공정 자동화 현황">
+          <div style="display:flex;gap:4px;border-bottom:1px solid #E1E5EA;margin-bottom:24px">
+            <div onClick="{{ tabPartOnClick }}" style="{{ tabPartStyle }}">부품 공정</div>
+            <div onClick="{{ tabModuleOnClick }}" style="{{ tabModuleStyleInactive }}">모듈 공정</div>
+          </div>
+
+          <div style="background:#F8F9FA;border:1px solid #E1E5EA;border-radius:4px;padding:12px 16px;display:flex;align-items:flex-end;gap:8px;margin-bottom:24px">
+            <sc-for list="{{ scr001Filters }}" as="f" hint-placeholder-count="5">
+              <div style="display:flex;flex-direction:column;gap:4px">
+                <label style="font-size:11px;color:#6B7280">{{ f.label }}</label>
+                <select style="height:32px;min-width:140px;border:1px solid #C9CFD6;border-radius:4px;font-size:13px;padding:0 8px;background:#fff">
+                  <option>전체</option>
+                </select>
+              </div>
+            </sc-for>
+            <div style="flex:1"></div>
+            <button style="height:32px;padding:0 16px;background:#fff;border:1px solid #C9CFD6;border-radius:4px;font-size:13px;color:#374151;cursor:pointer">초기화</button>
+            <button onClick="{{ runSearch }}" style="height:32px;padding:0 20px;background:#1A56DB;border:none;border-radius:4px;font-size:13px;color:#fff;cursor:pointer;font-weight:600">조회</button>
+          </div>
+
+          <div style="margin-bottom:12px">
+            <div style="font-size:16px;font-weight:600">요약 현황</div>
+            <div style="font-size:12px;color:#9CA3AF;margin-top:2px">공장/라인별 자동화율·직접인원 현재→개선 및 중장기 완료일정</div>
+          </div>
+          <div style="overflow-x:auto;margin-bottom:32px">
+            <table style="border-collapse:collapse;font-size:13px;min-width:1300px;width:100%">
+              <thead>
+                <tr style="background:#EEF1F4">
+                  <th style="text-align:left;padding:10px 16px;font-size:12px;font-weight:600;color:#4B5563;border-bottom:1px solid #E1E5EA;min-width:140px;position:sticky;left:0;background:#EEF1F4">구분</th>
+                  <sc-for list="{{ scr001LineCols }}" as="col" hint-placeholder-count="9">
+                    <th style="{{ col.headStyle }}">{{ col.label }}</th>
+                  </sc-for>
+                </tr>
+              </thead>
+              <tbody>
+                <sc-for list="{{ scr001SummaryRows }}" as="srow" hint-placeholder-count="3">
+                  <tr>
+                    <td style="padding:10px 16px;border-bottom:1px solid #EEF1F4;font-weight:600;position:sticky;left:0;background:#fff">{{ srow.label }}</td>
+                    <sc-for list="{{ srow.cells }}" as="c" hint-placeholder-count="9">
+                      <td style="{{ c.style }}">
+                        {{ c.text }}
+                        <sc-if value="{{ c.hasDelta }}" hint-placeholder-val="{{ false }}">
+                          <span style="{{ c.deltaStyle }}"> ({{ c.deltaText }})</span>
+                        </sc-if>
+                      </td>
+                    </sc-for>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+            <div style="font-size:16px;font-weight:600">공정별 상세</div>
+            <div style="display:flex;gap:8px">
+              <button onClick="{{ openRegisterProcess }}" style="height:32px;padding:0 16px;background:#1A56DB;border:none;border-radius:4px;font-size:13px;color:#fff;cursor:pointer;font-weight:600">+ 공정 등록</button>
+              <button style="height:32px;padding:0 16px;background:#fff;border:1px solid #C9CFD6;border-radius:4px;font-size:13px;color:#374151;cursor:pointer">엑셀</button>
+              <button onClick="{{ openEmailShare }}" style="height:32px;padding:0 16px;background:#fff;border:1px solid #C9CFD6;border-radius:4px;font-size:13px;color:#374151;cursor:pointer">이메일 공유</button>
+            </div>
+          </div>
+          <div style="font-size:12px;color:#9CA3AF;margin-bottom:12px">현재/개선/주요내용 · 공장/라인별 확대전개계획, 현재=자동 선택 시 동영상 팝업</div>
+
+          <div style="overflow-x:auto">
+            <table style="border-collapse:collapse;min-width:1700px">
+              <thead>
+                <tr style="background:#EEF1F4">
+                  <th rowspan="2" style="text-align:center;padding:10px 12px;font-size:12px;font-weight:600;color:#4B5563;border-bottom:1px solid #E1E5EA;min-width:40px;position:sticky;left:0;background:#EEF1F4">NO</th>
+                  <th rowspan="2" style="text-align:left;padding:10px 16px;font-size:12px;font-weight:600;color:#4B5563;border-bottom:1px solid #E1E5EA;min-width:150px;position:sticky;left:40px;background:#EEF1F4">공정</th>
+                  <th colspan="4" style="text-align:center;padding:8px 16px;font-size:13px;font-weight:600;color:#1F2937;border-bottom:1px solid #E1E5EA;background:#E9F0FD">{{ scr001MatrixLineLabel }}</th>
+                  <sc-for list="{{ scr001LineColsRest }}" as="col" hint-placeholder-count="8">
+                    <th rowspan="2" style="{{ col.headStyle2 }}">{{ col.label }}</th>
+                  </sc-for>
+                </tr>
+                <tr style="background:#EEF1F4">
+                  <th colspan="2" style="text-align:center;padding:10px 16px;font-size:12px;font-weight:600;color:#4B5563;border-bottom:1px solid #E1E5EA;min-width:170px;white-space:nowrap">현재</th>
+                  <th style="text-align:left;padding:10px 16px;font-size:12px;font-weight:600;color:#4B5563;border-bottom:1px solid #E1E5EA;min-width:100px">개선</th>
+                  <th style="text-align:left;padding:10px 16px;font-size:12px;font-weight:600;color:#4B5563;border-bottom:1px solid #E1E5EA;min-width:220px">주요내용</th>
+                </tr>
+              </thead>
+              <tbody>
+                <sc-for list="{{ scr001Matrix }}" as="mrow" hint-placeholder-count="4">
+                  <tr>
+                    <td style="text-align:center;padding:10px 12px;border-bottom:1px solid #EEF1F4;color:#9CA3AF;position:sticky;left:0;background:#fff">{{ mrow.no }}</td>
+                    <td style="padding:10px 16px;border-bottom:1px solid #EEF1F4;font-weight:600;position:sticky;left:40px;background:#fff">
+                      <span>{{ mrow.process }}</span>
+                      <sc-if value="{{ mrow.tag }}" hint-placeholder-val="{{ false }}">
+                        <span style="font-size:11px;color:#9CA3AF;font-weight:400"> ({{ mrow.tag }})</span>
+                      </sc-if>
+                    </td>
+                    <td style="{{ mrow.currentTdStyle }}">
+                      <span onClick="{{ mrow.current.onClick }}" style="{{ mrow.current.style }}">{{ mrow.current.label }}</span>
+                    </td>
+                    <sc-if value="{{ mrow.showCount }}" hint-placeholder-val="{{ false }}">
+                      <td rowspan="{{ mrow.countRowSpan }}" style="{{ mrow.countTdStyle }}">
+                        <span style="{{ mrow.countStyle }}">{{ mrow.countText }}</span>
+                      </td>
+                    </sc-if>
+                    <sc-if value="{{ mrow.showImprovement }}" hint-placeholder-val="{{ false }}">
+                      <td rowspan="{{ mrow.improvementRowSpan }}" style="{{ mrow.improvementTdStyle }}">
+                        <span style="{{ mrow.improvementStyle }}">{{ mrow.improvement }}</span>
+                      </td>
+                      <td rowspan="{{ mrow.noteRowSpan }}" style="{{ mrow.noteTdStyle }}">{{ mrow.note }}</td>
+                    </sc-if>
+                    <sc-for list="{{ mrow.cells }}" as="cell" hint-placeholder-count="8">
+                      <td style="text-align:center;padding:10px 12px;border-bottom:1px solid #EEF1F4;white-space:nowrap">
+                        <span style="{{ cell.style }}">{{ cell.label }}</span>
+                      </td>
+                    </sc-for>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isSCR003 }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="SCR-003 모듈 공정 자동화 현황">
+          <div style="display:flex;gap:4px;border-bottom:1px solid #E1E5EA;margin-bottom:16px">
+            <div onClick="{{ tabPartOnClickFromModule }}" style="{{ tabPartStyleInactive }}">부품 공정</div>
+            <div onClick="{{ tabModuleOnClickActive }}" style="{{ tabModuleStyle }}">모듈 공정</div>
+          </div>
+          <div style="margin-bottom:16px">
+            <span style="font-size:12px;color:#157A3D;background:#EAF7EE;padding:4px 10px;border-radius:11px">최종 동기화: 2026-08-07 03:00</span>
+          </div>
+
+          <div style="background:#F8F9FA;border:1px solid #E1E5EA;border-radius:4px;padding:12px 16px;display:flex;align-items:flex-end;gap:8px;margin-bottom:24px">
+            <sc-for list="{{ scr003Filters }}" as="f" hint-placeholder-count="5">
+              <div style="display:flex;flex-direction:column;gap:4px">
+                <label style="font-size:11px;color:#6B7280">{{ f.label }}</label>
+                <select style="height:32px;min-width:130px;border:1px solid #C9CFD6;border-radius:4px;font-size:13px;padding:0 8px;background:#fff">
+                  <option>전체</option>
+                </select>
+              </div>
+            </sc-for>
+            <div style="flex:1"></div>
+            <button style="height:32px;padding:0 16px;background:#fff;border:1px solid #C9CFD6;border-radius:4px;font-size:13px;color:#374151;cursor:pointer">초기화</button>
+            <button onClick="{{ runSearch }}" style="height:32px;padding:0 20px;background:#1A56DB;border:none;border-radius:4px;font-size:13px;color:#fff;cursor:pointer;font-weight:600">조회</button>
+          </div>
+
+          <sc-if value="{{ scr003Warning }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:center;gap:8px;background:#EEF1F4;border-left:4px solid #1F2937;padding:12px 16px;border-radius:4px;margin-bottom:16px;font-size:13px;color:#374151">
+              <span>⚠</span><span>정합성 검증 실패 항목이 있습니다. 관리자 확인이 필요합니다.</span>
+            </div>
+          </sc-if>
+
+          <div style="margin-bottom:12px">
+            <span style="font-size:16px;font-weight:600">요약 현황</span>
+            <span style="font-size:12px;color:#9CA3AF;margin-left:6px">(공장/차종별 자동화율·인원 및 성인화 실적/계획)</span>
+          </div>
+          <div style="overflow-x:auto;margin-bottom:32px">
+            <table style="border-collapse:collapse;font-size:13px;min-width:1100px;width:100%">
+              <thead>
+                <tr style="background:#EEF1F4">
+                  <th style="text-align:left;padding:10px 16px;font-size:12px;font-weight:600;color:#4B5563;border-bottom:1px solid #E1E5EA;min-width:150px;position:sticky;left:0;background:#EEF1F4">구분</th>
+                  <sc-for list="{{ scr003SummaryCols }}" as="col" hint-placeholder-count="7">
+                    <th style="{{ col.style }}">{{ col.label }}</th>
+                  </sc-for>
+                </tr>
+              </thead>
+              <tbody>
+                <sc-for list="{{ scr003SummaryRows }}" as="srow" hint-placeholder-count="8">
+                  <tr>
+                    <td style="{{ srow.labelTdStyle }}padding-left:{{ srow.indent }}px">{{ srow.label }}</td>
+                    <sc-for list="{{ srow.cells }}" as="c" hint-placeholder-count="7">
+                      <td style="{{ srow.cellTdStyle }}">{{ c }}</td>
+                    </sc-for>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+            <div style="font-size:16px;font-weight:600">작업내용별 상세</div>
+          </div>
+          <div style="font-size:12px;color:#9CA3AF;margin-bottom:12px">Best Practice 기술현황/상세계획 · 차종별 확대전개계획, 자동 선택 시 상세 팝업</div>
+
+          <div style="overflow-x:auto">
+            <table style="border-collapse:collapse;min-width:1300px">
+              <thead>
+                <tr style="background:#EEF1F4">
+                  <th rowspan="2" style="text-align:center;padding:10px 12px;font-size:12px;font-weight:600;color:#4B5563;border-bottom:1px solid #E1E5EA;min-width:40px;position:sticky;left:0;background:#EEF1F4">NO</th>
+                  <th rowspan="2" style="text-align:left;padding:10px 16px;font-size:12px;font-weight:600;color:#4B5563;border-bottom:1px solid #E1E5EA;min-width:170px;position:sticky;left:40px;background:#EEF1F4">작업내용</th>
+                  <th colspan="2" style="text-align:center;padding:8px 16px;font-size:13px;font-weight:600;color:#1F2937;border-bottom:1px solid #E1E5EA;background:#FDEEDC">Best Practice</th>
+                  <sc-for list="{{ scr003DetailCols }}" as="col" hint-placeholder-count="5">
+                    <th rowspan="2" style="text-align:center;padding:10px 16px;font-size:12px;font-weight:600;color:#4B5563;border-bottom:1px solid #E1E5EA;min-width:130px">{{ col }}</th>
+                  </sc-for>
+                </tr>
+                <tr style="background:#EEF1F4">
+                  <th style="text-align:center;padding:10px 16px;font-size:12px;font-weight:600;color:#4B5563;border-bottom:1px solid #E1E5EA;min-width:90px">기술현황</th>
+                  <th style="text-align:left;padding:10px 16px;font-size:12px;font-weight:600;color:#4B5563;border-bottom:1px solid #E1E5EA;min-width:240px">상세계획</th>
+                </tr>
+              </thead>
+              <tbody>
+                <sc-for list="{{ scr003Matrix }}" as="mrow" hint-placeholder-count="12">
+                  <tr>
+                    <td style="text-align:center;padding:10px 12px;border-bottom:1px solid #EEF1F4;color:#9CA3AF;position:sticky;left:0;background:#fff">{{ mrow.no }}</td>
+                    <td style="padding:10px 16px;border-bottom:1px solid #EEF1F4;font-weight:600;position:sticky;left:40px;background:#fff">{{ mrow.process }}</td>
+                    <td style="text-align:center;padding:10px 16px;border-bottom:1px solid #EEF1F4">
+                      <span onClick="{{ mrow.techOnClick }}" style="{{ mrow.tech.style }}">{{ mrow.tech.symbol }}</span>
+                    </td>
+                    <td style="padding:10px 16px;border-bottom:1px solid #EEF1F4">
+                      <span style="{{ mrow.detailStyle }}">{{ mrow.detail }}</span>
+                    </td>
+                    <sc-for list="{{ mrow.cells }}" as="cell" hint-placeholder-count="5">
+                      <td style="{{ cell.style }}">
+                        <sc-if value="{{ cell.hasPill }}" hint-placeholder-val="{{ false }}">
+                          <span onClick="{{ cell.onClick }}" style="{{ cell.pill }}">{{ cell.text }}</span>
+                        </sc-if>
+                        <sc-if value="{{ cell.noPill }}" hint-placeholder-val="{{ true }}">
+                          <span>{{ cell.text }}</span>
+                        </sc-if>
+                      </td>
+                    </sc-for>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isSCR002 }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="SCR-002 표준공정 마스터 관리" style="border-left:3px solid #1F2937;padding-left:21px">
+          <div style="background:#F8F9FA;border:1px solid #E1E5EA;border-radius:4px;padding:12px 16px;display:flex;align-items:flex-end;gap:8px;margin-bottom:24px">
+            <div style="display:flex;flex-direction:column;gap:4px"><label style="font-size:11px;color:#6B7280">공장</label><select style="height:32px;min-width:140px;border:1px solid #C9CFD6;border-radius:4px;padding:0 8px;background:#fff"><option>전체</option></select></div>
+            <div style="display:flex;flex-direction:column;gap:4px"><label style="font-size:11px;color:#6B7280">라인</label><select style="height:32px;min-width:140px;border:1px solid #C9CFD6;border-radius:4px;padding:0 8px;background:#fff"><option>전체</option></select></div>
+            <div style="flex:1"></div>
+            <button style="height:32px;padding:0 16px;background:#fff;border:1px solid #C9CFD6;border-radius:4px;color:#374151;cursor:pointer">초기화</button>
+            <button style="height:32px;padding:0 20px;background:#1A56DB;border:none;border-radius:4px;color:#fff;cursor:pointer;font-weight:600">조회</button>
+            <button style="height:32px;padding:0 16px;background:#fff;border:1px solid #C9CFD6;border-radius:4px;color:#374151;cursor:pointer">엑셀 다운로드</button>
+          </div>
+          <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+            <button onClick="{{ openStdProcessRegister }}" style="height:32px;padding:0 16px;background:#1A56DB;border:none;border-radius:4px;color:#fff;cursor:pointer;font-weight:600">+ 표준공정 등록</button>
+          </div>
+          <table style="width:100%;border-collapse:collapse">
+            <thead><tr style="background:#EEF1F4">
+              <th style="text-align:left;padding:10px 16px;font-size:12px;color:#4B5563;border-bottom:1px solid #E1E5EA">공장</th>
+              <th style="text-align:left;padding:10px 16px;font-size:12px;color:#4B5563;border-bottom:1px solid #E1E5EA">라인</th>
+              <th style="text-align:left;padding:10px 16px;font-size:12px;color:#4B5563;border-bottom:1px solid #E1E5EA">표준공정명</th>
+              <th style="text-align:right;padding:10px 16px;font-size:12px;color:#4B5563;border-bottom:1px solid #E1E5EA">순서</th>
+              <th style="text-align:left;padding:10px 16px;font-size:12px;color:#4B5563;border-bottom:1px solid #E1E5EA">비고</th>
+              <th style="text-align:center;padding:10px 16px;font-size:12px;color:#4B5563;border-bottom:1px solid #E1E5EA">관리</th>
+            </tr></thead>
+            <tbody>
+              <sc-for list="{{ scr002Rows }}" as="row" hint-placeholder-count="3">
+                <tr>
+                  <td style="padding:10px 16px;border-bottom:1px solid #EEF1F4">{{ row.plant }}</td>
+                  <td style="padding:10px 16px;border-bottom:1px solid #EEF1F4">{{ row.line }}</td>
+                  <td style="padding:10px 16px;border-bottom:1px solid #EEF1F4">{{ row.name }}</td>
+                  <td style="text-align:right;padding:10px 16px;border-bottom:1px solid #EEF1F4">{{ row.seq }}</td>
+                  <td style="padding:10px 16px;border-bottom:1px solid #EEF1F4;color:#6B7280">{{ row.note }}</td>
+                  <td style="text-align:center;padding:10px 16px;border-bottom:1px solid #EEF1F4"><button style="border:none;background:none;color:#1A56DB;cursor:pointer;font-size:12px;margin-right:8px">수정</button><button style="border:none;background:none;color:#C0201D;cursor:pointer;font-size:12px">삭제</button></td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isSCR004 }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="SCR-004 모듈 표준 작업명 관리" style="border-left:3px solid #1F2937;padding-left:21px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:24px">
+            <select style="height:32px;min-width:140px;border:1px solid #C9CFD6;border-radius:4px;padding:0 8px;background:#fff"><option>전체 공정유형</option></select>
+            <input placeholder="작업명 검색" style="height:32px;min-width:200px;border:1px solid #C9CFD6;border-radius:4px;padding:0 10px" />
+            <button style="height:32px;padding:0 16px;background:#1A56DB;border:none;border-radius:4px;color:#fff;cursor:pointer;font-weight:600">조회</button>
+            <div style="flex:1"></div>
+            <button onClick="{{ openStdTaskRegister }}" style="height:32px;padding:0 16px;background:#1A56DB;border:none;border-radius:4px;color:#fff;cursor:pointer;font-weight:600">+ 표준 작업명 등록</button>
+          </div>
+          <table style="width:100%;border-collapse:collapse">
+            <thead><tr style="background:#EEF1F4">
+              <th style="text-align:left;padding:10px 16px;font-size:12px;color:#4B5563;border-bottom:1px solid #E1E5EA">표준 작업명</th>
+              <th style="text-align:left;padding:10px 16px;font-size:12px;color:#4B5563;border-bottom:1px solid #E1E5EA">공정유형</th>
+              <th style="text-align:right;padding:10px 16px;font-size:12px;color:#4B5563;border-bottom:1px solid #E1E5EA">사용현황(연동모듈수)</th>
+              <th style="text-align:left;padding:10px 16px;font-size:12px;color:#4B5563;border-bottom:1px solid #E1E5EA">등록일</th>
+              <th style="text-align:center;padding:10px 16px;font-size:12px;color:#4B5563;border-bottom:1px solid #E1E5EA">관리</th>
+            </tr></thead>
+            <tbody>
+              <sc-for list="{{ scr004Rows }}" as="row" hint-placeholder-count="2">
+                <tr>
+                  <td style="padding:10px 16px;border-bottom:1px solid #EEF1F4">{{ row.name }}</td>
+                  <td style="padding:10px 16px;border-bottom:1px solid #EEF1F4">{{ row.type }}</td>
+                  <td style="text-align:right;padding:10px 16px;border-bottom:1px solid #EEF1F4;color:#1A56DB;cursor:pointer">{{ row.usage }}</td>
+                  <td style="padding:10px 16px;border-bottom:1px solid #EEF1F4;color:#6B7280">{{ row.registered }}</td>
+                  <td style="text-align:center;padding:10px 16px;border-bottom:1px solid #EEF1F4"><button onClick="{{ row.deleteOnClick }}" style="border:none;background:none;color:#C0201D;cursor:pointer;font-size:12px">삭제</button></td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isSCR005 }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="SCR-005 I/F 실행결과 관리" style="border-left:3px solid #1F2937;padding-left:21px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:24px">
+            <input type="date" style="height:32px;border:1px solid #C9CFD6;border-radius:4px;padding:0 8px" />
+            <span>~</span>
+            <input type="date" style="height:32px;border:1px solid #C9CFD6;border-radius:4px;padding:0 8px" />
+            <select style="height:32px;min-width:120px;border:1px solid #C9CFD6;border-radius:4px;padding:0 8px;background:#fff"><option>전체 I/F 유형</option></select>
+            <select style="height:32px;min-width:120px;border:1px solid #C9CFD6;border-radius:4px;padding:0 8px;background:#fff"><option>전체 결과</option></select>
+            <button style="height:32px;padding:0 20px;background:#1A56DB;border:none;border-radius:4px;color:#fff;cursor:pointer;font-weight:600">조회</button>
+          </div>
+          <table style="width:100%;border-collapse:collapse">
+            <thead><tr style="background:#EEF1F4">
+              <th style="text-align:left;padding:10px 16px;font-size:12px;color:#4B5563;border-bottom:1px solid #E1E5EA">실행시각</th>
+              <th style="text-align:left;padding:10px 16px;font-size:12px;color:#4B5563;border-bottom:1px solid #E1E5EA">I/F-ID</th>
+              <th style="text-align:left;padding:10px 16px;font-size:12px;color:#4B5563;border-bottom:1px solid #E1E5EA">유형</th>
+              <th style="text-align:right;padding:10px 16px;font-size:12px;color:#4B5563;border-bottom:1px solid #E1E5EA">처리건수</th>
+              <th style="text-align:center;padding:10px 16px;font-size:12px;color:#4B5563;border-bottom:1px solid #E1E5EA">결과</th>
+              <th style="text-align:left;padding:10px 16px;font-size:12px;color:#4B5563;border-bottom:1px solid #E1E5EA">실패 원인</th>
+            </tr></thead>
+            <tbody>
+              <sc-for list="{{ scr005Rows }}" as="row" hint-placeholder-count="3">
+                <tr onClick="{{ row.onClick }}" style="{{ row.rowStyle }}">
+                  <td style="padding:10px 16px;border-bottom:1px solid #EEF1F4">{{ row.time }}</td>
+                  <td style="padding:10px 16px;border-bottom:1px solid #EEF1F4">{{ row.ifId }}</td>
+                  <td style="padding:10px 16px;border-bottom:1px solid #EEF1F4">{{ row.type }}</td>
+                  <td style="text-align:right;padding:10px 16px;border-bottom:1px solid #EEF1F4">{{ row.count }}</td>
+                  <td style="text-align:center;padding:10px 16px;border-bottom:1px solid #EEF1F4"><span style="{{ row.resultStyle }}">{{ row.result }}</span></td>
+                  <td style="padding:10px 16px;border-bottom:1px solid #EEF1F4;color:#6B7280">{{ row.reason }}</td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isMTRMMAIN }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="MTRM-MAIN 메인 대시보드">
+          <div style="font-size:16px;font-weight:600;margin-bottom:2px">메인 대시보드</div>
+          <div style="font-size:12px;color:#9CA3AF;margin-bottom:24px">통합 로드맵·생산기술 Tech PR·기술동향을 한 화면에서 확인</div>
+
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px">
+            <sc-for list="{{ scr006Stats }}" as="s" hint-placeholder-count="3">
+              <div style="background:#fff;border:1px solid #E1E5EA;border-radius:4px;padding:16px 20px">
+                <div style="font-size:22px;font-weight:700;color:{{ s.color }}">{{ s.value }}</div>
+                <div style="font-size:12px;color:#6B7280;margin-top:4px">{{ s.label }}</div>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="background:#fff;border:1px solid #E1E5EA;border-radius:4px;padding:20px;margin-bottom:16px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+              <div style="font-size:14px;font-weight:600">통합 로드맵</div>
+              <a href="#" onClick="{{ goToSCR006 }}" style="font-size:12px;font-weight:600">통합 로드맵 보기 ›</a>
+            </div>
+            <div style="border:1px solid #E1E5EA;border-radius:4px;overflow:hidden">
+              <div style="display:flex;background:#EEF1F4;border-bottom:1px solid #E1E5EA">
+                <div style="width:180px;flex-shrink:0;padding:8px 12px;font-size:11px;color:#6B7280;font-weight:600">로드맵</div>
+                <div style="flex:1;display:flex">
+                  <sc-for list="{{ ganttQuarters }}" as="q" hint-placeholder-count="12">
+                    <div style="flex:1;text-align:center;padding:8px 2px;font-size:10px;color:#9CA3AF;border-left:1px solid #E1E5EA">{{ q }}</div>
+                  </sc-for>
+                </div>
+              </div>
+              <sc-for list="{{ mainGanttRows }}" as="row" hint-placeholder-count="2">
+                <div onClick="{{ row.onClick }}" style="display:flex;border-bottom:1px solid #EEF1F4;align-items:center;min-height:38px;cursor:pointer;background:{{ row.rowBg }}">
+                  <div style="width:180px;flex-shrink:0;padding:0 12px;font-size:12px;font-weight:600">{{ row.label }}</div>
+                  <div style="flex:1;position:relative;height:20px;margin:8px 0">
+                    <div style="{{ row.barStyle }}"></div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:16px;margin-bottom:16px">
+            <div style="flex:1;background:#fff;border:1px solid #E1E5EA;border-radius:4px;padding:20px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+                <div style="font-size:14px;font-weight:600">생산기술 Tech PR</div>
+                <a href="#" onClick="{{ goToSCR009 }}" style="font-size:12px;font-weight:600">전체보기 ›</a>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
+                <sc-for list="{{ mainTechPrPreview }}" as="card" hint-placeholder-count="3">
+                  <div onClick="{{ goToSCR009 }}" style="border:1px solid #E1E5EA;border-radius:4px;overflow:hidden;cursor:pointer">
+                    <sc-if value="{{ card.isVideoType }}" hint-placeholder-val="{{ false }}">
+                      <div style="position:relative;aspect-ratio:16/9;background:repeating-linear-gradient(135deg,#EEF1F4,#EEF1F4 10px,#E1E5EA 10px,#E1E5EA 20px);display:flex;align-items:center;justify-content:center">
+                        <div style="width:34px;height:34px;border-radius:50%;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px">▶</div>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{ card.isFileType }}" hint-placeholder-val="{{ false }}">
+                      <div style="aspect-ratio:16/9;background:#F8F9FA;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px">
+                        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#B45309" strokeWidth="1.6"><path d="M6 3h9l5 5v13a1 1 0 01-1 1H6a1 1 0 01-1-1V4a1 1 0 011-1z"></path><path d="M15 3v5h5"></path></svg>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{ card.isTextType }}" hint-placeholder-val="{{ false }}">
+                      <div style="aspect-ratio:16/9;background:#F8F9FA;padding:12px;display:flex;align-items:center">
+                        <div style="font-size:11px;color:#4B5563;line-height:16px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;border-left:3px solid #157A3D;padding-left:8px">{{ card.body }}</div>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{ card.isMultiType }}" hint-placeholder-val="{{ false }}">
+                      <div style="aspect-ratio:16/9;background:#F8F9FA;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px">
+                        <div style="display:flex;gap:6px">
+                          <span style="width:20px;height:20px;border-radius:50%;background:#E9F0FD;color:#1A56DB;display:flex;align-items:center;justify-content:center;font-size:9px">▶</span>
+                          <span style="width:20px;height:20px;border-radius:50%;background:#FDEEDC;color:#B45309;display:flex;align-items:center;justify-content:center;font-size:9px">📄</span>
+                          <span style="width:20px;height:20px;border-radius:50%;background:#EAF7EE;color:#157A3D;display:flex;align-items:center;justify-content:center;font-size:9px">≡</span>
+                        </div>
+                        <span style="font-size:10px;color:#6B46C1;font-weight:600">자료 {{ card.itemCount }}건</span>
+                      </div>
+                    </sc-if>
+                    <div style="padding:10px 12px">
+                      <span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:8px;color:{{ card.typeInfo.color }};background:{{ card.typeInfo.bg }};display:inline-block;margin-bottom:5px">{{ card.typeInfo.label }}</span>
+                      <div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ card.title }}</div>
+                      <div style="font-size:11px;color:#9CA3AF;margin-top:2px">{{ card.section }}</div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="flex:1;background:#fff;border:1px solid #E1E5EA;border-radius:4px;padding:20px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+                <div style="font-size:14px;font-weight:600">최근 기술동향</div>
+                <a href="#" onClick="{{ goToSCR014 }}" style="font-size:12px;font-weight:600">전체보기 ›</a>
+              </div>
+              <sc-for list="{{ mainTrendPreview }}" as="t" hint-placeholder-count="3">
+                <div onClick="{{ t.onClick }}" style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #EEF1F4;cursor:pointer;font-size:13px">
+                  <span>{{ t.title }}</span>
+                  <span style="color:#9CA3AF;font-size:12px">{{ t.date }} · 조회 {{ t.views }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isSCR006 }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="SCR-006 통합 로드맵">
+          <div style="font-size:16px;font-weight:600;margin-bottom:2px">통합 로드맵</div>
+          <div style="font-size:12px;color:#9CA3AF;margin-bottom:16px">분과별 중장기 자동화 로드맵 등록/조회 · 로드맵명 선택 시 상세 이동</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px">
+            <sc-for list="{{ scr006Stats }}" as="s" hint-placeholder-count="3">
+              <div style="background:#fff;border:1px solid #E1E5EA;border-radius:4px;padding:16px 20px">
+                <div style="font-size:22px;font-weight:700;color:{{ s.color }}">{{ s.value }}</div>
+                <div style="font-size:12px;color:#6B7280;margin-top:4px">{{ s.label }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+            <select style="height:32px;min-width:120px;border:1px solid #C9CFD6;border-radius:4px;padding:0 8px;background:#fff"><option>전체 분과</option></select>
+            <select style="height:32px;min-width:120px;border:1px solid #C9CFD6;border-radius:4px;padding:0 8px;background:#fff"><option>전체 상태</option></select>
+            <div style="flex:1"></div>
+            <a href="#" onClick="{{ goToGantt }}" style="font-size:13px;font-weight:600;margin-right:8px">간트차트로 보기 ›</a>
+            <button onClick="{{ openRoadmapRegister }}" style="height:32px;padding:0 16px;background:#1A56DB;border:none;border-radius:4px;color:#fff;cursor:pointer;font-weight:600">+ 로드맵 등록</button>
+          </div>
+          <table style="width:100%;border-collapse:collapse">
+            <thead><tr style="background:#EEF1F4">
+              <th style="text-align:left;padding:10px 16px;font-size:12px;color:#4B5563;border-bottom:1px solid #E1E5EA">분과</th>
+              <th style="text-align:left;padding:10px 16px;font-size:12px;color:#4B5563;border-bottom:1px solid #E1E5EA">로드맵명</th>
+              <th style="text-align:left;padding:10px 16px;font-size:12px;color:#4B5563;border-bottom:1px solid #E1E5EA">기간</th>
+              <th style="text-align:left;padding:10px 16px;font-size:12px;color:#4B5563;border-bottom:1px solid #E1E5EA">대표과제</th>
+              <th style="text-align:center;padding:10px 16px;font-size:12px;color:#4B5563;border-bottom:1px solid #E1E5EA">상태</th>
+              <th style="text-align:center;padding:10px 16px;font-size:12px;color:#4B5563;border-bottom:1px solid #E1E5EA">개정이력</th>
+            </tr></thead>
+            <tbody>
+              <sc-for list="{{ scr006Rows }}" as="row" hint-placeholder-count="2">
+                <tr onClick="{{ row.onClick }}" style="cursor:pointer" style-hover="background:#F8FAFF">
+                  <td style="padding:12px 16px;border-bottom:1px solid #EEF1F4;color:#1A56DB;font-weight:600">{{ row.section }}</td>
+                  <td style="padding:12px 16px;border-bottom:1px solid #EEF1F4;font-weight:500">{{ row.name }}</td>
+                  <td style="padding:12px 16px;border-bottom:1px solid #EEF1F4;color:#6B7280">{{ row.period }}</td>
+                  <td style="padding:12px 16px;border-bottom:1px solid #EEF1F4">{{ row.task }}</td>
+                  <td style="text-align:center;padding:12px 16px;border-bottom:1px solid #EEF1F4"><span style="{{ row.statusStyle }}">{{ row.status }}</span></td>
+                  <td style="text-align:center;padding:12px 16px;border-bottom:1px solid #EEF1F4"><button onClick="{{ row.historyOnClick }}" style="border:1px solid #C9CFD6;background:#fff;border-radius:4px;padding:5px 12px;cursor:pointer;font-size:12px">이력보기</button></td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isSCR007 }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="SCR-007 상세과제 로드맵 관리">
+          <div style="font-size:16px;font-weight:600;margin-bottom:2px">상세과제 로드맵 관리</div>
+          <div style="font-size:12px;color:#9CA3AF;margin-bottom:16px">통합 로드맵에 속한 세부 과제의 담당자·기간·진행상태 관리</div>
+          <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
+            <div style="display:flex;gap:4px;background:#F8F9FA;border:1px solid #E1E5EA;border-radius:8px;padding:4px">
+              <sc-for list="{{ scr007Tabs }}" as="t" hint-placeholder-count="2">
+                <div onClick="{{ t.onClick }}" style="{{ t.style }}">{{ t.label }}</div>
+              </sc-for>
+            </div>
+            <div style="flex:1"></div>
+            <button onClick="{{ openDetailTaskRegister }}" style="height:32px;padding:0 16px;background:#1A56DB;border:none;border-radius:4px;color:#fff;cursor:pointer;font-weight:600">+ 상세과제 등록</button>
+          </div>
+          <table style="width:100%;border-collapse:collapse">
+            <thead><tr style="background:#EEF1F4">
+              <th style="text-align:left;padding:10px 16px;font-size:12px;color:#4B5563;border-bottom:1px solid #E1E5EA">과제명</th>
+              <th style="text-align:left;padding:10px 16px;font-size:12px;color:#4B5563;border-bottom:1px solid #E1E5EA">담당자</th>
+              <th style="text-align:left;padding:10px 16px;font-size:12px;color:#4B5563;border-bottom:1px solid #E1E5EA">기간</th>
+              <th style="text-align:center;padding:10px 16px;font-size:12px;color:#4B5563;border-bottom:1px solid #E1E5EA">진행상태</th>
+              <th style="text-align:center;padding:10px 16px;font-size:12px;color:#4B5563;border-bottom:1px solid #E1E5EA">관리</th>
+            </tr></thead>
+            <tbody>
+              <sc-for list="{{ scr007Rows }}" as="row" hint-placeholder-count="2">
+                <tr style-hover="background:#F8FAFF">
+                  <td style="padding:12px 16px;border-bottom:1px solid #EEF1F4;font-weight:500">{{ row.name }}</td>
+                  <td style="padding:12px 16px;border-bottom:1px solid #EEF1F4">{{ row.owner }}</td>
+                  <td style="padding:12px 16px;border-bottom:1px solid #EEF1F4;color:#6B7280">{{ row.period }}</td>
+                  <td style="text-align:center;padding:12px 16px;border-bottom:1px solid #EEF1F4"><span style="{{ row.statusStyle }}">{{ row.status }}</span></td>
+                  <td style="text-align:center;padding:12px 16px;border-bottom:1px solid #EEF1F4"><button style="border:1px solid #C9CFD6;background:#fff;border-radius:4px;padding:5px 12px;cursor:pointer;font-size:12px">수정</button></td>
+                </tr>
+              </sc-for>
+              <sc-if value="{{ scr007Empty }}" hint-placeholder-val="{{ false }}">
+                <tr><td colspan="5" style="text-align:center;padding:56px 20px;color:#9CA3AF">
+                  <div style="font-size:13px;margin-bottom:12px">등록된 상세과제가 없습니다</div>
+                  <button onClick="{{ openDetailTaskRegister }}" style="height:32px;padding:0 16px;background:#1A56DB;border:none;border-radius:4px;color:#fff;cursor:pointer;font-size:12px;font-weight:600">+ 상세과제 등록</button>
+                </td></tr>
+              </sc-if>
+            </tbody>
+          </table>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isSCR008 }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="SCR-008 통합 로드맵 차트">
+          <div style="font-size:16px;font-weight:600;margin-bottom:2px">통합 로드맵 차트</div>
+          <div style="font-size:12px;color:#9CA3AF;margin-bottom:16px">분과별 로드맵·과제 일정을 간트차트로 조회 · 막대 선택 시 상세 팝업</div>
+          <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
+            <select style="height:32px;min-width:120px;border:1px solid #C9CFD6;border-radius:4px;padding:0 8px;background:#fff"><option>전체 분과</option></select>
+            <span style="font-size:12px;color:#6B7280">2026 ~ 2028</span>
+            <div style="flex:1"></div>
+            <div style="display:flex;align-items:center;gap:14px;font-size:11px;color:#6B7280">
+              <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#5B8DEF;display:inline-block"></span>차체</span>
+              <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#F2A65A;display:inline-block"></span>조립</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:4px;background:#F8F9FA;border:1px solid #E1E5EA;border-radius:8px;padding:4px">
+              <div onClick="{{ setViewSummary }}" style="padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer;font-weight:{{ ganttSummaryWeight }};color:{{ ganttSummaryColor }};background:{{ ganttSummaryBg }}">요약본</div>
+              <div onClick="{{ setViewFull }}" style="padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer;font-weight:{{ ganttFullWeight }};color:{{ ganttFullColor }};background:{{ ganttFullBg }}">전체보기</div>
+            </div>
+          </div>
+          <div style="background:#fff;border:1px solid #E1E5EA;border-radius:4px;overflow:hidden">
+            <div style="display:flex;background:#EEF1F4;border-bottom:1px solid #F0F2F4">
+              <div style="width:240px;flex-shrink:0"></div>
+              <div style="flex:1;display:flex">
+                <sc-for list="{{ ganttYears }}" as="y" hint-placeholder-count="3">
+                  <div style="flex:{{ y.span }};text-align:center;padding:4px 2px;font-size:11px;font-weight:700;color:#4B5563;border-left:1px solid #E1E5EA">{{ y.label }}</div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="display:flex;background:#EEF1F4;border-bottom:1px solid #E1E5EA">
+              <div style="width:240px;flex-shrink:0;padding:8px 12px;font-size:12px;color:#6B7280;font-weight:600">로드맵 / 과제</div>
+              <div style="flex:1;display:flex">
+                <sc-for list="{{ ganttQuarters }}" as="q" hint-placeholder-count="12">
+                  <div style="flex:1;text-align:center;padding:8px 2px;font-size:11px;color:#6B7280;border-left:1px solid #E1E5EA">{{ q }}</div>
+                </sc-for>
+              </div>
+            </div>
+            <sc-for list="{{ ganttRows }}" as="row" hint-placeholder-count="5">
+              <div style="display:flex;border-bottom:1px solid #EEF1F4;align-items:center;min-height:38px;background:{{ row.rowBg }}">
+                <div style="width:240px;flex-shrink:0;padding:0 12px;font-size:12px;padding-left:{{ row.indent }}px;font-weight:{{ row.weight }}">{{ row.label }}</div>
+                <div style="flex:1;position:relative;height:20px;margin:8px 0">
+                  <div onClick="{{ row.onClick }}" style="{{ row.barStyle }}"></div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isSCR009 }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="SCR-009 생산기술 Tech PR">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:24px">
+            <select style="height:32px;min-width:120px;border:1px solid #C9CFD6;border-radius:4px;padding:0 8px;background:#fff"><option>전체 과제</option></select>
+            <select style="height:32px;min-width:120px;border:1px solid #C9CFD6;border-radius:4px;padding:0 8px;background:#fff"><option>전체 분과</option></select>
+            <select style="height:32px;min-width:120px;border:1px solid #C9CFD6;border-radius:4px;padding:0 8px;background:#fff"><option>전체 소재유형</option></select>
+            <div style="flex:1"></div>
+            <button onClick="{{ openTechPrInquiry }}" style="height:32px;padding:0 16px;background:#1A56DB;border:none;border-radius:4px;color:#fff;cursor:pointer;font-weight:600">기술 문의/제안</button>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:20px">
+            <sc-for list="{{ techPrCardsView }}" as="card" hint-placeholder-count="4">
+              <div onClick="{{ card.onClick }}" style="border:1px solid #E1E5EA;border-radius:4px;overflow:hidden;cursor:pointer">
+                <sc-if value="{{ card.isVideoType }}" hint-placeholder-val="{{ false }}">
+                  <div style="position:relative;aspect-ratio:16/9;background:repeating-linear-gradient(135deg,#EEF1F4,#EEF1F4 10px,#E1E5EA 10px,#E1E5EA 20px);display:flex;align-items:center;justify-content:center">
+                    <div style="width:44px;height:44px;border-radius:50%;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px">▶</div>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ card.isFileType }}" hint-placeholder-val="{{ false }}">
+                  <div style="aspect-ratio:16/9;background:#F8F9FA;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px">
+                    <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#B45309" strokeWidth="1.6"><path d="M6 3h9l5 5v13a1 1 0 01-1 1H6a1 1 0 01-1-1V4a1 1 0 011-1z"></path><path d="M15 3v5h5"></path></svg>
+                    <span style="font-size:11px;color:#9CA3AF">{{ card.fileName }}</span>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ card.isTextType }}" hint-placeholder-val="{{ false }}">
+                  <div style="aspect-ratio:16/9;background:#F8F9FA;padding:16px;display:flex;align-items:center">
+                    <div style="font-size:12px;color:#4B5563;line-height:18px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;border-left:3px solid #157A3D;padding-left:10px">{{ card.body }}</div>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ card.isMultiType }}" hint-placeholder-val="{{ false }}">
+                  <div style="aspect-ratio:16/9;background:#F8F9FA;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px">
+                    <div style="display:flex;gap:8px">
+                      <span style="width:26px;height:26px;border-radius:50%;background:#E9F0FD;color:#1A56DB;display:flex;align-items:center;justify-content:center;font-size:11px">▶</span>
+                      <span style="width:26px;height:26px;border-radius:50%;background:#FDEEDC;color:#B45309;display:flex;align-items:center;justify-content:center;font-size:11px">📄</span>
+                      <span style="width:26px;height:26px;border-radius:50%;background:#EAF7EE;color:#157A3D;display:flex;align-items:center;justify-content:center;font-size:11px">≡</span>
+                    </div>
+                    <span style="font-size:11px;color:#6B46C1;font-weight:600">자료 {{ card.itemCount }}건 등록</span>
+                  </div>
+                </sc-if>
+                <div style="padding:16px">
+                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+                    <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:9px;color:{{ card.typeInfo.color }};background:{{ card.typeInfo.bg }}">{{ card.typeInfo.label }}</span>
+                  </div>
+                  <div style="font-size:15px;font-weight:600;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ card.title }}</div>
+                  <div style="font-size:12px;color:#9CA3AF">{{ card.section }} · {{ card.date }}</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isSCR010 }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="SCR-010 Tech PR 관리자" style="border-left:3px solid #1F2937;padding-left:21px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:24px">
+            <select style="height:32px;min-width:140px;border:1px solid #C9CFD6;border-radius:4px;padding:0 8px;background:#fff"><option>전체 과제</option></select>
+            <div style="flex:1"></div>
+            <button onClick="{{ openMaterialRegister }}" style="height:32px;padding:0 16px;background:#1A56DB;border:none;border-radius:4px;color:#fff;cursor:pointer;font-weight:600">+ 자료 등록</button>
+          </div>
+          <table style="width:100%;border-collapse:collapse">
+            <thead><tr style="background:#EEF1F4">
+              <th style="text-align:left;padding:10px 16px;font-size:12px;color:#4B5563;border-bottom:1px solid #E1E5EA">제목</th>
+              <th style="text-align:left;padding:10px 16px;font-size:12px;color:#4B5563;border-bottom:1px solid #E1E5EA">과제</th>
+              <th style="text-align:left;padding:10px 16px;font-size:12px;color:#4B5563;border-bottom:1px solid #E1E5EA">담당자</th>
+              <th style="text-align:left;padding:10px 16px;font-size:12px;color:#4B5563;border-bottom:1px solid #E1E5EA">첨부(문서/동영상)</th>
+              <th style="text-align:left;padding:10px 16px;font-size:12px;color:#4B5563;border-bottom:1px solid #E1E5EA">등록일</th>
+              <th style="text-align:center;padding:10px 16px;font-size:12px;color:#4B5563;border-bottom:1px solid #E1E5EA">관리</th>
+            </tr></thead>
+            <tbody>
+              <sc-for list="{{ scr010Rows }}" as="row" hint-placeholder-count="1">
+                <tr>
+                  <td style="padding:10px 16px;border-bottom:1px solid #EEF1F4;font-weight:500">{{ row.title }}</td>
+                  <td style="padding:10px 16px;border-bottom:1px solid #EEF1F4">{{ row.task }}</td>
+                  <td style="padding:10px 16px;border-bottom:1px solid #EEF1F4">{{ row.owner }}</td>
+                  <td style="padding:10px 16px;border-bottom:1px solid #EEF1F4;color:#6B7280">{{ row.attachment }}</td>
+                  <td style="padding:10px 16px;border-bottom:1px solid #EEF1F4;color:#6B7280">{{ row.registered }}</td>
+                  <td style="text-align:center;padding:10px 16px;border-bottom:1px solid #EEF1F4"><button style="border:1px solid #C9CFD6;background:#fff;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:12px">수정</button></td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isSCR011 }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="SCR-011 mTRM 협의체 관리" style="border-left:3px solid #1F2937;padding-left:21px">
+          <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+            <button onClick="{{ openCouncilRegister }}" style="height:32px;padding:0 16px;background:#1A56DB;border:none;border-radius:4px;color:#fff;cursor:pointer;font-weight:600">+ 협의체 등록</button>
+          </div>
+          <table style="width:100%;border-collapse:collapse">
+            <thead><tr style="background:#EEF1F4">
+              <th style="text-align:left;padding:10px 16px;font-size:12px;color:#4B5563;border-bottom:1px solid #E1E5EA">협의체명</th>
+              <th style="text-align:left;padding:10px 16px;font-size:12px;color:#4B5563;border-bottom:1px solid #E1E5EA">분과</th>
+              <th style="text-align:left;padding:10px 16px;font-size:12px;color:#4B5563;border-bottom:1px solid #E1E5EA">의제</th>
+              <th style="text-align:left;padding:10px 16px;font-size:12px;color:#4B5563;border-bottom:1px solid #E1E5EA">대상 분과장</th>
+              <th style="text-align:left;padding:10px 16px;font-size:12px;color:#4B5563;border-bottom:1px solid #E1E5EA">일정</th>
+              <th style="text-align:center;padding:10px 16px;font-size:12px;color:#4B5563;border-bottom:1px solid #E1E5EA">메일상태</th>
+            </tr></thead>
+            <tbody>
+              <sc-for list="{{ scr011Rows }}" as="row" hint-placeholder-count="1">
+                <tr>
+                  <td style="padding:10px 16px;border-bottom:1px solid #EEF1F4;font-weight:500">{{ row.name }}</td>
+                  <td style="padding:10px 16px;border-bottom:1px solid #EEF1F4">{{ row.section }}</td>
+                  <td style="padding:10px 16px;border-bottom:1px solid #EEF1F4">{{ row.agenda }}</td>
+                  <td style="padding:10px 16px;border-bottom:1px solid #EEF1F4">{{ row.target }}</td>
+                  <td style="padding:10px 16px;border-bottom:1px solid #EEF1F4;color:#6B7280">{{ row.schedule }}</td>
+                  <td style="text-align:center;padding:10px 16px;border-bottom:1px solid #EEF1F4"><span style="{{ row.mailStyle }}">{{ row.mailStatus }}</span></td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isSCR012 }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="SCR-012 mTRM 관리" style="border-left:3px solid #1F2937;padding-left:21px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+            <input placeholder="mTRM명 검색" style="height:32px;min-width:220px;border:1px solid #C9CFD6;border-radius:4px;padding:0 10px" />
+            <button style="height:32px;padding:0 16px;background:#1A56DB;border:none;border-radius:4px;color:#fff;cursor:pointer;font-weight:600">조회</button>
+            <div style="flex:1"></div>
+            <button style="height:32px;padding:0 16px;background:#1A56DB;border:none;border-radius:4px;color:#fff;cursor:pointer;font-weight:600">+ mTRM 등록</button>
+          </div>
+          <table style="width:100%;border-collapse:collapse">
+            <thead><tr style="background:#EEF1F4">
+              <th style="text-align:left;padding:10px 16px;font-size:12px;color:#4B5563;border-bottom:1px solid #E1E5EA">mTRM명</th>
+              <th style="text-align:left;padding:10px 16px;font-size:12px;color:#4B5563;border-bottom:1px solid #E1E5EA">분과</th>
+              <th style="text-align:center;padding:10px 16px;font-size:12px;color:#4B5563;border-bottom:1px solid #E1E5EA">상태</th>
+              <th style="text-align:left;padding:10px 16px;font-size:12px;color:#4B5563;border-bottom:1px solid #E1E5EA">등록일</th>
+              <th style="text-align:center;padding:10px 16px;font-size:12px;color:#4B5563;border-bottom:1px solid #E1E5EA">관리</th>
+            </tr></thead>
+            <tbody>
+              <sc-for list="{{ scr012Rows }}" as="row" hint-placeholder-count="1">
+                <tr>
+                  <td style="padding:10px 16px;border-bottom:1px solid #EEF1F4;font-weight:500">{{ row.name }}</td>
+                  <td style="padding:10px 16px;border-bottom:1px solid #EEF1F4">{{ row.section }}</td>
+                  <td style="text-align:center;padding:10px 16px;border-bottom:1px solid #EEF1F4"><span style="{{ row.statusStyle }}">{{ row.status }}</span></td>
+                  <td style="padding:10px 16px;border-bottom:1px solid #EEF1F4;color:#6B7280">{{ row.registered }}</td>
+                  <td style="text-align:center;padding:10px 16px;border-bottom:1px solid #EEF1F4"><button style="border:none;background:none;color:#1A56DB;cursor:pointer;font-size:12px;margin-right:8px">수정</button><button onClick="{{ openDeleteConfirm }}" style="border:none;background:none;color:#C0201D;cursor:pointer;font-size:12px">삭제</button></td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isSCR013 }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="SCR-013 기술과제 계획 등록">
+          <div style="background:#fff;border:1px solid #E1E5EA;border-radius:4px;padding:24px;max-width:900px">
+            <div style="display:flex;gap:24px;margin-bottom:16px">
+              <div style="flex:1"><label style="font-size:12px;color:#6B7280;display:block;margin-bottom:4px">과제명 *</label><input style="width:100%;height:36px;border:1px solid #C9CFD6;border-radius:4px;padding:0 10px" /></div>
+              <div style="flex:1"><label style="font-size:12px;color:#6B7280;display:block;margin-bottom:4px">담당자 *</label><select style="width:100%;height:36px;border:1px solid #C9CFD6;border-radius:4px;padding:0 8px;background:#fff"><option>선택</option></select></div>
+            </div>
+            <div style="margin-bottom:24px"><label style="font-size:12px;color:#6B7280;display:block;margin-bottom:4px">계획등록일 *</label><input type="date" style="height:36px;border:1px solid #C9CFD6;border-radius:4px;padding:0 10px" /></div>
+            <div style="border-top:1px solid #E1E5EA;padding-top:16px;margin-bottom:16px">
+              <div style="font-size:14px;font-weight:600;margin-bottom:12px">mTRM 연동 영역</div>
+              <div style="margin-bottom:16px"><label style="font-size:12px;color:#6B7280;display:block;margin-bottom:4px">연동 mTRM 로드맵 *</label>
+                <select onChange="{{ onTaskPlanRoadmapChange }}" style="width:100%;height:36px;border:1px solid #C9CFD6;border-radius:4px;padding:0 8px;background:#fff">
+                  <sc-for list="{{ roadmapOptions }}" as="opt" hint-placeholder-count="2"><option value="{{ opt.id }}">{{ opt.label }}</option></sc-for>
+                </select>
+              </div>
+              <div style="font-size:12px;color:#6B7280;margin-bottom:8px">자동 매핑 결과</div>
+              <table style="width:100%;border-collapse:collapse">
+                <thead><tr style="background:#EEF1F4">
+                  <th style="text-align:left;padding:8px 12px;font-size:12px;color:#4B5563;border-bottom:1px solid #E1E5EA">매핑 로드맵명</th>
+                  <th style="text-align:left;padding:8px 12px;font-size:12px;color:#4B5563;border-bottom:1px solid #E1E5EA">매핑 상세과제</th>
+                  <th style="text-align:center;padding:8px 12px;font-size:12px;color:#4B5563;border-bottom:1px solid #E1E5EA">매핑상태</th>
+                </tr></thead>
+                <tbody>
+                  <tr>
+                    <td style="padding:8px 12px;border-bottom:1px solid #EEF1F4">{{ taskPlanMapping.roadmapName }}</td>
+                    <td style="padding:8px 12px;border-bottom:1px solid #EEF1F4">{{ taskPlanMapping.detailTask }}</td>
+                    <td style="text-align:center;padding:8px 12px;border-bottom:1px solid #EEF1F4"><span style="{{ taskPlanMapping.statusStyle }}">{{ taskPlanMapping.status }}</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div style="display:flex;justify-content:flex-end;gap:8px">
+              <button style="height:36px;padding:0 20px;background:#fff;border:1px solid #C9CFD6;border-radius:4px;cursor:pointer">취소</button>
+              <button style="height:36px;padding:0 20px;background:#1A56DB;border:none;border-radius:4px;color:#fff;cursor:pointer;font-weight:600">등록</button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isSCR014 }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="SCR-014 기술동향">
+          <sc-if value="{{ isTrendList }}" hint-placeholder-val="{{ true }}">
+            <div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:24px">
+                <select style="height:32px;min-width:180px;border:1px solid #C9CFD6;border-radius:4px;padding:0 8px;background:#fff"><option>전체(글로벌 트렌드/신기술 자료/기술개발 제안)</option></select>
+                <input placeholder="태그 검색" style="height:32px;min-width:140px;border:1px solid #C9CFD6;border-radius:4px;padding:0 10px" />
+                <div style="flex:1"></div>
+                <button style="height:32px;padding:0 16px;background:#1A56DB;border:none;border-radius:4px;color:#fff;cursor:pointer;font-weight:600">+ 등록</button>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:24px">
+                <sc-for list="{{ trendCards }}" as="card" hint-placeholder-count="4">
+                  <div onClick="{{ card.onClick }}" style="border:1px solid #E1E5EA;border-radius:4px;overflow:hidden;cursor:pointer">
+                    <div style="aspect-ratio:16/9;background:repeating-linear-gradient(135deg,#EEF1F4,#EEF1F4 10px,#E1E5EA 10px,#E1E5EA 20px)"></div>
+                    <div style="padding:16px">
+                      <div style="font-size:15px;font-weight:600;margin-bottom:6px">{{ card.title }}</div>
+                      <div style="font-size:12px;color:#9CA3AF;margin-bottom:6px">조회 {{ card.views }}</div>
+                      <div style="font-size:12px;color:#9CA3AF">{{ card.date }} · {{ card.dept }} · {{ card.owner }} · {{ card.tag }}</div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ isTrendDetail }}" hint-placeholder-val="{{ false }}">
+            <div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+                <a href="#" onClick="{{ backToTrendList }}" style="font-size:13px;font-weight:600">‹ 목록으로</a>
+                <div style="display:flex;gap:8px">
+                  <button onClick="{{ prevTrend }}" disabled="{{ trendPrevDisabled }}" style="{{ trendPrevStyle }}">‹ 이전</button>
+                  <button onClick="{{ nextTrend }}" disabled="{{ trendNextDisabled }}" style="{{ trendNextStyle }}">다음 ›</button>
+                </div>
+              </div>
+              <div style="background:#fff;border:1px solid #E1E5EA;border-radius:4px;padding:24px">
+                <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">
+                  <div style="font-size:20px;font-weight:700">{{ currentTrend.title }}</div>
+                  <div style="font-size:12px;color:#9CA3AF">조회 {{ currentTrend.views }} | {{ currentTrend.date }} | {{ currentTrend.dept }}/{{ currentTrend.owner }}</div>
+                </div>
+                <div style="font-size:12px;color:#1A56DB;margin-bottom:16px">{{ currentTrend.tag }}</div>
+                <div style="border-top:1px solid #E1E5EA;padding-top:16px;aspect-ratio:16/6;background:repeating-linear-gradient(135deg,#EEF1F4,#EEF1F4 10px,#E1E5EA 10px,#E1E5EA 20px);display:flex;align-items:center;justify-content:center;font-family:monospace;font-size:12px;color:#9CA3AF">본문 / 이미지 / 동영상 프리뷰 영역</div>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+    </div>
+  </div>
+
+  <sc-if value="{{ activeModal }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;z-index:100">
+      <div style="{{ modalBoxStyle }}">
+        <div style="height:48px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;border-bottom:1px solid #E1E5EA;flex-shrink:0">
+          <div style="font-size:16px;font-weight:600">{{ modalTitle }}</div>
+          <div onClick="{{ closeModal }}" style="cursor:pointer;color:#6B7280;font-size:18px">✕</div>
+        </div>
+        <div style="padding:24px;overflow-y:auto;flex:1">
+          <sc-for list="{{ modalFields }}" as="fld" hint-placeholder-count="4">
+            <div style="display:flex;gap:8px;margin-bottom:16px;align-items:flex-start">
+              <label style="width:120px;flex-shrink:0;font-size:13px;color:#374151;padding-top:8px">{{ fld.label }}<span style="color:#C0201D">{{ fld.requiredMark }}</span></label>
+              <div style="flex:1">
+                <sc-if value="{{ fld.isTextarea }}" hint-placeholder-val="{{ false }}">
+                  <textarea style="width:100%;min-height:100px;border:1px solid #C9CFD6;border-radius:4px;padding:8px 10px;font-family:inherit"></textarea>
+                </sc-if>
+                <sc-if value="{{ fld.isSelect }}" hint-placeholder-val="{{ false }}">
+                  <select style="width:100%;height:36px;border:1px solid #C9CFD6;border-radius:4px;padding:0 8px;background:#fff"><option>선택</option></select>
+                </sc-if>
+                <sc-if value="{{ fld.isDate }}" hint-placeholder-val="{{ false }}">
+                  <input type="date" style="width:100%;height:36px;border:1px solid #C9CFD6;border-radius:4px;padding:0 10px" />
+                </sc-if>
+                <sc-if value="{{ fld.isFile }}" hint-placeholder-val="{{ false }}">
+                  <div style="border:1px dashed #C9CFD6;border-radius:4px;padding:20px;text-align:center;color:#9CA3AF;font-size:12px">파일을 드래그하거나 클릭하여 첨부</div>
+                </sc-if>
+                <sc-if value="{{ fld.isVideo }}" hint-placeholder-val="{{ false }}">
+                  <div style="aspect-ratio:16/9;background:repeating-linear-gradient(135deg,#EEF1F4,#EEF1F4 10px,#E1E5EA 10px,#E1E5EA 20px);border-radius:4px;display:flex;align-items:center;justify-content:center">
+                    <div style="width:56px;height:56px;border-radius:50%;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px">▶</div>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ fld.isPlainText }}" hint-placeholder-val="{{ false }}">
+                  <input readOnly="{{ true }}" value="{{ fld.value }}" style="width:100%;height:36px;border:none;background:#F8F9FA;border-radius:4px;padding:0 10px;color:#374151" />
+                </sc-if>
+                <sc-if value="{{ fld.isText }}" hint-placeholder-val="{{ false }}">
+                  <input style="width:100%;height:36px;border:1px solid #C9CFD6;border-radius:4px;padding:0 10px" />
+                </sc-if>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="height:56px;flex-shrink:0;display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:0 20px;border-top:1px solid #E1E5EA">
+          <button onClick="{{ closeModal }}" style="height:36px;padding:0 20px;background:#fff;border:1px solid #C9CFD6;border-radius:4px;cursor:pointer">취소</button>
+          <button onClick="{{ closeModal }}" style="height:36px;padding:0 20px;background:#1A56DB;border:none;border-radius:4px;color:#fff;cursor:pointer;font-weight:600">{{ modalConfirmLabel }}</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ techPrDetail }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;z-index:100">
+      <div style="width:720px;max-width:92vw;max-height:86vh;background:#fff;border-radius:8px;display:flex;flex-direction:column;overflow:hidden">
+        <div style="height:56px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 24px;border-bottom:1px solid #E1E5EA">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:10px;color:{{ techPrDetail.typeInfo.color }};background:{{ techPrDetail.typeInfo.bg }}">{{ techPrDetail.typeInfo.label }}</span>
+            <div style="font-size:16px;font-weight:600">{{ techPrDetail.title }}</div>
+          </div>
+          <div onClick="{{ closeTechPrDetail }}" style="cursor:pointer;color:#6B7280;font-size:18px">✕</div>
+        </div>
+        <div style="padding:24px;overflow-y:auto;flex:1">
+          <div style="display:flex;gap:20px;font-size:12px;color:#9CA3AF;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid #EEF1F4">
+            <span>분과 · {{ techPrDetail.section }}</span>
+            <span>등록일 · {{ techPrDetail.date }}</span>
+            <span>담당자 · {{ techPrDetail.owner }}</span>
+          </div>
+          <sc-if value="{{ techPrDetail.isVideoType }}" hint-placeholder-val="{{ false }}">
+            <div style="aspect-ratio:16/9;background:repeating-linear-gradient(135deg,#EEF1F4,#EEF1F4 10px,#E1E5EA 10px,#E1E5EA 20px);border-radius:6px;display:flex;align-items:center;justify-content:center;margin-bottom:20px">
+              <div style="width:64px;height:64px;border-radius:50%;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;color:#fff;font-size:24px">▶</div>
+            </div>
+            <div style="font-size:14px;color:#374151;line-height:24px">{{ techPrDetail.desc }}</div>
+          </sc-if>
+          <sc-if value="{{ techPrDetail.isFileType }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:center;gap:16px;border:1px solid #E1E5EA;border-radius:6px;padding:20px">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#B45309" strokeWidth="1.5" style="flex-shrink:0"><path d="M6 3h9l5 5v13a1 1 0 01-1 1H6a1 1 0 01-1-1V4a1 1 0 011-1z"></path><path d="M15 3v5h5"></path></svg>
+              <div style="flex:1">
+                <div style="font-size:14px;font-weight:600">{{ techPrDetail.fileName }}</div>
+                <div style="font-size:12px;color:#9CA3AF;margin-top:2px">{{ techPrDetail.fileSize }}</div>
+              </div>
+              <button style="height:36px;padding:0 18px;background:#1A56DB;border:none;border-radius:4px;color:#fff;cursor:pointer;font-weight:600;font-size:13px">다운로드</button>
+            </div>
+          </sc-if>
+          <sc-if value="{{ techPrDetail.isTextType }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:14px;color:#374151;line-height:26px;white-space:pre-line">{{ techPrDetail.body }}</div>
+          </sc-if>
+          <sc-if value="{{ techPrDetail.isMultiType }}" hint-placeholder-val="{{ false }}">
+            <sc-for list="{{ techPrDetail.itemsView }}" as="it" hint-placeholder-count="3">
+              <div style="margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid #EEF1F4">
+                <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:9px;color:{{ it.typeInfo.color }};background:{{ it.typeInfo.bg }};margin-bottom:10px;display:inline-block">{{ it.typeInfo.label }}</span>
+                <sc-if value="{{ it.isVideoType }}" hint-placeholder-val="{{ false }}">
+                  <div style="aspect-ratio:16/9;background:repeating-linear-gradient(135deg,#EEF1F4,#EEF1F4 10px,#E1E5EA 10px,#E1E5EA 20px);border-radius:6px;display:flex;align-items:center;justify-content:center;margin-bottom:10px">
+                    <div style="width:52px;height:52px;border-radius:50%;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px">▶</div>
+                  </div>
+                  <div style="font-size:13px;color:#374151;line-height:22px">{{ it.desc }}</div>
+                </sc-if>
+                <sc-if value="{{ it.isFileType }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex;align-items:center;gap:14px;border:1px solid #E1E5EA;border-radius:6px;padding:14px 16px">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#B45309" strokeWidth="1.6" style="flex-shrink:0"><path d="M6 3h9l5 5v13a1 1 0 01-1 1H6a1 1 0 01-1-1V4a1 1 0 011-1z"></path><path d="M15 3v5h5"></path></svg>
+                    <div style="flex:1">
+                      <div style="font-size:13px;font-weight:600">{{ it.fileName }}</div>
+                      <div style="font-size:11px;color:#9CA3AF">{{ it.fileSize }}</div>
+                    </div>
+                    <button style="height:32px;padding:0 14px;background:#1A56DB;border:none;border-radius:4px;color:#fff;cursor:pointer;font-weight:600;font-size:12px">다운로드</button>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ it.isTextType }}" hint-placeholder-val="{{ false }}">
+                  <div style="font-size:13px;color:#374151;line-height:22px">{{ it.body }}</div>
+                </sc-if>
+              </div>
+            </sc-for>
+          </sc-if>
+        </div>
+        <div style="height:56px;flex-shrink:0;display:flex;align-items:center;justify-content:flex-end;padding:0 24px;border-top:1px solid #E1E5EA">
+          <button onClick="{{ closeTechPrDetail }}" style="height:36px;padding:0 20px;background:#fff;border:1px solid #C9CFD6;border-radius:4px;cursor:pointer">닫기</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const SCREENS = {
+  'FLOW-MAP': { group: '가이드', name: '전체 프로세스 흐름도', admin: false },
+  'DASH-AUTO': { group: '공정 자동화 현황', name: '통합 대시보드', admin: false },
+  'DASH-MTRM': { group: '중장기 방향성 공유', name: '통합 대시보드', admin: false },
+  'SCR-001': { group: '공정 자동화 현황', name: '부품 공정 자동화 현황', admin: false },
+  'SCR-002': { group: '공정 자동화 현황', name: '표준공정 마스터 관리', admin: true },
+  'SCR-003': { group: '공정 자동화 현황', name: '모듈 공정 자동화 현황', admin: false },
+  'SCR-004': { group: '공정 자동화 현황', name: '모듈 표준 작업명 관리', admin: true },
+  'SCR-005': { group: '공정 자동화 현황', name: 'I/F 실행결과 관리', admin: true },
+  'SCR-006': { group: '중장기 방향성 공유', name: '통합 로드맵', admin: false },
+  'SCR-007': { group: '중장기 방향성 공유', name: '상세과제 로드맵 관리', admin: false },
+  'SCR-008': { group: '중장기 방향성 공유', name: '통합 로드맵 차트', admin: false },
+  'SCR-009': { group: '중장기 방향성 공유', name: '생산기술 Tech PR', admin: false },
+  'SCR-010': { group: '중장기 방향성 공유', name: '생산기술 Tech PR 관리자', admin: true },
+  'SCR-011': { group: '중장기 방향성 공유', name: 'mTRM 협의체', admin: true },
+  'SCR-012': { group: '중장기 방향성 공유', name: 'mTRM 관리', admin: true },
+  'SCR-013': { group: '중장기 방향성 공유', name: '기술과제 관리', admin: false },
+  'SCR-014': { group: '중장기 방향성 공유', name: '기술동향', admin: false },
+  'MTRM-MAIN': { group: '중장기 방향성 공유', name: '메인 대시보드', admin: false },
+  'NAV-OPT': { group: '가이드', name: '사이드 내비게이션 개선안 (옵션)', admin: false },
+};
+
+const NAV_ICON = {
+  'FLOW-MAP': 'flow', 'DASH-AUTO': 'dash', 'DASH-MTRM': 'dash', 'SCR-002': 'table', 'SCR-004': 'table',
+  'SCR-005': 'table', 'SCR-001': 'table', 'SCR-003': 'table', 'SCR-006': 'table', 'SCR-007': 'table',
+  'SCR-008': 'dash', 'SCR-009': 'cards', 'SCR-010': 'table', 'SCR-011': 'table', 'SCR-012': 'table',
+  'SCR-013': 'form', 'SCR-014': 'cards', 'NAV-OPT': 'flow',
+};
+
+const NAV_CHILDREN = { 'SCR-006': ['SCR-007', 'SCR-008'] };
+
+const NAV = [
+  { title: '가이드', items: ['FLOW-MAP', 'NAV-OPT'] },
+  { title: '공정 자동화 현황', items: ['SCR-001', 'SCR-002', 'SCR-003', 'SCR-004', 'SCR-005'] },
+  { title: '중장기 방향성 공유', items: ['MTRM-MAIN', 'SCR-006', 'SCR-007', 'SCR-008', 'SCR-009', 'SCR-010', 'SCR-011', 'SCR-012', 'SCR-013', 'SCR-014'] },
+];
+
+function badgeStyle(bg, color) {
+  return { display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 600, padding: '3px 10px', borderRadius: '11px', background: bg, color: color, whiteSpace: 'nowrap' };
+}
+
+class Component extends DCLogic {
+  state = {
+    currentScreen: 'SCR-001',
+    activeModal: null,
+    ganttView: 'summary',
+    selectedParentRoadmap: 'body',
+    trendView: 'list',
+    trendIndex: 0,
+    videoProcess: null,
+    navOptCollapsed: {},
+    navSubOpen: { 'SCR-006': true },
+    techPrDetailIndex: null,
+  };
+
+  toggleNavOptGroup = (title) => this.setState((s) => ({ navOptCollapsed: { ...s.navOptCollapsed, [title]: !s.navOptCollapsed[title] } }));
+  toggleNavSub = (id) => this.setState((s) => ({ navSubOpen: { ...s.navSubOpen, [id]: !s.navSubOpen[id] } }));
+  openTechPrDetail = (i) => this.setState({ techPrDetailIndex: i });
+  closeTechPrDetail = () => this.setState({ techPrDetailIndex: null });
+
+  openVideo = (process) => this.setState({ activeModal: 'autoVideo', videoProcess: process });
+
+  selectScreen = (id) => this.setState({ currentScreen: id, activeModal: null });
+  openModal = (id) => this.setState({ activeModal: id });
+  closeModal = () => this.setState({ activeModal: null });
+  runSearch = () => {};
+  setViewSummary = () => this.setState({ ganttView: 'summary' });
+  setViewFull = () => this.setState({ ganttView: 'full' });
+  onParentRoadmapChange = (e) => this.setState({ selectedParentRoadmap: e.target.value });
+  onTaskPlanRoadmapChange = () => {};
+  goToGantt = (e) => { e.preventDefault(); this.setState({ currentScreen: 'SCR-008' }); };
+  goToSCR001 = (e) => { e.preventDefault(); this.setState({ currentScreen: 'SCR-001' }); };
+  openTrendDetail = (i) => this.setState({ trendView: 'detail', trendIndex: i });
+  backToTrendList = (e) => { e.preventDefault(); this.setState({ trendView: 'list' }); };
+  prevTrend = () => this.setState((s) => ({ trendIndex: Math.max(0, s.trendIndex - 1) }));
+  nextTrend = () => this.setState((s) => ({ trendIndex: Math.min(3, s.trendIndex + 1) }));
+
+  renderVals() {
+    const { currentScreen, activeModal, ganttView, selectedParentRoadmap, trendView, trendIndex, videoProcess, navOptCollapsed, navSubOpen, techPrDetailIndex } = this.state;
+    const currentMeta = SCREENS[currentScreen];
+
+    const childIds = new Set(Object.values(NAV_CHILDREN).flat());
+    const navGroups = NAV.map((g) => ({
+      title: g.title,
+      items: g.items.filter((id) => !childIds.has(id)).map((id) => {
+        const children = NAV_CHILDREN[id];
+        const isOpen = !!navSubOpen[id];
+        const active = id === currentScreen || (children && children.includes(currentScreen));
+        return {
+          label: SCREENS[id].name,
+          admin: SCREENS[id].admin,
+          onClick: () => this.selectScreen(id),
+          hasChildren: !!children,
+          chevronStyle: { transition: 'transform .15s', transform: isOpen ? 'rotate(0deg)' : 'rotate(-90deg)', fontSize: '10px', color: '#9CA3AF', marginLeft: '4px' },
+          onToggle: (e) => { e.stopPropagation(); this.toggleNavSub(id); },
+          rowStyle: {
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 10px',
+            borderRadius: '4px', cursor: 'pointer', fontSize: '13px', marginBottom: '2px',
+            background: active ? '#E9F0FD' : 'transparent', color: active ? '#1A56DB' : '#374151',
+            fontWeight: active ? 600 : 400,
+          },
+          children: children && isOpen ? children.map((cid) => {
+            const cActive = cid === currentScreen;
+            return {
+              label: SCREENS[cid].name,
+              admin: SCREENS[cid].admin,
+              onClick: () => this.selectScreen(cid),
+              rowStyle: {
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 10px 8px 22px',
+                borderRadius: '4px', cursor: 'pointer', fontSize: '12.5px', marginBottom: '2px',
+                background: cActive ? '#E9F0FD' : 'transparent', color: cActive ? '#1A56DB' : '#6B7280',
+                fontWeight: cActive ? 600 : 400,
+              },
+            };
+          }) : [],
+        };
+      }),
+    }));
+
+    // ---- Tabs (SCR-001 / SCR-003) ----
+    const tabBase = { padding: '10px 20px', cursor: 'pointer', fontSize: '14px', borderBottom: '2px solid transparent', marginBottom: '-1px' };
+    const tabActive = { ...tabBase, borderBottomColor: '#1A56DB', color: '#1A56DB', fontWeight: 600 };
+    const tabInactive = { ...tabBase, color: '#6B7280' };
+
+    // ---- SCR-001 mock data ----
+    const scr001Filters = ['제품군', '제품', '지역', '공장', '라인'].map((label) => ({ label }));
+
+    const stickyHeadStyle = { textAlign: 'center', padding: '10px 12px', fontSize: '12px', fontWeight: 600, color: '#4B5563', borderBottom: '1px solid #E1E5EA', minWidth: '120px', whiteSpace: 'nowrap' };
+    const bpHeadStyle = { ...stickyHeadStyle, background: '#E9F0FD', color: '#1A56DB' };
+    const lineDefs = [
+      { label: '[B/P] 창원2C 라인', bp: true, rateFrom: 72, rateTo: 94, staffFrom: 4, staffTo: 1, deadline: "'27년" },
+      { label: '창원 2A', rateFrom: 71, rateTo: 94, staffFrom: 4, staffTo: 1, deadline: "'27년" },
+      { label: '창원 2B', rateFrom: 67, rateTo: 94, staffFrom: 5, staffTo: 1, deadline: "'30년" },
+      { label: '창원 2D', rate: 63, staff: 4, deadline: '-' },
+      { label: '창원 2E', rateFrom: 63, rateTo: 94, staffFrom: 4, staffTo: 1, deadline: "'30년" },
+      { label: 'MSK 조립1', rateFrom: 47, rateTo: 93, staffFrom: 5, staffTo: 1, deadline: "'30년" },
+      { label: 'MMX 조립1', rateFrom: 40, rateTo: 93, staffFrom: 6, staffTo: 1, deadline: "'30년" },
+      { label: 'MWX 조립1', rateFrom: 47, rateTo: 93, staffFrom: 5, staffTo: 1, deadline: "'30년" },
+      { label: 'MWX 조립2', rateFrom: 40, rateTo: 93, staffFrom: 6, staffTo: 1, deadline: "'30년" },
+    ];
+    const scr001LineCols = lineDefs.map((l) => ({
+      label: l.label,
+      headStyle: l.bp ? bpHeadStyle : stickyHeadStyle,
+      headStyle2: l.bp ? { ...bpHeadStyle, minWidth: '140px' } : { ...stickyHeadStyle, minWidth: '140px' },
+    }));
+    const scr001LineColsRest = scr001LineCols.slice(1);
+    const rateCell = (l) => l.rateFrom == null
+      ? { text: l.rate + '%', hasDelta: false, style: { textAlign: 'center', padding: '10px 12px', borderBottom: '1px solid #EEF1F4', fontWeight: 600 } }
+      : { text: `${l.rateFrom}%→${l.rateTo}%`, hasDelta: true, deltaText: `${l.rateTo - l.rateFrom}%▲`, deltaStyle: { color: '#1E8E3E', fontWeight: 600, fontSize: '11px' }, style: { textAlign: 'center', padding: '10px 12px', borderBottom: '1px solid #EEF1F4', fontWeight: 600 } };
+    const staffCell = (l) => l.staffFrom == null
+      ? { text: l.staff + '명', hasDelta: false, style: { textAlign: 'center', padding: '10px 12px', borderBottom: '1px solid #EEF1F4' } }
+      : { text: `${l.staffFrom}명→${l.staffTo}명`, hasDelta: true, deltaText: `${l.staffFrom - l.staffTo}명▼`, deltaStyle: { color: '#C0201D', fontWeight: 600, fontSize: '11px' }, style: { textAlign: 'center', padding: '10px 12px', borderBottom: '1px solid #EEF1F4' } };
+    const deadlineCell = (l) => ({ text: l.deadline, hasDelta: false, style: { textAlign: 'center', padding: '10px 12px', borderBottom: '1px solid #EEF1F4', color: '#6B7280' } });
+    const scr001SummaryRows = [
+      { label: '자동화율', cells: lineDefs.map(rateCell) },
+      { label: '직접인원', cells: lineDefs.map(staffCell) },
+      { label: '완료일정', cells: lineDefs.map(deadlineCell) },
+    ];
+
+    const currentAutoStyle = { ...badgeStyle('#EAF7EE', '#1E8E3E'), cursor: 'pointer', whiteSpace: 'nowrap' };
+    const currentManualStyle = { display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 600, padding: '3px 10px', borderRadius: '11px', background: '#F5F6F7', color: '#374151', border: '1px solid #C9CFD6', whiteSpace: 'nowrap' };
+    const cellStyles = {
+      auto: badgeStyle('#EAF7EE', '#1E8E3E'),
+      feasible: { color: '#1A56DB', fontWeight: 600, fontSize: '12px', whiteSpace: 'nowrap' },
+      na: { color: '#C9CFD6', fontSize: '12px', whiteSpace: 'nowrap' },
+      negotiate: badgeStyle('#FDEEDC', '#B45309'),
+      notApplied: badgeStyle('#EEF1F4', '#4B5563'),
+    };
+    const mCell = (kind, label) => ({ label, style: cellStyles[kind] });
+    const countTextStyle = { fontSize: '12px', color: '#6B7280' };
+    const scr001MatrixLineLabel = '[BP]창원2C 라인';
+    const currentTd = () => ({ textAlign: 'center', padding: '10px 16px', borderBottom: '1px solid #EEF1F4' });
+    const countTd = () => ({ textAlign: 'center', padding: '10px 16px', borderBottom: '1px solid #EEF1F4' });
+    const improvementTd = () => ({ padding: '10px 16px', borderBottom: '1px solid #EEF1F4' });
+    const noteTd = () => ({ padding: '10px 16px', borderBottom: '1px solid #EEF1F4', color: '#6B7280' });
+    const scr001Matrix = [
+      {
+        no: 1, process: '오버몰딩', tag: null,
+        current: { label: '● 자동', style: currentAutoStyle, onClick: () => this.openVideo('오버몰딩') },
+        currentTdStyle: currentTd(),
+        showCount: true, countText: '', countRowSpan: 1, countStyle: countTextStyle, countTdStyle: countTd(),
+        showImprovement: true, improvement: '자동', improvementStyle: { color: '#374151', fontWeight: 500 }, improvementRowSpan: 1, improvementTdStyle: improvementTd(),
+        note: '-', noteRowSpan: 1, noteTdStyle: noteTd(),
+        cells: [mCell('auto', '● 자동'), mCell('auto', '● 자동'), mCell('na', '미해당'), mCell('na', '미해당'), mCell('auto', '● 자동'), mCell('negotiate', '협의必(ROI 13년) 1명'), mCell('auto', '● 자동'), mCell('negotiate', '협의必(ROI 13년) 1명')],
+      },
+      {
+        no: 2, process: '파워헤드 버퍼적재', tag: null,
+        current: { label: '수동', style: currentManualStyle, onClick: undefined },
+        currentTdStyle: currentTd(),
+        showCount: true, countText: '1명', countRowSpan: 1, countStyle: countTextStyle, countTdStyle: countTd(),
+        showImprovement: true, improvement: "가능('27)", improvementStyle: { color: '#1A56DB', fontWeight: 600 }, improvementRowSpan: 1, improvementTdStyle: improvementTd(),
+        note: '6축로봇 + 버퍼교체', noteRowSpan: 1, noteTdStyle: noteTd(),
+        cells: [mCell('feasible', "가능('27)"), mCell('feasible', "가능('28)"), mCell('na', '미해당'), mCell('na', '미해당'), mCell('feasible', "가능('27)"), mCell('negotiate', '협의必(회수 불가) 1명'), mCell('negotiate', '협의必(회수 불가) 1명'), mCell('negotiate', '협의必(회수 불가) 1명')],
+      },
+      {
+        no: 3, process: '인풋풀 조립', tag: null,
+        current: { label: '수동', style: currentManualStyle, onClick: undefined },
+        currentTdStyle: currentTd(),
+        showCount: true, countText: '1명', countRowSpan: 2, countStyle: countTextStyle, countTdStyle: countTd(),
+        showImprovement: true, improvement: "가능('27)", improvementStyle: { color: '#1A56DB', fontWeight: 600 }, improvementRowSpan: 2, improvementTdStyle: improvementTd(),
+        note: '인풋풀 조립 인덱스, 컬럼 로딩/조립로봇 外', noteRowSpan: 2, noteTdStyle: noteTd(),
+        cells: [mCell('feasible', "가능('27)"), mCell('feasible', "가능('28)"), mCell('notApplied', '미적용(협의中) 1명'), mCell('feasible', "가능('29)"), mCell('negotiate', '협의必(ROI 42년) 1명'), mCell('negotiate', '협의必(회수불가) 1명'), mCell('negotiate', '협의必(회수불가) 1명'), mCell('negotiate', '협의必(회수불가) 1명')],
+      },
+      {
+        no: 4, process: '컬럼 조립', tag: '추정',
+        current: { label: '수동', style: currentManualStyle, onClick: undefined },
+        currentTdStyle: currentTd(),
+        showCount: false, countText: '', countRowSpan: 1, countStyle: countTextStyle, countTdStyle: countTd(),
+        showImprovement: false, improvement: '', improvementStyle: {}, improvementRowSpan: 1, improvementTdStyle: improvementTd(),
+        note: '', noteRowSpan: 1, noteTdStyle: noteTd(),
+        cells: [mCell('feasible', "가능('28)"), mCell('feasible', "가능('29)"), mCell('notApplied', '미적용(협의中) 1명'), mCell('feasible', "가능('30)"), mCell('negotiate', '협의必(ROI 45년) 1명'), mCell('negotiate', '협의必(회수불가) 1명'), mCell('negotiate', '협의必(회수불가) 1명'), mCell('negotiate', '협의必(회수불가) 1명')],
+      },
+    ];
+    const scr001Expansion = [
+      { line: 'A공장 1라인', target: "'27년", pct: 80, status: '진행중', statusStyle: badgeStyle('#E9F0FD', '#1A56DB') },
+      { line: 'A공장 2라인', target: "'29년", pct: 45, status: '진행중', statusStyle: badgeStyle('#E9F0FD', '#1A56DB') },
+      { line: 'B공장 1라인', target: "'28년", pct: 30, status: '계획', statusStyle: badgeStyle('#EEF1F4', '#4B5563') },
+      { line: '종합', target: "'30년", pct: 55, status: '진행중', statusStyle: badgeStyle('#E9F0FD', '#1A56DB') },
+    ].map((e) => ({
+      ...e,
+      trackStyle: { flex: 1, height: '8px', background: '#EEF1F4', borderRadius: '4px', overflow: 'hidden' },
+      barStyle: { width: e.pct + '%', height: '100%', background: '#1A56DB', borderRadius: '4px' },
+    }));
+
+    // ---- SCR-003 mock data ----
+    const scr003Filters = ['제품군', '제품', '권역', '공장', '엔진타입'].map((label) => ({ label }));
+    const scr003LineDefs = [
+      { label: '[BP] 조지아 대표차종', bp: true, rateFrom: 65, rateTo: 90, staffFrom: 5, staffTo: 2, deadline: "'28년", autoTotal: '13/17' },
+      { label: '조지아 2차종', rateFrom: 58, rateTo: 88, staffFrom: 6, staffTo: 2, deadline: "'28년", autoTotal: '11/17' },
+      { label: '울산 1차종', rateFrom: 52, rateTo: 85, staffFrom: 6, staffTo: 3, deadline: "'29년", autoTotal: '12/17' },
+      { label: '울산 2차종', rate: 47, staff: 8, deadline: '-', autoTotal: '9/15' },
+      { label: '벤전대 차종', rateFrom: 40, rateTo: 80, staffFrom: 8, staffTo: 4, deadline: "'30년", autoTotal: '9/15' },
+    ];
+    const autoTotalCell = (l) => ({ text: l.autoTotal, hasDelta: false, style: { textAlign: 'center', padding: '10px 12px', borderBottom: '1px solid #EEF1F4', color: '#374151' } });
+    const scr003LineCols = scr003LineDefs.map((l) => ({
+      label: l.label,
+      headStyle: l.bp ? bpHeadStyle : stickyHeadStyle,
+      headStyle2: l.bp ? { ...bpHeadStyle, minWidth: '140px' } : { ...stickyHeadStyle, minWidth: '140px' },
+    }));
+    const scr003LineColsRest = scr003LineCols.slice(1);
+    const scr003SummaryCols = [
+      { label: 'Best Practice', style: { textAlign: 'center', padding: '8px 16px', fontSize: '12px', fontWeight: 600, color: '#1F2937', borderBottom: '1px solid #E1E5EA', background: '#FDEEDC', minWidth: '110px' } },
+      { label: '국내/외 종합(계)', style: { textAlign: 'center', padding: '8px 16px', fontSize: '12px', fontWeight: 600, color: '#4B5563', borderBottom: '1px solid #E1E5EA', minWidth: '120px' } },
+      { label: '조지아 대표차종', style: { textAlign: 'center', padding: '8px 16px', fontSize: '12px', fontWeight: 600, color: '#4B5563', borderBottom: '1px solid #E1E5EA', minWidth: '110px' } },
+      { label: '울산 차종명', style: { textAlign: 'center', padding: '8px 16px', fontSize: '12px', fontWeight: 600, color: '#4B5563', borderBottom: '1px solid #E1E5EA', minWidth: '110px' } },
+      { label: '차종명', style: { textAlign: 'center', padding: '8px 16px', fontSize: '12px', fontWeight: 600, color: '#4B5563', borderBottom: '1px solid #E1E5EA', minWidth: '110px' } },
+      { label: '차종명', style: { textAlign: 'center', padding: '8px 16px', fontSize: '12px', fontWeight: 600, color: '#4B5563', borderBottom: '1px solid #E1E5EA', minWidth: '110px' } },
+      { label: '차종명', style: { textAlign: 'center', padding: '8px 16px', fontSize: '12px', fontWeight: 600, color: '#4B5563', borderBottom: '1px solid #E1E5EA', minWidth: '110px' } },
+    ];
+    const scr003SummaryRows = [
+      { label: '자동화율', indent: 16, cells: ['-', '-', '-', '-', '-', '-', '-'] },
+      { label: '자동공정 / 총 공정', indent: 16, cells: ['-', '-', '-', '11/17', '12/17', '9/15', '9/15'] },
+      { label: '교대운영', indent: 16, cells: ['-', '-', '3교대', '2교대', '2교대', '1교대', '2교대'] },
+      { label: 'UPH', indent: 16, cells: ['-', '-', '71UPH', '-', '-', '-', '-'] },
+      { label: '조립 인원 (직접)', indent: 16, cells: ['-', '-', '21명', '10명', '8명', '4명', '8명'] },
+      { label: '검사 인원 (간접)', indent: 16, cells: ['-', '-', '???', '-', '-', '-', '-'] },
+      { label: '총인원', indent: 16, cells: ['-', '-', '-', '-', '-', '-', '-'] },
+      { label: '총 성인화 (실적/계획)', indent: 16, cells: ['-', '-', '-', "'28년 0명/6명", "'27년 0명/4명", '-', "'30년 0명/2명"] },
+    ].map((r) => ({
+      ...r,
+      labelTdStyle: 'padding:10px 16px;border-bottom:1px solid #EEF1F4;font-weight:600;position:sticky;left:0;background:#fff;',
+      cellTdStyle: 'text-align:center;padding:10px 12px;border-bottom:1px solid #EEF1F4;color:#6B7280;',
+    }));
+    const scr003DetailCols = ['조지아', '울산', '차종명', '차종명', '차종명'];
+    const techBadge = (kind) => {
+      const map = { auto: ['#1E8E3E', '●'], partial: ['#B45309', '▲'], manual: ['#6B7280', 'X'] };
+      const [color, symbol] = map[kind];
+      return { symbol, style: { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '24px', height: '24px', borderRadius: '50%', background: color, color: '#fff', fontSize: '12px', fontWeight: 700 } };
+    };
+    const dash = { text: '-', hasPill: false, noPill: true, style: { textAlign: 'center', padding: '10px 12px', borderBottom: '1px solid #EEF1F4', color: '#C9CFD6' } };
+    const autoPillCell = { text: '● 자동', hasPill: true, noPill: false, style: { textAlign: 'center', padding: '10px 12px', borderBottom: '1px solid #EEF1F4' }, pill: badgeStyle('#EAF7EE', '#1E8E3E'), onClick: () => this.openVideo('이대치조정') };
+    const manualPlainCell = { text: 'X 수동', hasPill: false, noPill: true, style: { textAlign: 'center', padding: '10px 12px', borderBottom: '1px solid #EEF1F4', color: '#374151' } };
+    const detailStyle = { color: '#374151' };
+    const dashRow = () => [dash, dash, dash, dash, dash];
+    const scr003Matrix = [
+      { no: 1, process: '이대치조정', tech: techBadge('auto'), techOnClick: () => this.openVideo('이대치조정'), detail: '기술 확보 完', detailStyle, cells: [autoPillCell, dash, dash, dash, dash] },
+      { no: 2, process: '디프로딩(4WD)', tech: techBadge('partial'), techOnClick: undefined, detail: "기술개발 중('27)", detailStyle, cells: [manualPlainCell, dash, dash, dash, dash] },
+      { no: 3, process: '멤버로딩', tech: techBadge('auto'), techOnClick: () => this.openVideo('멤버로딩'), detail: '기술 확보 完', detailStyle, cells: dashRow() },
+      { no: 4, process: '리어 로위암 로딩', tech: techBadge('manual'), techOnClick: undefined, detail: '유동으로 인한 現기술 자동화 불가', detailStyle, cells: dashRow() },
+      { no: 6, process: '디프/멤버 가체결(4WD)', tech: techBadge('partial'), techOnClick: undefined, detail: "기술개발 중('29)", detailStyle, cells: dashRow() },
+      { no: 8, process: '디프/멤버 완체결(4WD)', tech: techBadge('auto'), techOnClick: () => this.openVideo('디프/멤버 완체결(4WD)'), detail: '기술 확보 完', detailStyle, cells: dashRow() },
+      { no: 10, process: '커플링 / 디프케리어 조립(4WD)', tech: techBadge('manual'), techOnClick: undefined, detail: '커플링 조립 난해로 現기술력 자동화 불가', detailStyle, cells: dashRow() },
+      { no: 11, process: '디프오일주입(4WD)', tech: techBadge('auto'), techOnClick: () => this.openVideo('디프오일주입(4WD)'), detail: '기술 확보 完', detailStyle, cells: dashRow() },
+      { no: 12, process: 'RR로위암/멤버 가체결', tech: techBadge('manual'), techOnClick: undefined, detail: '유동으로 인한 現기술 자동화 불가', detailStyle, cells: dashRow() },
+      { no: 13, process: '스텝바/멤버 가체결', tech: techBadge('auto'), techOnClick: () => this.openVideo('스텝바/멤버 가체결'), detail: '기술 확보 完', detailStyle, cells: dashRow() },
+      { no: 14, process: '리어 이버암/멤버가체결', tech: techBadge('manual'), techOnClick: undefined, detail: '체결부 유동으로 現 기술력 자동화 불가', detailStyle, cells: dashRow() },
+      { no: 15, process: '스텝바 링크/스텝바 가체결', tech: techBadge('manual'), techOnClick: undefined, detail: '체결부 유동으로 現 기술력 자동화 불가', detailStyle, cells: dashRow() },
+    ];
+
+    // ---- SCR-002 ----
+    const scr002Rows = [
+      { plant: 'A공장', line: '1라인', name: '용접', seq: 10, note: '-' },
+      { plant: 'A공장', line: '1라인', name: '조립', seq: 20, note: '-' },
+      { plant: 'A공장', line: '2라인', name: '검사', seq: 10, note: '신규 라인' },
+    ];
+
+    // ---- SCR-004 ----
+    const scr004Rows = [
+      { name: '볼트 체결', type: '조립', usage: 12, registered: '2026-01-10', deleteOnClick: () => this.openModal('deleteConfirm') },
+      { name: '와이어링', type: '배선', usage: 8, registered: '2026-02-15', deleteOnClick: () => this.openModal('deleteConfirm') },
+    ];
+
+    // ---- SCR-005 ----
+    const successStyle = badgeStyle('#E3F5E9', '#157A3D');
+    const failStyle = badgeStyle('#FCE8E7', '#C0201D');
+    const scr005Rows = [
+      { time: '2026-08-07 03:00:12', ifId: 'IF-003', type: '배치', count: '1,204', result: '성공', resultStyle: successStyle, reason: '-', rowStyle: {} },
+      { time: '2026-08-06 03:00:08', ifId: 'IF-003', type: '배치', count: '980', result: '실패', resultStyle: failStyle, reason: '원본 DB 연결 타임아웃', rowStyle: { cursor: 'pointer' }, onClick: () => this.openModal('ifError') },
+      { time: '2026-08-06 03:05:01', ifId: 'IF-003', type: '배치(재처리)', count: '980', result: '성공', resultStyle: successStyle, reason: '-', rowStyle: {} },
+    ];
+
+    // ---- SCR-006 ----
+    const progressStyle = badgeStyle('#E9F0FD', '#1A56DB');
+    const pendingStyle = badgeStyle('#FDEEDC', '#B45309');
+    const scr006Rows = [
+      { section: '차체', name: '차체 자동화 로드맵', period: '2026.01~2028.12', task: '용접 자동화', status: '진행중', statusStyle: progressStyle, onClick: () => this.selectScreen('SCR-007'), historyOnClick: () => this.openModal('history') },
+      { section: '조립', name: '조립 자동화 로드맵', period: '2026.03~2029.06', task: '코봇 도입', status: '계획', statusStyle: pendingStyle, onClick: () => this.selectScreen('SCR-007'), historyOnClick: () => this.openModal('history') },
+    ];
+    const scr006Stats = [
+      { label: '등록 로드맵', value: scr006Rows.length + '건' },
+      { label: '진행중', value: scr006Rows.filter((r) => r.status === '진행중').length + '건', color: '#1A56DB' },
+      { label: '계획', value: scr006Rows.filter((r) => r.status === '계획').length + '건', color: '#B45309' },
+    ];
+    const roadmapOptions = [{ id: 'body', label: '차체 자동화 로드맵' }, { id: 'assembly', label: '조립 자동화 로드맵' }];
+    const scr007TabStyle = (id) => ({
+      padding: '8px 16px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer',
+      fontWeight: selectedParentRoadmap === id ? 700 : 400,
+      color: selectedParentRoadmap === id ? '#1A56DB' : '#4B5563',
+      background: selectedParentRoadmap === id ? '#E9F0FD' : 'transparent',
+    });
+    const scr007Tabs = roadmapOptions.map((opt) => ({ ...opt, style: scr007TabStyle(opt.id), onClick: () => this.setState({ selectedParentRoadmap: opt.id }) }));
+
+    // ---- SCR-007 ----
+    const scr007Data = {
+      body: [
+        { name: '용접 로봇 도입', owner: '홍**', period: '2026.03~2026.09', status: '진행중', statusStyle: progressStyle },
+        { name: '검사공정 자동화', owner: '김**', period: '2026.06~2027.02', status: '계획', statusStyle: badgeStyle('#EEF1F4', '#4B5563') },
+      ],
+      assembly: [],
+    };
+    const scr007Rows = scr007Data[selectedParentRoadmap] || [];
+    const scr007Empty = scr007Rows.length === 0;
+
+    // ---- SCR-008 gantt ----
+    const ganttQuarters = ['26.Q1', 'Q2', 'Q3', 'Q4', '27.Q1', 'Q2', 'Q3', 'Q4', '28.Q1', 'Q2', 'Q3', 'Q4'];
+    const bar = (left, width, color, label) => ({
+      position: 'absolute', left: left + '%', width: width + '%', top: 0, height: '100%',
+      background: color, borderRadius: '3px', cursor: 'pointer', display: 'flex', alignItems: 'center',
+      paddingLeft: '6px', fontSize: '10px', color: '#fff', overflow: 'hidden', whiteSpace: 'nowrap',
+    });
+    const ganttRowsFull = [
+      { label: '차체 자동화 로드맵', indent: 12, weight: 600, barStyle: bar(0, 25, '#5B8DEF'), onClick: () => this.openModal('ganttDetail') },
+      { label: 'ㄴ 용접 로봇 도입', indent: 28, weight: 400, barStyle: bar(2, 8, '#9DC0F7'), onClick: () => this.openModal('ganttDetail') },
+      { label: 'ㄴ 검사공정 자동화', indent: 28, weight: 400, barStyle: bar(4, 10, '#9DC0F7'), onClick: () => this.openModal('ganttDetail') },
+      { label: '조립 자동화 로드맵', indent: 12, weight: 600, barStyle: bar(8, 33, '#F2A65A'), onClick: () => this.openModal('ganttDetail') },
+      { label: 'ㄴ 코봇 도입', indent: 28, weight: 400, barStyle: bar(9, 12, '#9DC0F7'), onClick: () => this.openModal('ganttDetail') },
+    ];
+    const ganttRows = (ganttView === 'summary' ? ganttRowsFull.filter((r) => r.weight === 600) : ganttRowsFull)
+      .map((r, i) => ({ ...r, rowBg: i % 2 === 0 ? '#fff' : '#FAFBFC' }));
+    const ganttYears = [
+      { label: "'26년", span: 4 }, { label: "'27년", span: 4 }, { label: "'28년", span: 4 },
+    ];
+
+    // ---- SCR-009 ----
+    const techPrCards = [
+      { title: '용접 로봇 도입', section: '차체', type: 'video', date: '2026-07-01', owner: '홍**', desc: '차체 용접공정에 6축 로봇을 도입한 사례입니다. 기존 수작업 대비 용접 품질 편차를 크게 줄였습니다.' },
+      { title: '검사 AI 적용', section: '검사', type: 'file', date: '2026-07-03', owner: '김**', fileName: '검사AI_적용사례.pdf', fileSize: '2.4MB' },
+      { title: '코봇 활용 사례', section: '조립', type: 'video', date: '2026-07-05', owner: '이**', desc: '협동로봇을 활용한 조립 라인 개선 사례입니다. 협소 공간에서도 안전하게 운용 가능합니다.' },
+      { title: '배선 자동화', section: '배선', type: 'text', date: '2026-07-08', owner: '박**', body: '배선 자동화 적용 배경과 효과를 정리한 기술 노트입니다.\n\n기존 수작업 배선 공정 대비 불량률을 40% 감소시켰으며, 1일 처리 물량은 1.6배 증가했습니다. 향후 타 라인 확대 적용을 검토 중입니다.' },
+      { title: '냉각 시스템 개선', section: '냉각', type: 'multi', date: '2026-07-10', owner: '최**', items: [
+        { type: 'video', desc: '냉각수 순환 자동화 적용 전/후 비교 영상입니다.' },
+        { type: 'file', fileName: '냉각시스템_개선보고서.pdf', fileSize: '1.1MB' },
+        { type: 'text', body: '냉각 효율을 15% 개선하고 설비 정지시간을 줄인 사례입니다. 관련 부품 표준화도 함께 진행했습니다.' },
+      ]},
+    ];
+    const TECH_PR_TYPE = {
+      video: { label: '동영상', color: '#1A56DB', bg: '#E9F0FD' },
+      file: { label: '파일', color: '#B45309', bg: '#FDEEDC' },
+      text: { label: '텍스트', color: '#157A3D', bg: '#EAF7EE' },
+      multi: { label: '복합자료', color: '#6B46C1', bg: '#F1EAFB' },
+    };
+    const techPrCardsView = techPrCards.map((c, i) => ({
+      ...c, typeInfo: TECH_PR_TYPE[c.type],
+      isVideoType: c.type === 'video', isFileType: c.type === 'file', isTextType: c.type === 'text', isMultiType: c.type === 'multi',
+      itemCount: c.items ? c.items.length : 0,
+      onClick: () => this.openTechPrDetail(i),
+    }));
+    const techPrDetail = techPrDetailIndex != null ? { ...techPrCards[techPrDetailIndex], typeInfo: TECH_PR_TYPE[techPrCards[techPrDetailIndex].type] } : null;
+    if (techPrDetail) {
+      techPrDetail.isVideoType = techPrDetail.type === 'video';
+      techPrDetail.isFileType = techPrDetail.type === 'file';
+      techPrDetail.isTextType = techPrDetail.type === 'text';
+      techPrDetail.isMultiType = techPrDetail.type === 'multi';
+      if (techPrDetail.items) {
+        techPrDetail.itemsView = techPrDetail.items.map((it) => ({
+          ...it, typeInfo: TECH_PR_TYPE[it.type],
+          isVideoType: it.type === 'video', isFileType: it.type === 'file', isTextType: it.type === 'text',
+        }));
+      }
+    }
+
+
+    // ---- SCR-010 ----
+    const scr010Rows = [
+      { title: '용접 로봇 도입', task: '용접 자동화', owner: '홍**', attachment: '동영상 1건', registered: '2026-07-01' },
+    ];
+
+    // ---- SCR-011 ----
+    const scr011Rows = [
+      { name: '26H1 협의체', section: '차체', agenda: '로드맵 리뷰', target: '이**', schedule: '2026-08-20', mailStatus: '발송완료', mailStyle: successStyle },
+    ];
+
+    // ---- SCR-012 ----
+    const scr012Rows = [
+      { name: '차체 mTRM', section: '차체', status: '활성', statusStyle: successStyle, registered: '2026-01-05' },
+    ];
+
+    // ---- SCR-013 mapping ----
+    const taskPlanMapping = { roadmapName: '차체 자동화 로드맵', detailTask: '용접 로봇 도입', status: '매핑완료', statusStyle: successStyle };
+
+    // ---- SCR-014 ----
+    const trendsData = [
+      { title: '글로벌 자동화 트렌드 A', views: 120, date: '2026-07-01', dept: '기획팀', owner: '박**', tag: '#자동화' },
+      { title: '신기술 소재 자료 B', views: 85, date: '2026-07-05', dept: '기획팀', owner: '이**', tag: '#신소재' },
+      { title: '기술개발 제안 C', views: 42, date: '2026-07-10', dept: '기획팀', owner: '최**', tag: '#제안' },
+      { title: '글로벌 자동화 트렌드 D', views: 200, date: '2026-07-14', dept: '기획팀', owner: '정**', tag: '#자동화' },
+    ];
+    const trendCards = trendsData.map((t, i) => ({ ...t, onClick: () => this.openTrendDetail(i) }));
+    const currentTrend = { ...trendsData[trendIndex], views: trendsData[trendIndex].views + 1 };
+
+    // ---- Modal config ----
+    const MODALS = {
+      registerProcess: { title: '공정 등록', confirm: '등록', size: 640, fields: [
+        { label: '공정명', requiredMark: '*', isText: true },
+        { label: 'Best Practice 지정', requiredMark: '', isSelect: true },
+        { label: '상태', requiredMark: '*', isSelect: true },
+        { label: '담당자', requiredMark: '*', isSelect: true },
+        { label: '첨부', requiredMark: '', isFile: true },
+      ]},
+      emailShare: { title: '이메일 공유', confirm: '전송', size: 480, fields: [
+        { label: '수신자', requiredMark: '*', isText: true },
+        { label: '메모', requiredMark: '', isTextarea: true },
+      ]},
+      cellDetail: { title: 'Best Practice 상세', confirm: '닫기', size: 640, fields: [
+        { label: '공정', requiredMark: '', isPlainText: true, value: '용접' },
+        { label: '내용', requiredMark: '', isPlainText: true, value: '자동용접 적용 사례' },
+        { label: '첨부 재생', requiredMark: '', isFile: true },
+      ]},
+      stdProcessRegister: { title: '표준공정 등록', confirm: '등록', size: 480, fields: [
+        { label: '공장', requiredMark: '*', isSelect: true },
+        { label: '라인', requiredMark: '*', isSelect: true },
+        { label: '표준공정명', requiredMark: '*', isText: true },
+        { label: '순서', requiredMark: '*', isText: true },
+      ]},
+      stdTaskRegister: { title: '표준 작업명 등록', confirm: '등록', size: 480, fields: [
+        { label: '작업명', requiredMark: '*', isText: true },
+        { label: '공정유형', requiredMark: '*', isSelect: true },
+      ]},
+      deleteConfirm: { title: '삭제 확인', confirm: '삭제', size: 480, fields: [
+        { label: '안내', requiredMark: '', isPlainText: true, value: '이 항목은 12개 모듈에서 사용 중입니다. 계속하시겠습니까?' },
+      ]},
+      roadmapRegister: { title: '통합 로드맵 등록', confirm: '등록', size: 640, fields: [
+        { label: '분과', requiredMark: '*', isSelect: true },
+        { label: '로드맵명', requiredMark: '*', isText: true },
+        { label: '기간(시작)', requiredMark: '*', isDate: true },
+        { label: '기간(종료)', requiredMark: '*', isDate: true },
+        { label: '대표과제', requiredMark: '', isText: true },
+      ]},
+      history: { title: '개정 이력', confirm: '닫기', size: 640, fields: [
+        { label: 'v1.2', requiredMark: '', isPlainText: true, value: '2026-07-20 · 기간 연장 (2028.12까지)' },
+        { label: 'v1.1', requiredMark: '', isPlainText: true, value: '2026-04-01 · 대표과제 변경' },
+        { label: 'v1.0', requiredMark: '', isPlainText: true, value: '2026-01-05 · 최초 등록' },
+      ]},
+      detailTaskRegister: { title: '상세과제 등록', confirm: '등록', size: 640, fields: [
+        { label: '과제명', requiredMark: '*', isText: true },
+        { label: '담당자', requiredMark: '*', isSelect: true },
+        { label: '기간(시작)', requiredMark: '*', isDate: true },
+        { label: '기간(종료)', requiredMark: '*', isDate: true },
+        { label: '진행상태', requiredMark: '*', isSelect: true },
+      ]},
+      ganttDetail: { title: '과제 상세', confirm: '닫기', size: 640, fields: [
+        { label: '과제명', requiredMark: '', isPlainText: true, value: '용접 로봇 도입' },
+        { label: '기간', requiredMark: '', isPlainText: true, value: '2026.03 ~ 2026.09' },
+        { label: '상태', requiredMark: '', isPlainText: true, value: '진행중' },
+      ]},
+      techPrInquiry: { title: '기술 문의/제안', confirm: '전송', size: 640, fields: [
+        { label: '대상 소재', requiredMark: '', isPlainText: true, value: '용접 로봇 도입' },
+        { label: '문의/제안 내용', requiredMark: '*', isTextarea: true },
+      ]},
+      materialRegister: { title: '자료 등록', confirm: '등록', size: 800, fields: [
+        { label: '제목', requiredMark: '*', isText: true },
+        { label: '과제', requiredMark: '*', isSelect: true },
+        { label: '담당자', requiredMark: '*', isSelect: true },
+        { label: '상세 설명', requiredMark: '', isTextarea: true },
+        { label: '첨부 문서', requiredMark: '', isFile: true },
+        { label: '첨부 동영상', requiredMark: '', isFile: true },
+      ]},
+      councilRegister: { title: '협의체 등록', confirm: '등록', size: 480, fields: [
+        { label: '협의체명', requiredMark: '*', isText: true },
+        { label: '분과', requiredMark: '*', isSelect: true },
+        { label: '의제', requiredMark: '', isText: true },
+        { label: '대상 분과장', requiredMark: '*', isSelect: true },
+        { label: '일정', requiredMark: '*', isDate: true },
+      ]},
+      ifError: { title: 'I/F 오류 로그', confirm: '닫기', size: 640, fields: [
+        { label: '오류 내용', requiredMark: '', isPlainText: true, value: '원본 DB 연결 타임아웃 (Connection timeout after 30000ms)' },
+      ]},
+      autoVideo: { title: `자동화 설비 동영상 — ${videoProcess || ''}`, confirm: '닫기', size: 720, fields: [
+        { label: '공정', requiredMark: '', isPlainText: true, value: videoProcess || '' },
+        { label: '설비 영상', requiredMark: '', isVideo: true },
+      ]},
+    };
+    const modal = activeModal ? MODALS[activeModal] : null;
+
+    // ---- Dashboards ----
+    const kpiCard = (label, value, color) => ({ label, value, color: color || '#1F2937' });
+    const linkCard = (label, desc, id) => ({ label, desc, onClick: () => this.selectScreen(id) });
+
+    const dashAutoKpis = [
+      kpiCard('전체 자동화율', '65%', '#157A3D'),
+      kpiCard('부품공정 자동화율', '65%'),
+      kpiCard('모듈공정 자동화율', '68%'),
+      kpiCard('등록 표준공정', '3건'),
+      kpiCard('I/F 최근 실패', '1건', '#C0201D'),
+    ];
+    const dashAutoLinks = [
+      linkCard('부품 공정 자동화 현황', '공장/라인별 자동화 현황 조회', 'SCR-001'),
+      linkCard('표준공정 마스터 관리', '표준공정 등록/관리', 'SCR-002'),
+      linkCard('모듈 공정 자동화 현황', '모듈 공정 자동화 비교', 'SCR-003'),
+      linkCard('모듈 표준 작업명 관리', '표준 작업명 등록/관리', 'SCR-004'),
+      linkCard('I/F 실행결과 관리', '배치 연동 실행 이력', 'SCR-005'),
+    ];
+
+    const dashMtrmKpis = [
+      kpiCard('등록 로드맵', '2건'),
+      kpiCard('진행중 상세과제', '1건', '#1A56DB'),
+      kpiCard('예정 협의체', '1건'),
+      kpiCard('Tech PR 자료', '4건'),
+      kpiCard('등록 기술동향', '4건'),
+    ];
+    const dashMtrmLinks = [
+      linkCard('통합 로드맵 관리', '분과별 통합 로드맵', 'SCR-006'),
+      linkCard('상세과제 로드맵 관리', '로드맵별 상세과제', 'SCR-007'),
+      linkCard('mTRM 통합 로드맵 대시보드', '간트차트 조회', 'SCR-008'),
+      linkCard('생산기술 Tech PR', '과제별 자료 그리드', 'SCR-009'),
+      linkCard('Tech PR 관리자', '자료 등록/관리', 'SCR-010'),
+      linkCard('mTRM 협의체 관리', '협의체 등록/메일발송', 'SCR-011'),
+      linkCard('mTRM 관리', 'mTRM 등록/관리', 'SCR-012'),
+      linkCard('기술과제 계획 등록', 'mTRM 연동 영역', 'SCR-013'),
+      linkCard('기술동향', '글로벌 트렌드/신기술', 'SCR-014'),
+    ];
+
+    // ---- Dashboard 1 visualizations ----
+    const rateBarColor = (v) => (v >= 70 ? '#1E8E3E' : v >= 40 ? '#B45309' : '#C0201D');
+
+    // ---- Dashboard 1: part vs module comparison (from SCR-001 / SCR-003 data) ----
+    const moduleAutoBars = scr003LineDefs.map((l) => {
+      const [auto, total] = l.autoTotal.split('/').map(Number);
+      const pct = Math.round((auto / total) * 100);
+      return {
+        label: l.label.replace('[BP] ', ''), pct, ratio: l.autoTotal,
+        trackStyle: { flex: 1, height: '10px', background: '#EEF1F4', borderRadius: '5px', overflow: 'hidden' },
+        barStyle: { width: pct + '%', height: '100%', background: rateBarColor(pct), borderRadius: '5px' },
+        labelStyle: { fontSize: '13px', color: '#374151', width: '110px', flexShrink: 0 },
+        valueStyle: { fontSize: '12px', color: '#6B7280', width: '50px', textAlign: 'right', flexShrink: 0 },
+      };
+    });
+    const moduleDirectStaff = 21 + 10 + 8 + 4 + 8;
+
+    const dashAutoRateBars = [
+      { label: 'A공장 1라인', value: 70 },
+      { label: 'A공장 2라인', value: 58 },
+      { label: '종합계', value: 65, emphasis: true },
+    ].map((r) => ({
+      ...r,
+      pct: r.value + '%',
+      trackStyle: { flex: 1, height: '10px', background: '#EEF1F4', borderRadius: '5px', overflow: 'hidden' },
+      barStyle: { width: r.value + '%', height: '100%', background: rateBarColor(r.value), borderRadius: '5px' },
+      labelStyle: { fontSize: '13px', color: '#374151', fontWeight: r.emphasis ? 600 : 400, width: '96px', flexShrink: 0 },
+      valueStyle: { fontSize: '13px', color: rateBarColor(r.value), fontWeight: 600, width: '40px', textAlign: 'right', flexShrink: 0 },
+    }));
+    const overallRate = 65;
+    const dashAutoDonutStyle = {
+      width: '120px', height: '120px', borderRadius: '50%',
+      background: `conic-gradient(#1A56DB 0% ${overallRate}%, #EEF1F4 ${overallRate}% 100%)`,
+      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+    };
+    const dashAutoDonutInnerStyle = { width: '86px', height: '86px', borderRadius: '50%', background: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' };
+    let autoCount = 0, manualCount = 0;
+    scr001Matrix.forEach((r) => r.cells.forEach((c) => { if (c.label.includes('자동')) autoCount++; else if (c.label.includes('협의') || c.label.includes('가능')) manualCount++; }));
+    const matrixTotal = autoCount + manualCount;
+    const dashAutoMatrixBar = [
+      { key: 'auto', label: '자동', count: autoCount, pct: Math.round((autoCount / matrixTotal) * 100), color: '#1E8E3E' },
+      { key: 'manual', label: '수동', count: manualCount, pct: Math.round((manualCount / matrixTotal) * 100), color: '#5F6368' },
+    ].map((s) => ({ ...s, segStyle: { width: s.pct + '%', background: s.color, height: '100%' } }));
+
+    const recentIfLogs = scr005Rows.slice(0, 3);
+
+    // ---- Dashboard 2 visualizations ----
+    const dashMtrmGanttRows = ganttRowsFull.filter((r) => r.weight === 600);
+    const roadmapProgress = [
+      { name: '차체 자동화 로드맵', status: '진행중', statusStyle: progressStyle, pct: 60 },
+      { name: '조립 자동화 로드맵', status: '승인대기', statusStyle: pendingStyle, pct: 25 },
+    ].map((r) => ({
+      ...r,
+      trackStyle: { flex: 1, height: '10px', background: '#EEF1F4', borderRadius: '5px', overflow: 'hidden' },
+      barStyle: { width: r.pct + '%', height: '100%', background: '#1A56DB', borderRadius: '5px' },
+    }));
+    const dashTrendPreview = trendsData.slice(0, 3).map((t, i) => ({ ...t, onClick: () => { this.setState({ currentScreen: 'SCR-014', trendView: 'detail', trendIndex: i }); } }));
+
+    // ---- MTRM-MAIN: combined 통합 로드맵 / Tech PR / 기술동향 dashboard ----
+    const mainGanttRows = ganttRowsFull.filter((r) => r.weight === 600).map((r, i) => ({ ...r, onClick: () => this.selectScreen('SCR-008'), rowBg: i % 2 === 0 ? '#fff' : '#FAFBFC' }));
+    const mainTechPrPreview = techPrCardsView.slice(0, 3);
+    const mainTrendPreview = trendsData.slice(0, 3).map((t, i) => ({ ...t, onClick: () => { this.setState({ currentScreen: 'SCR-014', trendView: 'detail', trendIndex: i }); } }));
+    const goToScreen = (id) => () => this.selectScreen(id);
+
+    // ---- Flow map ----
+    const KIND = {
+      'DASH-AUTO': 'dashboard', 'SCR-001': 'table', 'SCR-002': 'table', 'SCR-003': 'table', 'SCR-004': 'table', 'SCR-005': 'table',
+      'DASH-MTRM': 'dashboard', 'SCR-006': 'table', 'SCR-007': 'table', 'SCR-008': 'gantt', 'SCR-009': 'cards', 'SCR-010': 'table',
+      'SCR-011': 'table', 'SCR-012': 'table', 'SCR-013': 'form', 'SCR-014': 'cards',
+    };
+    const buildFlow = (ids) => ids.map((id, i) => {
+      const kind = KIND[id];
+      return {
+        id, label: SCREENS[id].name, screenId: id,
+        onClick: () => this.selectScreen(id),
+        isLast: i === ids.length - 1,
+        isTable: kind === 'table', isCards: kind === 'cards', isGantt: kind === 'gantt', isForm: kind === 'form', isDashboard: kind === 'dashboard',
+      };
+    });
+    const flowAuto = buildFlow(['DASH-AUTO', 'SCR-001', 'SCR-002', 'SCR-003', 'SCR-004', 'SCR-005']);
+    const flowMtrm = buildFlow(['DASH-MTRM', 'SCR-006', 'SCR-007', 'SCR-008', 'SCR-009', 'SCR-010', 'SCR-011', 'SCR-012', 'SCR-013', 'SCR-014']);
+
+    const buildStepFlow = (steps, color) => steps.map((s, i) => ({
+      ...s,
+      circleStyle: {
+        width: '36px', height: '36px', borderRadius: '50%', background: color, color: '#fff',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: 700,
+        cursor: s.onClick ? 'pointer' : 'default', flexShrink: 0,
+      },
+      hasNext: i < steps.length - 1,
+    }));
+    // ---- NAV-OPT: sidebar accessibility/usability comparison ----
+    const ICON_PATH = {
+      flow: 'M4 5h16M4 12h10M4 19h7', dash: 'M4 13h4v7H4zM10 8h4v12h-4zM16 4h4v16h-4z',
+      table: 'M4 6h16M4 12h16M4 18h16', cards: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z',
+      form: 'M6 3h12v18H6zM9 8h6M9 12h6M9 16h4',
+    };
+    const navOptGroups = NAV.map((g) => {
+      const collapsed = !!navOptCollapsed[g.title];
+      return {
+        title: g.title,
+        collapsed,
+        chevronStyle: { transition: 'transform .15s', transform: collapsed ? 'rotate(-90deg)' : 'rotate(0deg)', display: 'inline-block', fontSize: '10px', color: '#9CA3AF' },
+        onToggle: () => this.toggleNavOptGroup(g.title),
+        items: collapsed ? [] : g.items.filter((id) => id !== 'DASH-AUTO' && id !== 'DASH-MTRM').map((id) => {
+          const active = id === currentScreen;
+          return {
+            id, label: SCREENS[id].name, admin: SCREENS[id].admin,
+            onClick: () => this.selectScreen(id),
+            iconPath: ICON_PATH[NAV_ICON[id]] || ICON_PATH.table,
+            rowStyle: {
+              display: 'flex', alignItems: 'center', gap: '10px', minHeight: '44px', padding: '8px 12px',
+              borderRadius: '6px', cursor: 'pointer', fontSize: '13px',
+              fontWeight: active ? 700 : 400,
+              color: active ? '#1A56DB' : '#374151',
+              background: active ? '#E9F0FD' : 'transparent',
+              borderLeft: active ? '3px solid #1A56DB' : '3px solid transparent',
+            },
+          };
+        }),
+      };
+    });
+
+    const flowRegister = buildStepFlow([
+      { step: 1, role: '현장/라인 담당자', label: '작업내용 등록 (SCR-013)', onClick: () => this.selectScreen('SCR-013') },
+      { step: 2, role: '생기 업무담당자', label: '등록 내용 검토' },
+      { step: 3, role: '생기 업무담당자', label: '공정 상세현황 반영 (SCR-001·003)', onClick: () => this.selectScreen('SCR-001') },
+      { step: 4, role: '시스템', label: '대시보드 자동 갱신 (DASH-AUTO·MTRM)', onClick: () => this.selectScreen('DASH-AUTO') },
+    ], '#1A56DB');
+    const flowLookup = buildStepFlow([
+      { step: 1, role: '경영진 · 의사결정자', label: '통합 대시보드 확인', onClick: () => this.selectScreen('DASH-AUTO') },
+      { step: 2, role: '경영진 · 의사결정자', label: '공정별 상세 드릴다운 (SCR-001·003)', onClick: () => this.selectScreen('SCR-001') },
+      { step: 3, role: '경영진 · 의사결정자', label: 'Best Practice·동영상 확인' },
+      { step: 4, role: '경영진 · 의사결정자', label: '중장기 로드맵/과제 확인 (DASH-MTRM)', onClick: () => this.selectScreen('DASH-MTRM') },
+    ], '#1E8E3E');
+
+    return {
+      currentMeta,
+      navGroups,
+      isFLOWMAP: currentScreen === 'FLOW-MAP',
+      isNAVOPT: currentScreen === 'NAV-OPT',
+      navOptGroups,
+      flowAuto, flowMtrm, flowRegister, flowLookup,
+      isDASHAUTO: currentScreen === 'DASH-AUTO',
+      isDASHMTRM: currentScreen === 'DASH-MTRM',
+      dashAutoKpis, dashAutoLinks, dashMtrmKpis, dashMtrmLinks,
+      dashAutoRateBars, dashAutoDonutStyle, dashAutoDonutInnerStyle, overallRate,
+      dashAutoMatrixBar, matrixTotal, recentIfLogs,
+      moduleAutoBars, moduleDirectStaff,
+      goToSCR003: (e) => { e.preventDefault(); this.setState({ currentScreen: 'SCR-003' }); },
+      dashMtrmGanttRows, ganttQuarters, roadmapProgress, dashTrendPreview,
+      goToSCR001: this.goToSCR001,
+      isSCR001: currentScreen === 'SCR-001',
+      isSCR002: currentScreen === 'SCR-002',
+      isSCR003: currentScreen === 'SCR-003',
+      isSCR004: currentScreen === 'SCR-004',
+      isSCR005: currentScreen === 'SCR-005',
+      isSCR006: currentScreen === 'SCR-006',
+      isSCR007: currentScreen === 'SCR-007',
+      isSCR008: currentScreen === 'SCR-008',
+      isSCR009: currentScreen === 'SCR-009',
+      isSCR010: currentScreen === 'SCR-010',
+      isSCR011: currentScreen === 'SCR-011',
+      isSCR012: currentScreen === 'SCR-012',
+      isSCR013: currentScreen === 'SCR-013',
+      isSCR014: currentScreen === 'SCR-014',
+
+      tabPartOnClick: () => this.selectScreen('SCR-001'),
+      tabModuleOnClick: () => this.selectScreen('SCR-003'),
+      tabPartOnClickFromModule: () => this.selectScreen('SCR-001'),
+      tabModuleOnClickActive: () => this.selectScreen('SCR-003'),
+      tabPartStyle: tabActive,
+      tabModuleStyleInactive: tabInactive,
+      tabPartStyleInactive: tabInactive,
+      tabModuleStyle: tabActive,
+
+      scr001Filters, scr001LineCols, scr001LineColsRest, scr001SummaryRows, scr001Matrix, scr001Expansion, scr001MatrixLineLabel,
+      openRegisterProcess: () => this.openModal('registerProcess'),
+      openEmailShare: () => this.openModal('emailShare'),
+
+      scr003Filters, scr003Warning: true,
+      scr003LineCols, scr003LineColsRest, scr003SummaryCols, scr003SummaryRows, scr003Matrix, scr003DetailCols,
+
+      scr002Rows, openStdProcessRegister: () => this.openModal('stdProcessRegister'),
+      scr004Rows, openStdTaskRegister: () => this.openModal('stdTaskRegister'),
+      scr005Rows,
+
+      scr006Rows, scr006Stats, roadmapOptions, scr007Tabs,
+      openRoadmapRegister: () => this.openModal('roadmapRegister'),
+      goToGantt: this.goToGantt,
+
+      selectedParentRoadmap, onParentRoadmapChange: this.onParentRoadmapChange,
+      scr007Rows, scr007Empty,
+      openDetailTaskRegister: () => this.openModal('detailTaskRegister'),
+
+      ganttQuarters, ganttRows, ganttYears,
+      ganttSummaryChecked: ganttView === 'summary',
+      ganttFullChecked: ganttView === 'full',
+      ganttSummaryWeight: ganttView === 'summary' ? 700 : 400,
+      ganttSummaryColor: ganttView === 'summary' ? '#1A56DB' : '#4B5563',
+      ganttSummaryBg: ganttView === 'summary' ? '#E9F0FD' : 'transparent',
+      ganttFullWeight: ganttView === 'full' ? 700 : 400,
+      ganttFullColor: ganttView === 'full' ? '#1A56DB' : '#4B5563',
+      ganttFullBg: ganttView === 'full' ? '#E9F0FD' : 'transparent',
+      setViewSummary: this.setViewSummary, setViewFull: this.setViewFull,
+
+      techPrCardsView, techPrDetail, openTechPrInquiry: () => this.openModal('techPrInquiry'), closeTechPrDetail: this.closeTechPrDetail,
+      isMTRMMAIN: currentScreen === 'MTRM-MAIN',
+      scr006Stats, mainGanttRows, mainTechPrPreview, mainTrendPreview,
+      goToSCR006: goToScreen('SCR-006'), goToSCR008: goToScreen('SCR-008'), goToSCR009: goToScreen('SCR-009'), goToSCR014: goToScreen('SCR-014'),
+
+      scr010Rows, openMaterialRegister: () => this.openModal('materialRegister'),
+      scr011Rows, openCouncilRegister: () => this.openModal('councilRegister'),
+      scr012Rows, openDeleteConfirm: () => this.openModal('deleteConfirm'),
+
+      taskPlanMapping, onTaskPlanRoadmapChange: this.onTaskPlanRoadmapChange,
+
+      isTrendList: trendView === 'list',
+      isTrendDetail: trendView === 'detail',
+      trendCards, currentTrend,
+      backToTrendList: this.backToTrendList,
+      prevTrend: this.prevTrend, nextTrend: this.nextTrend,
+      trendPrevDisabled: trendIndex === 0,
+      trendNextDisabled: trendIndex === trendsData.length - 1,
+      trendPrevStyle: { height: '32px', padding: '0 14px', border: '1px solid #C9CFD6', borderRadius: '4px', background: '#fff', cursor: trendIndex === 0 ? 'default' : 'pointer', opacity: trendIndex === 0 ? 0.4 : 1 },
+      trendNextStyle: { height: '32px', padding: '0 14px', border: '1px solid #C9CFD6', borderRadius: '4px', background: '#fff', cursor: trendIndex === trendsData.length - 1 ? 'default' : 'pointer', opacity: trendIndex === trendsData.length - 1 ? 0.4 : 1 },
+
+      runSearch: this.runSearch,
+
+      activeModal,
+      modalTitle: modal ? modal.title : '',
+      modalConfirmLabel: modal ? modal.confirm : '',
+      modalFields: modal ? modal.fields : [],
+      modalBoxStyle: { width: (modal ? modal.size : 480) + 'px', maxHeight: '70vh', background: '#fff', borderRadius: '4px', display: 'flex', flexDirection: 'column', boxShadow: '0 8px 30px rgba(0,0,0,0.2)' },
+      closeModal: this.closeModal,
+    };
+  }
+}
+</script>
+</body>
+</html>
+

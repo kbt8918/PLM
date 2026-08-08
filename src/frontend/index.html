@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PNDES 생기포털 - 공정 자동화 현황 / 중장기 방향성 공유 (프로토타입)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/common.css">
+</head>
+<body>
+
+<!--
+  PNDES 생기포털 신규 메뉴(공정 자동화 현황 / 중장기 방향성 공유) 프론트엔드 프로토타입.
+  근거: Claude Design 프로토타입(PNDES Portal Prototype.dc.html), 03.구현문서/design-style-guide.md.
+  설계 검토·프로토타이핑용 (CLAUDE.md Tech Stack 지침) — 실 배포 시 PNDES 공통 UI 컴포넌트/JSP 레이아웃으로 대체합니다.
+  헤더/GNB/좌측 메뉴 트리는 PNDES 기존 공통 컴포넌트를 재사용하는 자리이며, 여기서는 목업으로 대체했습니다.
+-->
+<div id="app-shell">
+  <header id="gnb-top"></header>
+  <div id="app-body">
+    <aside id="gnb-side"></aside>
+    <main id="content"></main>
+  </div>
+</div>
+
+<div id="modal-root"></div>
+
+<!-- jQuery: PNDES 공통 UI 컴포넌트 라이브러리 연동 전까지 CDN 참조로 대체 -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="js/data.js"></script>
+<script src="js/render.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
