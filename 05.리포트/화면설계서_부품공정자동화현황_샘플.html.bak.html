@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLM 생기포털 - 부품 공정 자동화 현황 (샘플 와이어프레임)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; box-sizing: border-box; }
+  body { background: #f8f9fa; margin: 0; }
+
+  .tab-btn { transition: all 0.15s; background: #fff; border: none; cursor: pointer; }
+  .tab-btn:hover { background: #e9ecef; }
+  .tab-btn.active { background: #343a40; color: #fff; }
+
+  .screen-section { scroll-margin-top: 48px; position: relative; z-index: 1; }
+
+  .badge { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 9999px; font-size: 11px; font-weight: 600; }
+  .badge-dark { background: #343a40; color: #fff; }
+  .badge-light { background: #e9ecef; color: #495057; }
+  .badge-outline { background: #fff; color: #495057; border: 1px solid #ced4da; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { background: #e9ecef; text-align: center; padding: 8px 8px; font-weight: 600; color: #495057; border: 1px solid #dee2e6; font-size: 11px; }
+  td { padding: 8px 8px; border: 1px solid #e9ecef; color: #343a40; text-align: center; }
+
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 16px; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer; border: none; }
+  .btn-dark { background: #495057; color: #fff; }
+  .btn-outline { background: #fff; color: #495057; border: 1px solid #ced4da; }
+
+  .card { background: #fff; border-radius: 10px; border: 1px solid #dee2e6; overflow: visible; }
+  .card-header { padding: 14px 20px; border-bottom: 1px solid #e9ecef; font-weight: 600; font-size: 14px; color: #212529; }
+  .card-body { padding: 18px 20px; }
+
+  .input { padding: 8px 12px; border: 1px solid #ced4da; border-radius: 6px; font-size: 12px; outline: none; width: 100%; background:#fff; color:#495057; }
+
+  .screen-id-badge { display: inline-flex; align-items: center; padding: 3px 12px; background: #e9ecef; border: 1px solid #ced4da; border-radius: 6px; font-size: 12px; font-weight: 600; color: #495057; margin-right: 8px; }
+  .breadcrumb { font-size: 12px; color: #adb5bd; }
+  .meta-box { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 16px 20px; margin-bottom: 20px; }
+  .meta-box .meta-label { font-size: 11px; color: #adb5bd; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+  .meta-box .meta-value { font-size: 13px; color: #343a40; margin-top: 2px; }
+
+  .indicator { position: absolute; z-index: 9999; width: 22px; height: 22px; border-radius: 50%; background: #e67700; color: #fff; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; line-height: 1; box-shadow: 0 2px 6px rgba(230,119,0,0.35); }
+  .ind-container { position: relative; overflow: visible !important; }
+
+  .desc-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 0; }
+  .desc-table th { background: #343a40; color: #fff; padding: 8px 10px; text-align: left; font-size: 11px; border: 1px solid #343a40; }
+  .desc-table td { padding: 8px 10px; border: 1px solid #dee2e6; color: #343a40; vertical-align: top; line-height: 1.5; }
+  .desc-table tr:nth-child(even) td { background: #f8f9fa; }
+  .desc-table .num { font-weight: 700; text-align: center; width: 1%; white-space: nowrap; color: #e67700; }
+  .desc-table .col-area { width: 60px; min-width: 60px; font-size: 11px; color: #6c757d; vertical-align: top; }
+  .cond-label { font-weight: 600; color: #343a40; }
+
+  .screen-section:not(#cover-page) { display: grid; grid-template-columns: 1fr 480px; grid-template-rows: auto 1fr; }
+  .screen-section:not(#cover-page) .meta-box { grid-column: 1 / -1; }
+  .screen-section:not(#cover-page) .wireframe-wrap { grid-column: 1; grid-row: 2; }
+  .screen-section:not(#cover-page) .desc-wrap { grid-column: 2; grid-row: 2; position: sticky; top: 52px; max-height: calc(100vh - 60px); overflow-y: auto; margin: 0 !important; padding: 16px; border-left: 2px solid #dee2e6; background: #fff; align-self: start; }
+  .desc-wrap h3 { font-size: 14px !important; margin: 0 0 10px 0 !important; }
+
+  .download-btns { position: absolute; top: 60px; right: 32px; display: flex; gap: 8px; z-index: 10; }
+  .download-btns button { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); color: #ced4da; padding: 6px 16px; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 6px; }
+  .download-btns button:hover { background: rgba(255,255,255,0.15); color: #fff; border-color: rgba(255,255,255,0.3); }
+
+  @media print {
+    @page { size: landscape; margin: 8mm; }
+    .no-print, .download-btns { display: none !important; }
+    body { background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .screen-section { page-break-before: always; position: static !important; z-index: auto !important; scroll-margin-top: 0 !important; }
+    .screen-section:not(#cover-page) { display: grid !important; grid-template-columns: 1fr 480px !important; page-break-inside: avoid; }
+    .desc-wrap { position: static !important; max-height: none !important; overflow: visible !important; }
+    .wireframe-wrap { overflow: hidden !important; }
+    .meta-box { margin: 0 24px !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ==================== COVER PAGE ==================== -->
+<div id="cover-page" class="screen-section active">
+  <div style="min-height:100vh; display:flex; align-items:center; justify-content:center; background: linear-gradient(135deg, #343a40 0%, #212529 100%); position:relative;">
+    <div class="download-btns no-print">
+      <button id="btn-pdf" onclick="downloadPDF(event)">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg>
+        PDF
+      </button>
+    </div>
+    <div style="text-align:center; color:#fff; max-width:800px; padding:40px;">
+      <div style="font-size:14px; letter-spacing:4px; color:#adb5bd; margin-bottom:20px; font-weight:600;">SCREEN DESIGN DOCUMENT (SAMPLE)</div>
+      <h1 style="font-size:36px; font-weight:700; margin:0 0 12px 0; line-height:1.3;">부품 공정 자동화 현황 — 화면 샘플</h1>
+      <div style="width:80px; height:3px; background:#adb5bd; margin:24px auto;"></div>
+      <p style="font-size:14px; color:#adb5bd; line-height:1.8; margin-bottom:40px;">
+        PLM 생기포털 고도화 프로젝트 — 화면설계서 부품 공정 자동화 현황 영역 검토용 샘플 와이어프레임입니다.<br>
+        완성도 확인 후 보정 작업을 진행합니다. 본 파일은 기존 화면설계서 산출물과 별개의 독립 파일입니다.
+      </p>
+      <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:26px; text-align:left; margin-bottom:40px;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; font-size:13px;">
+          <div><span style="color:#6c757d;">Project</span><br><span style="color:#e9ecef; font-weight:600;">PLM 생기포털 고도화</span></div>
+          <div><span style="color:#6c757d;">Document Type</span><br><span style="color:#e9ecef; font-weight:600;">Screen Design Sample (Wireframe)</span></div>
+          <div><span style="color:#6c757d;">Version</span><br><span style="color:#e9ecef; font-weight:600;">Draft 0.1</span></div>
+          <div><span style="color:#6c757d;">Total Screens</span><br><span style="color:#e9ecef; font-weight:600;">1 (샘플)</span></div>
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr; gap:6px; text-align:left; font-size:13px;">
+        <div style="padding:8px 14px; background:rgba(255,255,255,0.04); border-radius:6px; color:#adb5bd;"><span style="color:#dee2e6; font-weight:600;">SCR-001</span> 부품 공정 자동화 현황</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== TAB NAVIGATION ==================== -->
+<div id="tab-nav" class="no-print" style="position:fixed; top:0; left:0; right:0; z-index:1000; background:#fff; border-bottom:1px solid #dee2e6; padding:8px 16px; overflow-x:auto; white-space:nowrap; display:flex; align-items:center;">
+  <button class="tab-btn active" onclick="showScreen('cover-page',this)" style="padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer; margin-right:2px; font-weight:500;">Cover</button>
+  <button class="tab-btn" onclick="showScreen('scr-001',this)" style="padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer; margin-right:2px;">SCR-001 부품 공정 자동화 현황</button>
+</div>
+
+<!-- ==================== SCR-001 부품 공정 자동화 현황 ==================== -->
+<div id="scr-001" class="screen-section">
+  <div class="meta-box" style="margin:8px 24px 0 24px;">
+    <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+      <span class="screen-id-badge">SCR-001</span>
+      <div><span class="meta-label">Screen</span><div class="meta-value" style="font-weight:600; font-size:15px;">부품 공정 자동화 현황</div></div>
+      <div style="margin-left:24px;"><span class="meta-label">Breadcrumb</span><div class="meta-value">PNDES &gt; 생기포털 &gt; 공정 자동화 현황 &gt; 부품 공정 자동화 현황</div></div>
+      <div style="margin-left:24px;"><span class="meta-label">Status</span><div class="meta-value">와이어프레임 (샘플, 보정 예정)</div></div>
+    </div>
+  </div>
+
+  <div class="wireframe-wrap" style="display:flex; margin:0 24px 24px 24px; border-radius:10px; overflow:visible; border:1px solid #dee2e6; min-height:calc(100vh - 140px); background:#fff;">
+    <!-- LEFT SIDEBAR -->
+    <div style="width:220px; min-height:100%; background:#343a40; padding:16px 0; flex-shrink:0;">
+      <div style="padding:0 18px 14px 18px; border-bottom:1px solid rgba(255,255,255,0.08); font-size:13px; color:#f8f9fa; font-weight:700;">공정 자동화 현황</div>
+      <nav style="padding:10px 0;">
+        <div style="padding:9px 18px; font-size:12px; color:#fff; background:rgba(255,255,255,0.15); font-weight:600; margin:2px 8px; border-radius:6px;">부품 공정 자동화 현황</div>
+        <div style="padding:9px 18px; font-size:12px; color:#adb5bd; margin:2px 8px;">표준공정 마스터 관리 &gt;</div>
+        <div style="padding:9px 18px; font-size:12px; color:#adb5bd; margin:2px 8px;">도출 공정 자동화 현황</div>
+        <div style="padding:9px 18px; font-size:12px; color:#adb5bd; margin:2px 8px;">모듈 표준 라인업 관리 &gt;</div>
+        <div style="padding:9px 18px; font-size:12px; color:#adb5bd; margin:2px 8px;">I/F 실행결과 관리 &gt;</div>
+        <div style="padding:9px 18px; font-size:12px; color:#adb5bd; margin:2px 8px;">용접기 방향성 공유</div>
+        <div style="padding:9px 18px; font-size:12px; color:#adb5bd; margin:2px 8px;">메인 대시보드</div>
+        <div style="padding:9px 18px; font-size:12px; color:#adb5bd; margin:2px 8px;">mTRM 설비체 &gt;</div>
+        <div style="padding:9px 18px; font-size:12px; color:#adb5bd; margin:2px 8px;">mTRM 관리 &gt;</div>
+      </nav>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="ind-container" style="flex:1; padding:20px 24px;">
+
+      <!-- header row: title + util buttons -->
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h2 style="font-size:18px; font-weight:700; color:#212529; margin:0;">부품 공정 자동화 현황</h2>
+        <div style="display:flex; gap:8px;">
+          <span class="badge badge-outline">업무프로세스 가이드</span>
+          <span class="badge badge-outline">공감동 님</span>
+          <span class="badge badge-outline">로그아웃</span>
+        </div>
+      </div>
+
+      <!-- tabs: 부품공정 / 모듈공정 -->
+      <div style="display:flex; gap:24px; border-bottom:1px solid #dee2e6; margin-bottom:18px;">
+        <div style="padding:8px 4px; font-size:13px; font-weight:700; color:#212529; border-bottom:2px solid #212529;">부품 공정</div>
+        <div style="padding:8px 4px; font-size:13px; color:#adb5bd;">모듈 공정</div>
+      </div>
+
+      <!-- filter bar -->
+      <div class="card" style="margin-bottom:18px;">
+        <div class="card-body">
+          <div style="display:grid; grid-template-columns:repeat(5,1fr) auto; gap:12px; align-items:end;">
+            <div><div style="font-size:11px; color:#6c757d; margin-bottom:4px;">제조군</div><select class="input"><option>전체</option></select></div>
+            <div><div style="font-size:11px; color:#6c757d; margin-bottom:4px;">제품</div><select class="input"><option>전체</option></select></div>
+            <div><div style="font-size:11px; color:#6c757d; margin-bottom:4px;">지역</div><select class="input"><option>전체</option></select></div>
+            <div><div style="font-size:11px; color:#6c757d; margin-bottom:4px;">공장</div><select class="input"><option>전체</option></select></div>
+            <div><div style="font-size:11px; color:#6c757d; margin-bottom:4px;">라인</div><select class="input"><option>전체</option></select></div>
+            <button class="btn btn-dark">조회</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 요약 현황 -->
+      <div style="font-size:15px; font-weight:700; color:#212529; margin-bottom:2px;">요약 현황</div>
+      <div style="font-size:11px; color:#6c757d; margin-bottom:10px;">공정 자동화 목표등록률, 자동화모델 정합율, 개선형 및 효율화 기준목표값</div>
+      <div style="overflow-x:auto; margin-bottom:24px;">
+        <table>
+          <thead>
+            <tr>
+              <th>구분</th><th>[B/P] 창원2C 라인</th><th>창원 2A</th><th>창원 2B</th><th>창원 2D</th><th>창원 2E</th><th>MSK 조립1</th><th>MNX 조립1</th><th>MVX 조립1</th><th>MVX 조립2</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td style="text-align:left; font-weight:600;">자동화율</td><td>72%~94% (22%△)</td><td>71%~94% (23%△)</td><td>67%~94% (27%△)</td><td>63%</td><td>63%~94% (31%△)</td><td>47%~93% (46%△)</td><td>40%~93% (53%△)</td><td>47%~93% (46%△)</td><td>40%~93% (53%△)</td></tr>
+            <tr><td style="text-align:left; font-weight:600;">직접인원</td><td>4명~1명 (39▼)</td><td>4명~1명 (39▼)</td><td>5명~1명 (45▼)</td><td>4명</td><td>4명~1명 (39▼)</td><td>5명~1명 (45▼)</td><td>6명~1명 (55▼)</td><td>6명~1명 (45▼)</td><td>6명~1명 (55▼)</td></tr>
+            <tr><td style="text-align:left; font-weight:600;">완료연한</td><td>'27년</td><td>'27년</td><td>'30년</td><td>-</td><td>'30년</td><td>'30년</td><td>'30년</td><td>'30년</td><td>'30년</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 공정별 상세 -->
+      <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:2px;">
+        <div>
+          <div style="font-size:15px; font-weight:700; color:#212529;">공정별 상세</div>
+          <div style="font-size:11px; color:#6c757d;">특성/이력/수집 모듈 - 공정/라인별 확대(전개/계획), 미래자동 예상 시 동영상 반영</div>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-dark">+ 공정 등록</button>
+          <button class="btn btn-outline">엑셀</button>
+          <button class="btn btn-outline">메일링 교육</button>
+        </div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th rowspan="2">NO</th><th rowspan="2">공정</th>
+              <th colspan="3">[B/P] 창원2C 라인</th>
+              <th rowspan="2">창원 2A</th><th rowspan="2">창원 2B</th><th rowspan="2">창원 2D</th><th rowspan="2">창원 2E</th><th rowspan="2">MSK 조립1</th><th rowspan="2">MNX 조립1</th><th rowspan="2">MVX 조립1</th><th rowspan="2">MVX 조립2</th>
+            </tr>
+            <tr><th>현재</th><th>개선</th><th>주요내용</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>1</td><td style="text-align:left; font-weight:600;">오버몰딩</td><td>자동</td><td>자동</td><td>-</td><td>자동</td><td>자동</td><td>-</td><td>-</td><td>자동</td><td colspan="2">발의(ROI 13년) 1명</td><td>-</td></tr>
+            <tr><td>2</td><td style="text-align:left; font-weight:600;">파워히트 비파괴재</td><td>수동</td><td>1명</td><td>가능('27)</td><td>가능('27)</td><td>가능('28)</td><td>-</td><td>가능('27)</td><td>가능('27)</td><td>발의(성과+불가) 1명</td><td>발의(성과+불가) 1명</td><td>발의(성과+불가)</td></tr>
+            <tr><td>3</td><td style="text-align:left; font-weight:600;">인포몰 조립</td><td>수동</td><td>1명</td><td>가능('27)<br>인포몰 조립 인력수, 검침로딩/조립로봇 외</td><td>가능('27)</td><td>가능('28)</td><td>미적용(히마) 1명</td><td>가능('29)</td><td>가능('29)</td><td>발의(ROI 42년) 1명</td><td>발의(성과+불가) 1명</td><td>발의(성과+불가)</td></tr>
+            <tr><td>4</td><td style="text-align:left; font-weight:600;">덕킹 조립 (수동)</td><td>수동</td><td>1명</td><td>가능('27)</td><td>가능('28)</td><td>가능('29)</td><td>미적용(히마) 1명</td><td>가능('30)</td><td>가능('30)</td><td>검토(ROI 45년) 1명</td><td>발의(성과+불가) 1명</td><td>검토(성과)</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- indicators -->
+      <div class="indicator" style="top:112px; left:16px;">1</div>
+      <div class="indicator" style="top:150px; left:16px;">2</div>
+      <div class="indicator" style="top:230px; left:16px;">3</div>
+      <div class="indicator" style="top:400px; left:16px;">4</div>
+      <div class="indicator" style="top:700px; left:16px;">5</div>
+      <div class="indicator" style="top:730px; right:110px; left:auto;">6</div>
+    </div>
+  </div>
+
+  <div class="desc-wrap" style="margin:0 24px 24px 24px;">
+    <h3 style="font-size:16px; font-weight:700; color:#212529; margin:0 0 12px 0;">Description</h3>
+    <table class="desc-table">
+      <thead><tr><th class="num">No.</th><th class="col-area">영역</th><th>요소</th><th>설명</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="num">1</td>
+          <td class="col-area">탭 영역</td>
+          <td>부품 공정 /<br>모듈 공정 탭</td>
+          <td>공정 유형(부품/모듈)을 전환하는 탭.<br><br>
+            <span class="cond-label">노출조건:</span> 화면 진입 시 항상 표시. 기본 활성 탭은 "부품 공정".<br>
+            <span class="cond-label">입력조건:</span> 탭 클릭으로 전환.<br>
+            <span class="cond-label">출력조건:</span> 선택 탭 아래 상세 표(요약 현황/공정별 상세)가 탭 유형에 맞춰 갱신.<br>
+            <span class="cond-label">인터랙션:</span> 탭 전환 시 하단 콘텐츠 페이드 전환.
+          </td>
+        </tr>
+        <tr>
+          <td class="num">2</td>
+          <td class="col-area">필터 영역</td>
+          <td>조건 필터<br>(제조군/제품/지역/공장/라인)</td>
+          <td>공정 데이터를 조회할 조건을 선택하는 필터 셀렉트박스 5종과 조회 버튼.<br><br>
+            <span class="cond-label">노출조건:</span> 항상 표시. 기본값은 전체(전체 라인 조회).<br>
+            <span class="cond-label">입력조건:</span> 상위(제조군) 선택 시 하위(제품/지역/공장/라인) 옵션 연동 변경. 조회 버튼 클릭 시 하단 표 갱신.<br>
+            <span class="cond-label">예외 Case:</span><br>
+            · 조회 결과 데이터 없음 → 표 영역에 "조회된 데이터가 없습니다." 안내 표시.<br>
+            · 네트워크 오류 시 → toast: "잠시 후 다시 시도해주세요."<br>
+            <span class="cond-label">BE 연동:</span> GET /api/automation/parts/summary?factory=&line=&region=&product=&group=
+          </td>
+        </tr>
+        <tr>
+          <td class="num">3</td>
+          <td class="col-area">요약 현황</td>
+          <td>요약 현황 표</td>
+          <td>라인별 자동화율/직접인원/완료연한을 한눈에 비교하는 요약 매트릭스.<br><br>
+            <span class="cond-label">노출조건:</span> 필터 조회 결과에 따라 라인 컬럼이 동적으로 구성.<br>
+            <span class="cond-label">출력조건:</span> 자동화율은 "현재%~목표%(증감폭)" 형식, 직접인원은 "현재명~목표명(감소폭)" 형식으로 표시. 개선폭이 큰 값은 강조 표시(△/▼ 표기).<br>
+            <span class="cond-label">BE 연동:</span> 부품/모듈 공정배치 원천 데이터 집계 배치 결과를 조회(GET /api/automation/parts/summary).
+          </td>
+        </tr>
+        <tr>
+          <td class="num">4</td>
+          <td class="col-area">상세 영역</td>
+          <td>공정별 상세 표</td>
+          <td>공정 단위(오버몰딩, 파워히트 비파괴재 등)로 현재/개선 상태와 라인별 확대(전개/계획) 현황을 표시하는 상세 매트릭스.<br><br>
+            <span class="cond-label">노출조건:</span> 필터 조회 시 공정 목록과 라인 컬럼이 함께 갱신.<br>
+            <span class="cond-label">출력조건:</span> 셀 값은 "자동/수동" 배지, "가능('연도)", "발의/검토(ROI·성과 사유) N명", "미적용(사유) N명" 등 상태별 표기 규칙을 따른다.<br>
+            <span class="cond-label">인터랙션:</span> 행(공정) 클릭 시 상세 이력/특성 팝업 오픈(연계 화면, 본 샘플 범위 외).<br>
+            <span class="cond-label">관리자 화면 연동:</span> 신규 공정 등록 시 표준공정 마스터 관리 목록에 반영.<br>
+            <span class="cond-label">BE 연동:</span> GET /api/automation/parts/process-detail
+          </td>
+        </tr>
+        <tr>
+          <td class="num">5</td>
+          <td class="col-area">CTA 영역</td>
+          <td>공정 등록 / 엑셀 / 메일링 교육 버튼</td>
+          <td>공정별 상세 표에 대한 데이터 조작·내보내기·안내 액션.<br><br>
+            <span class="cond-label">입력조건:</span> "+ 공정 등록" 클릭 시 공정 등록 팝업 오픈, "엑셀" 클릭 시 현재 조회 결과를 xlsx로 다운로드, "메일링 교육" 클릭 시 안내 팝업 오픈.<br>
+            <span class="cond-label">예외 Case:</span><br>
+            · 공정 등록 시 필수값 누락 → alert: "필수 항목을 입력해주세요."<br>
+            · 엑셀 다운로드 대상 데이터 없음 → alert: "다운로드할 데이터가 없습니다."<br>
+            <span class="cond-label">BE 연동:</span> POST /api/automation/parts/process, GET /api/automation/parts/export
+          </td>
+        </tr>
+        <tr>
+          <td class="num">6</td>
+          <td class="col-area">유틸 영역</td>
+          <td>업무프로세스 가이드 / 공감동 님 / 로그아웃</td>
+          <td>상단 우측 유틸리티 메뉴.<br><br>
+            <span class="cond-label">노출조건:</span> 로그인 상태에서 항상 표시. "공감동 님"은 SSO(MPASS) 로그인 사용자명으로 치환.<br>
+            <span class="cond-label">입력조건:</span> 로그아웃 클릭 시 세션 종료 후 PNDES 로그인 화면으로 이동.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ==================== JAVASCRIPT ==================== -->
+<script>
+function showScreen(screenId, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const target = document.getElementById(screenId);
+  if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+document.getElementById('cover-page').addEventListener('click', (e) => {
+  if (!e.target.closest('button') && !e.target.closest('.download-btns')) {
+    showScreen('scr-001', document.querySelectorAll('.tab-btn')[1]);
+  }
+});
+
+function updateActiveTab() {
+  const sections = document.querySelectorAll('.screen-section');
+  const tabs = document.querySelectorAll('.tab-btn');
+  let current = 0;
+  sections.forEach((section, idx) => {
+    const rect = section.getBoundingClientRect();
+    if (rect.top <= 80) current = idx;
+  });
+  tabs.forEach(t => t.classList.remove('active'));
+  if (tabs[current]) tabs[current].classList.add('active');
+}
+
+function downloadPDF(e) {
+  e.stopPropagation();
+  window.print();
+}
+
+function applyPrintScaling() {
+  const dpi = 96;
+  const mm = v => v * dpi / 25.4;
+  const pageW = mm(297) - mm(8) * 2;
+  const pageH = mm(210) - mm(8) * 2;
+  const sections = document.querySelectorAll('.screen-section:not(#cover-page)');
+  sections.forEach(sec => { sec.style.zoom = ''; });
+  const bodyOrigWidth = document.body.style.width;
+  document.body.style.width = pageW + 'px';
+  void document.body.offsetHeight;
+  sections.forEach(sec => {
+    const w = sec.scrollWidth;
+    const h = sec.scrollHeight;
+    const scale = Math.min(pageW / w, pageH / h, 1) * 0.97;
+    if (scale < 1) sec.style.zoom = scale;
+  });
+  document.body.style.width = bodyOrigWidth;
+}
+function clearPrintScaling() {
+  document.querySelectorAll('.screen-section:not(#cover-page)').forEach(sec => { sec.style.zoom = ''; });
+}
+window.addEventListener('beforeprint', applyPrintScaling);
+window.addEventListener('afterprint', clearPrintScaling);
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('cover-page').style.cursor = 'pointer';
+  window.addEventListener('scroll', updateActiveTab, { passive: true });
+});
+</script>
+
+</body>
+</html>

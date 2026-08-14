@@ -1,0 +1,1374 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLM 생기포털 고도화 (kbt 검토 브랜치) - Screen Design Document</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  @font-face { font-family: 'Pretendard'; src: url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css'); }
+  * { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; box-sizing: border-box; }
+  body { background: #f8f9fa; margin: 0; }
+
+  /* === TAB NAVIGATION === */
+  .tab-btn { transition: all 0.15s; background: #fff; border: none; cursor: pointer; }
+  .tab-btn:hover { background: #e9ecef; }
+  .tab-btn.active { background: #343a40; color: #fff; }
+
+  /* === SCREEN SECTIONS === */
+  .screen-section { scroll-margin-top: 48px; position: relative; z-index: 1; }
+
+  /* === SIDEBAR === */
+  .sidebar-item { padding: 10px 20px; color: #adb5bd; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 10px; border-radius: 6px; margin: 2px 8px; transition: all 0.15s; }
+  .sidebar-item:hover { background: rgba(255,255,255,0.08); color: #dee2e6; }
+  .sidebar-item.active { background: rgba(255,255,255,0.15); color: #fff; font-weight: 600; }
+  .sidebar-sub { padding-left: 44px; font-size: 12px; }
+
+  /* === STAT CARDS === */
+  .stat-card { background: #fff; border-radius: 10px; padding: 20px; border: 1px solid #dee2e6; }
+  .stat-value { font-size: 28px; font-weight: 700; color: #212529; }
+  .stat-label { font-size: 12px; color: #6c757d; margin-bottom: 4px; }
+  .stat-change { font-size: 12px; font-weight: 500; }
+  .stat-up { color: #495057; }
+  .stat-up::before { content: "▲ "; font-size: 10px; }
+  .stat-down { color: #6c757d; }
+  .stat-down::before { content: "▼ "; font-size: 10px; }
+
+  /* === BADGES (all grayscale) === */
+  .badge { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 9999px; font-size: 11px; font-weight: 600; }
+  .badge-dark { background: #343a40; color: #fff; }
+  .badge-mid { background: #6c757d; color: #fff; }
+  .badge-light { background: #e9ecef; color: #495057; }
+  .badge-outline { background: #fff; color: #495057; border: 1px solid #ced4da; }
+  .badge-pending { background: #e9ecef; color: #495057; border: 1px solid #ced4da; }
+  .badge-approved { background: #dee2e6; color: #212529; }
+  .badge-rejected { background: #495057; color: #fff; }
+  .badge-active { background: #343a40; color: #fff; }
+
+  /* === TABLES === */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { background: #e9ecef; text-align: left; padding: 10px 12px; font-weight: 600; color: #495057; border-bottom: 2px solid #dee2e6; font-size: 12px; }
+  td { padding: 10px 12px; border-bottom: 1px solid #e9ecef; color: #343a40; }
+  tr:hover td { background: #f8f9fa; }
+
+  /* === BUTTONS === */
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 16px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; transition: all 0.15s; }
+  .btn-dark { background: #495057; color: #fff; }
+  .btn-dark:hover { background: #343a40; }
+  .btn-outline { background: #fff; color: #495057; border: 1px solid #ced4da; }
+  .btn-outline:hover { background: #f8f9fa; }
+  .btn-sm { padding: 4px 10px; font-size: 12px; }
+
+  /* === CARDS === */
+  .card { background: #fff; border-radius: 10px; border: 1px solid #dee2e6; overflow: visible; }
+  .card-header { padding: 16px 20px; border-bottom: 1px solid #e9ecef; font-weight: 600; font-size: 15px; color: #212529; }
+  .card-body { padding: 20px; }
+
+  /* === TOGGLE === */
+  .toggle { width: 40px; height: 22px; border-radius: 11px; position: relative; cursor: pointer; transition: all 0.2s; }
+  .toggle.on { background: #495057; }
+  .toggle.off { background: #ced4da; }
+  .toggle::after { content: ''; position: absolute; width: 18px; height: 18px; border-radius: 50%; background: #fff; top: 2px; transition: all 0.2s; }
+  .toggle.on::after { left: 20px; }
+  .toggle.off::after { left: 2px; }
+
+  /* === INPUTS === */
+  .input { padding: 8px 12px; border: 1px solid #ced4da; border-radius: 6px; font-size: 13px; outline: none; width: 100%; }
+  .input:focus { border-color: #495057; box-shadow: 0 0 0 3px rgba(73,80,87,0.1); }
+  .select { padding: 8px 12px; border: 1px solid #ced4da; border-radius: 6px; font-size: 13px; background: #fff; outline: none; cursor: pointer; appearance: auto; }
+
+  /* === GAUGE === */
+  .gauge-ring { stroke-linecap: round; transition: stroke-dashoffset 0.5s; }
+
+  /* === META BOX === */
+  .screen-id-badge { display: inline-flex; align-items: center; padding: 3px 12px; background: #e9ecef; border: 1px solid #ced4da; border-radius: 6px; font-size: 12px; font-weight: 600; color: #495057; margin-right: 8px; }
+  .breadcrumb { font-size: 12px; color: #adb5bd; }
+  .breadcrumb a { color: #6c757d; text-decoration: none; }
+  .meta-box { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 16px 20px; margin-bottom: 20px; }
+  .meta-box .meta-label { font-size: 11px; color: #adb5bd; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+  .meta-box .meta-value { font-size: 13px; color: #343a40; margin-top: 2px; }
+
+  /* === NUMBERED INDICATORS === */
+  .indicator { position: absolute; z-index: 9999; width: 22px; height: 22px; border-radius: 50%; background: #e67700; color: #fff; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; line-height: 1; box-shadow: 0 2px 6px rgba(230,119,0,0.35); }
+  .ind-container { position: relative; overflow: visible !important; }
+
+  /* === LIVE SCREEN (implemented screens) === */
+  /* Display area showing a real screenshot of the locally-implemented screen */
+  /* instead of a wireframe. The screenshot is embedded as a base64 data URI so */
+  /* the HTML stays self-contained. Indicators overlay on top via .ind-container. */
+  .live-screen-wrap { display: flex; margin: 0 24px 24px 24px; border-radius: 10px; overflow: visible; border: 1px solid #dee2e6; background: #fff; }
+  .live-screen-wrap .ind-container { width: 100%; }
+  .live-screen { width: 100%; height: auto; display: block; border-radius: 9px; }
+
+  /* === DESCRIPTION TABLE === */
+  .desc-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 0; }
+  .desc-table th { background: #343a40; color: #fff; padding: 8px 10px; text-align: left; font-size: 11px; border: 1px solid #343a40; }
+  .desc-table td { padding: 8px 10px; border: 1px solid #dee2e6; color: #343a40; vertical-align: top; line-height: 1.5; }
+  .desc-table tr:nth-child(even) td { background: #f8f9fa; }
+  .desc-table .num { font-weight: 700; text-align: center; width: 1%; white-space: nowrap; color: #e67700; }
+  .desc-table th:last-child, .desc-table td:last-child { width: 240px; min-width: 240px; }
+
+  /* === RIGHT PANEL LAYOUT === */
+  .screen-section:not(#cover-page) { display: grid; grid-template-columns: 1fr 400px; grid-template-rows: auto 1fr; }
+  .screen-section:not(#cover-page) .meta-box { grid-column: 1 / -1; }
+  .screen-section:not(#cover-page) .wireframe-wrap,
+  .screen-section:not(#cover-page) .live-screen-wrap { grid-column: 1; grid-row: 2; }
+  .screen-section:not(#cover-page) .desc-wrap { grid-column: 2; grid-row: 2; position: sticky; top: 52px; max-height: calc(100vh - 60px); overflow-y: auto; margin: 0 !important; padding: 16px; border-left: 2px solid #dee2e6; background: #fff; align-self: start; }
+  .desc-wrap h3 { font-size: 14px !important; margin: 0 0 10px 0 !important; }
+
+  /* === DOWNLOAD BUTTONS === */
+  /* PDF only. Editable PPTX is injected by sb-creator-pptx (separate skill). */
+  .download-btns { position: absolute; top: 60px; right: 32px; display: flex; gap: 8px; z-index: 10; }
+  .download-btns button { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); color: #ced4da; padding: 6px 16px; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 6px; }
+  .download-btns button:hover { background: rgba(255,255,255,0.15); color: #fff; border-color: rgba(255,255,255,0.3); }
+
+  /* === PRINT === */
+  @media print {
+    @page { size: landscape; margin: 8mm; }
+    .no-print, .download-btns { display: none !important; }
+    body { background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .screen-section { page-break-before: always; position: static !important; z-index: auto !important; scroll-margin-top: 0 !important; }
+    .screen-section:not(#cover-page) { display: grid !important; grid-template-columns: 1fr 360px !important; }
+    .desc-wrap { position: static !important; max-height: none !important; overflow: visible !important; }
+    .wireframe-wrap { overflow: hidden !important; }
+    .live-screen-wrap { overflow: visible !important; }
+    .live-screen { max-height: calc(100vh - 160px); object-fit: contain; object-position: top; }
+    .meta-box { margin: 0 24px !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ==================== COVER PAGE ==================== -->
+<div id="cover-page" class="screen-section active">
+  <div style="min-height:100vh; display:flex; align-items:center; justify-content:center; background: linear-gradient(135deg, #343a40 0%, #212529 100%); position:relative;">
+    <div class="download-btns no-print">
+      <button id="btn-pdf" onclick="downloadPDF(event)">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg>
+        PDF
+      </button>
+      <!-- Editable PPTX button is injected by sb-creator-pptx after generation. -->
+      <!-- BEGIN sb-creator-pptx button (auto-injected) -->
+<!-- sb-creator-pptx 다운로드 버튼 (커버 영역 내부에 PDF 버튼 옆으로 삽입) -->
+<button id="btn-pptx" onclick="downloadPPTX(event)">
+  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+  PPTX
+</button>
+<span class="progress-text" id="download-progress" style="display:none; font-size:11px; color:#adb5bd; align-self:center; white-space:nowrap;"></span>
+<!-- END sb-creator-pptx button -->
+    </div>
+    <div style="text-align:center; color:#fff; max-width:800px; padding:40px;">
+      <div style="font-size:14px; letter-spacing:4px; color:#adb5bd; margin-bottom:20px; font-weight:600;">SCREEN DESIGN DOCUMENT</div>
+      <h1 style="font-size:42px; font-weight:700; margin:0 0 12px 0; line-height:1.3;">PLM 생기포털 고도화<br>화면설계서 (kbt)</h1>
+      <div style="width:80px; height:3px; background:#adb5bd; margin:24px auto;"></div>
+      <p style="font-size:15px; color:#adb5bd; line-height:1.8; margin-bottom:40px;">
+        공정 자동화 현황 및 중장기 방향성 공유 신규 기능 구축 — src/frontend 실 구현 반영 검토 브랜치
+      </p>
+      <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:30px; text-align:left; margin-bottom:40px;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; font-size:13px;">
+          <div><span style="color:#6c757d;">Project</span><br><span style="color:#e9ecef; font-weight:600;">PLM 생기포털 고도화 (kbt 검토 브랜치)</span></div>
+          <div><span style="color:#6c757d;">Document Type</span><br><span style="color:#e9ecef; font-weight:600;">Screen Design (Wireframe)</span></div>
+          <div><span style="color:#6c757d;">Version</span><br><span style="color:#e9ecef; font-weight:600;">v1.1-kbt</span></div>
+          <div><span style="color:#6c757d;">Date</span><br><span style="color:#e9ecef; font-weight:600;">2026-08-08</span></div>
+          <div><span style="color:#6c757d;">Total Screens</span><br><span style="color:#e9ecef; font-weight:600;">17</span></div>
+          <div><span style="color:#6c757d;">Status</span><br><span style="color:#e9ecef; font-weight:600;">kbt 검토 브랜치 (미승인)</span></div>
+        </div>
+      </div>
+      <h3 style="font-size:16px; font-weight:600; margin-bottom:16px; color:#ced4da;">Screen List</h3>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; text-align:left; font-size:13px;">
+        <!-- SCREEN_LIST: Repeat for each screen -->
+<div style="padding:8px 14px; background:rgba(255,255,255,0.04); border-radius:6px; color:#adb5bd;"><span style="color:#dee2e6; font-weight:600;">FLOW-MAP</span> 전체 프로세스 흐름도</div>
+<div style="padding:8px 14px; background:rgba(255,255,255,0.04); border-radius:6px; color:#adb5bd;"><span style="color:#dee2e6; font-weight:600;">DASH-AUTO</span> 공정 자동화 현황 통합 대시보드</div>
+<div style="padding:8px 14px; background:rgba(255,255,255,0.04); border-radius:6px; color:#adb5bd;"><span style="color:#dee2e6; font-weight:600;">SCR-001</span> 부품 공정 자동화 현황</div>
+<div style="padding:8px 14px; background:rgba(255,255,255,0.04); border-radius:6px; color:#adb5bd;"><span style="color:#dee2e6; font-weight:600;">SCR-002</span> 표준공정 마스터 관리</div>
+<div style="padding:8px 14px; background:rgba(255,255,255,0.04); border-radius:6px; color:#adb5bd;"><span style="color:#dee2e6; font-weight:600;">SCR-003</span> 모듈 공정 자동화 현황</div>
+<div style="padding:8px 14px; background:rgba(255,255,255,0.04); border-radius:6px; color:#adb5bd;"><span style="color:#dee2e6; font-weight:600;">SCR-004</span> 모듈 표준 작업명 관리</div>
+<div style="padding:8px 14px; background:rgba(255,255,255,0.04); border-radius:6px; color:#adb5bd;"><span style="color:#dee2e6; font-weight:600;">SCR-005</span> I/F 실행결과 관리</div>
+<div style="padding:8px 14px; background:rgba(255,255,255,0.04); border-radius:6px; color:#adb5bd;"><span style="color:#dee2e6; font-weight:600;">DASH-MTRM</span> 중장기 방향성 공유 통합 대시보드</div>
+<div style="padding:8px 14px; background:rgba(255,255,255,0.04); border-radius:6px; color:#adb5bd;"><span style="color:#dee2e6; font-weight:600;">SCR-006</span> 통합 로드맵 관리</div>
+<div style="padding:8px 14px; background:rgba(255,255,255,0.04); border-radius:6px; color:#adb5bd;"><span style="color:#dee2e6; font-weight:600;">SCR-007</span> 상세 과제 로드맵 관리</div>
+<div style="padding:8px 14px; background:rgba(255,255,255,0.04); border-radius:6px; color:#adb5bd;"><span style="color:#dee2e6; font-weight:600;">SCR-008</span> mTRM 통합 로드맵 대시보드(간트차트)</div>
+<div style="padding:8px 14px; background:rgba(255,255,255,0.04); border-radius:6px; color:#adb5bd;"><span style="color:#dee2e6; font-weight:600;">SCR-009</span> 생산기술 Tech PR</div>
+<div style="padding:8px 14px; background:rgba(255,255,255,0.04); border-radius:6px; color:#adb5bd;"><span style="color:#dee2e6; font-weight:600;">SCR-010</span> Tech PR 관리자</div>
+<div style="padding:8px 14px; background:rgba(255,255,255,0.04); border-radius:6px; color:#adb5bd;"><span style="color:#dee2e6; font-weight:600;">SCR-011</span> mTRM 협의체 관리</div>
+<div style="padding:8px 14px; background:rgba(255,255,255,0.04); border-radius:6px; color:#adb5bd;"><span style="color:#dee2e6; font-weight:600;">SCR-012</span> mTRM 관리</div>
+<div style="padding:8px 14px; background:rgba(255,255,255,0.04); border-radius:6px; color:#adb5bd;"><span style="color:#dee2e6; font-weight:600;">SCR-013</span> 기술과제 계획등록(mTRM 연동 영역)</div>
+<div style="padding:8px 14px; background:rgba(255,255,255,0.04); border-radius:6px; color:#adb5bd;"><span style="color:#dee2e6; font-weight:600;">SCR-014</span> 기술동향 목록/상세</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== TAB NAVIGATION ==================== -->
+<div id="tab-nav" class="no-print" style="position:fixed; top:0; left:0; right:0; z-index:1000; background:#fff; border-bottom:1px solid #dee2e6; padding:8px 16px; overflow-x:auto; white-space:nowrap; display:flex; align-items:center;">
+  <button class="tab-btn active" onclick="showScreen('cover-page',this)" style="padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer; margin-right:2px; font-weight:500;">Cover</button>
+  <!-- TAB_BUTTONS: Repeat for each screen -->
+  <button class="tab-btn" onclick="showScreen('flow-map',this)" style="padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer; margin-right:2px;">FLOW-MAP 전체 프로세스 흐름도</button>
+  <button class="tab-btn" onclick="showScreen('dash-auto',this)" style="padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer; margin-right:2px;">DASH-AUTO 공정 자동화 현황 통합 대시보드</button>
+  <button class="tab-btn" onclick="showScreen('scr-001',this)" style="padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer; margin-right:2px;">SCR-001 부품 공정 자동화 현황</button>
+  <button class="tab-btn" onclick="showScreen('scr-002',this)" style="padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer; margin-right:2px;">SCR-002 표준공정 마스터 관리</button>
+  <button class="tab-btn" onclick="showScreen('scr-003',this)" style="padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer; margin-right:2px;">SCR-003 모듈 공정 자동화 현황</button>
+  <button class="tab-btn" onclick="showScreen('scr-004',this)" style="padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer; margin-right:2px;">SCR-004 모듈 표준 작업명 관리</button>
+  <button class="tab-btn" onclick="showScreen('scr-005',this)" style="padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer; margin-right:2px;">SCR-005 I/F 실행결과 관리</button>
+  <button class="tab-btn" onclick="showScreen('dash-mtrm',this)" style="padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer; margin-right:2px;">DASH-MTRM 중장기 방향성 공유 통합 대시보드</button>
+  <button class="tab-btn" onclick="showScreen('scr-006',this)" style="padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer; margin-right:2px;">SCR-006 통합 로드맵 관리</button>
+  <button class="tab-btn" onclick="showScreen('scr-007',this)" style="padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer; margin-right:2px;">SCR-007 상세 과제 로드맵 관리</button>
+  <button class="tab-btn" onclick="showScreen('scr-008',this)" style="padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer; margin-right:2px;">SCR-008 mTRM 통합 로드맵 대시보드(간트차트)</button>
+  <button class="tab-btn" onclick="showScreen('scr-009',this)" style="padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer; margin-right:2px;">SCR-009 생산기술 Tech PR</button>
+  <button class="tab-btn" onclick="showScreen('scr-010',this)" style="padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer; margin-right:2px;">SCR-010 Tech PR 관리자</button>
+  <button class="tab-btn" onclick="showScreen('scr-011',this)" style="padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer; margin-right:2px;">SCR-011 mTRM 협의체 관리</button>
+  <button class="tab-btn" onclick="showScreen('scr-012',this)" style="padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer; margin-right:2px;">SCR-012 mTRM 관리</button>
+  <button class="tab-btn" onclick="showScreen('scr-013',this)" style="padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer; margin-right:2px;">SCR-013 기술과제 계획등록(mTRM 연동 영역)</button>
+  <button class="tab-btn" onclick="showScreen('scr-014',this)" style="padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer; margin-right:2px;">SCR-014 기술동향 목록/상세</button>
+</div>
+
+
+
+<div class="screen-section" id="flow-map">
+<div class="meta-box" style="margin:8px 24px 0 24px;"><div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;"><span class="screen-id-badge">FLOW-MAP</span><span style="font-weight:600; font-size:15px; color:#212529;">전체 프로세스 흐름도</span></div><div style="display:flex; gap:28px; flex-wrap:wrap;"><div><span class="meta-label">URL</span><div class="meta-value">/pndes/guide/flow</div></div><div><span class="meta-label">플랫폼</span><div class="meta-value">PC 사용자</div></div><div><span class="meta-label">접근 권한</span><div class="meta-value">전체 사용자(조회, 내비게이션 전용)</div></div><div><span class="meta-label">관련 기능</span><div class="meta-value">전체 F-ID(공통) — 개별 업무 기능 없이 화면 간 이동만 제공하는 가이드 화면</div></div><div><span class="meta-label">관련 I/F</span><div class="meta-value">-</div></div><div><span class="meta-label">우선순위</span><div class="meta-value"><span class="badge badge-dark">P2</span></div></div></div></div>
+  <div class="wireframe-wrap" style="margin:0 24px 24px 24px; border-radius:10px; overflow:visible; border:1px solid #dee2e6; background:#fff;">
+    <div class="ind-container" style="padding:20px;">
+<div style="padding:14px 20px; background:#343a40; color:#fff; font-size:13px; border-radius:8px 8px 0 0; margin:-20px -20px 16px -20px;">생기포털 &gt; 가이드 &gt; 전체 프로세스 흐름도 <span style="float:right; color:#adb5bd; font-size:12px;">[사용자명][로그아웃]</span></div>
+<table style="margin-bottom:16px;">
+<thead><tr><th>DASH-AUTO</th><th></th><th>SCR-001</th><th></th><th>SCR-002</th><th></th><th>SCR-003</th><th></th><th>SCR-004</th><th></th><th>SCR-005</th></tr></thead>
+<tbody>
+<tr><td>통합대시보드</td><td></td><td>부품공정</td><td></td><td>표준공정</td><td></td><td>모듈공정</td><td></td><td>표준작업명</td><td></td><td>I/F실행결과</td></tr>
+</tbody></table>
+    </div>
+  </div>
+  <div class="desc-wrap" style="margin:0 24px 24px 24px;">
+    <h3 style="font-size:16px; font-weight:700; color:#212529; margin:0 0 12px 0;">Description</h3>
+<table class="desc-table">
+<thead><tr><th class="num">No</th><th>컴포넌트</th><th>설명 / 인터랙션</th></tr></thead>
+<tbody>
+<tr><td class="num">1</td><td>흐름 카드(2개 행) <span style='color:#adb5bd;font-size:11px;'>(Card grid)</span></td><td>공정 자동화 현황 흐름(6개), 중장기 방향성 공유 흐름(10개) — 화면ID + 화면명 + 화면유형별 목업 미리보기(대시보드/표/간트/카드형/폼)<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 카드 클릭 시 해당 화면으로 즉시 이동(좌측 GNB 활성 메뉴 동기화)</div></td></tr>
+</tbody></table>
+<h3 style="font-size:13px; font-weight:700; color:#343a40; margin:18px 0 8px 0;">상태별 화면</h3>
+<table class="desc-table"><thead><tr><th>상태</th><th>조건</th><th>표시 내용</th></tr></thead><tbody>
+<tr><td>기본</td><td>항상</td><td>16개 화면 카드 전체 표출(정적 가이드, 조회조건 없음)</td></tr>
+</tbody></table>
+  </div>
+</div>
+
+
+<div class="screen-section" id="dash-auto">
+<div class="meta-box" style="margin:8px 24px 0 24px;"><div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;"><span class="screen-id-badge">DASH-AUTO</span><span style="font-weight:600; font-size:15px; color:#212529;">공정 자동화 현황 통합 대시보드</span></div><div style="display:flex; gap:28px; flex-wrap:wrap;"><div><span class="meta-label">URL</span><div class="meta-value">/pndes/automation/dashboard</div></div><div><span class="meta-label">플랫폼</span><div class="meta-value">PC 사용자</div></div><div><span class="meta-label">접근 권한</span><div class="meta-value">전체 사용자(조회)</div></div><div><span class="meta-label">관련 기능</span><div class="meta-value">F-001(부품 공정 요약 재사용), F-005(모듈 공정 요약 재사용), F-009(I/F 실행결과 요약)</div></div><div><span class="meta-label">관련 I/F</span><div class="meta-value">IF-001(부품공정배치), IF-003(모듈공정배치)</div></div><div><span class="meta-label">우선순위</span><div class="meta-value"><span class="badge badge-dark">P0</span></div></div></div></div>
+  <div class="wireframe-wrap" style="margin:0 24px 24px 24px; border-radius:10px; overflow:visible; border:1px solid #dee2e6; background:#fff;">
+    <div class="ind-container" style="padding:20px;">
+<div style="padding:14px 20px; background:#343a40; color:#fff; font-size:13px; border-radius:8px 8px 0 0; margin:-20px -20px 16px -20px;">생기포털 &gt; 공정 자동화 현황 &gt; 통합 대시보드 <span style="float:right; color:#adb5bd; font-size:12px;">[사용자명][로그아웃]</span></div>
+<div style="display:flex; gap:8px; justify-content:flex-end; margin-bottom:12px;"><button class="btn btn-dark btn-sm">B/P</button><button class="btn btn-outline btn-sm">상세 보기 &gt;</button><button class="btn btn-outline btn-sm">부품공정</button><button class="btn btn-outline btn-sm">표준공정마스터</button><button class="btn btn-outline btn-sm">모듈공정</button><button class="btn btn-outline btn-sm">모듈표준작업명</button><button class="btn btn-outline btn-sm">I/F실행결과</button></div>
+<table style="margin-bottom:16px;">
+<thead><tr><th>전체자동화율</th><th></th><th>부품공정자동화율</th><th></th><th>모듈공정자동화율</th><th></th><th>등록표준공정</th><th></th><th>I/F최근실패</th></tr></thead>
+<tbody>
+<tr><td>65%</td><td></td><td>65%</td><td></td><td>68%</td><td></td><td>3건</td><td></td><td>1건</td></tr>
+</tbody></table>
+<table style="margin-bottom:16px;">
+<thead><tr><th>부품공정—공장/라인별 자동화율</th><th></th><th>모듈공정—차종별 자동공정/총공정</th><th></th><th>전체 자동화율</th></tr></thead>
+<tbody>
+<tr><td>[B/P]창원2C ████████ 72%</td><td></td><td>울산      ██████ 11/17</td><td></td><td>(도넛 차트)</td></tr>
+<tr><td>창원2A     ████████ 71%</td><td></td><td>차종명    ████████ 12/17</td><td></td><td>57%</td></tr>
+<tr><td>...(SCR-001 요약현황 자동화율 행 재사용)</td><td></td><td>...(SCR-003 자동공정/총공정 행 재사용)</td><td></td><td>모듈조립직접인원합계 51명</td></tr>
+</tbody></table>
+<table style="margin-bottom:16px;">
+<thead><tr><th>공정별 상세 매트릭스—자동/수동 비율(4건)</th><th></th><th>최근 I/F 실행결과</th></tr></thead>
+<tbody>
+<tr><td>████████░░░░ 자동1건(25%) 수동3건(75%)</td><td></td><td>2026-08-07 03:00:12 IF-003 성공</td></tr>
+</tbody></table>
+    </div>
+  </div>
+  <div class="desc-wrap" style="margin:0 24px 24px 24px;">
+    <h3 style="font-size:16px; font-weight:700; color:#212529; margin:0 0 12px 0;">Description</h3>
+<table class="desc-table">
+<thead><tr><th class="num">No</th><th>컴포넌트</th><th>설명 / 인터랙션</th></tr></thead>
+<tbody>
+<tr><td class="num">1</td><td>요약 지표 KPI 카드 <span style='color:#adb5bd;font-size:11px;'>(Card x5)</span></td><td>전체/부품공정/모듈공정 자동화율, 등록 표준공정, I/F 최근 실패 건수<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ I/F 최근 실패 등 위험 지표는 빨강 강조</div></td></tr>
+</tbody></table>
+<h3 style="font-size:13px; font-weight:700; color:#343a40; margin:18px 0 8px 0;">상태별 화면</h3>
+<table class="desc-table"><thead><tr><th>상태</th><th>조건</th><th>표시 내용</th></tr></thead><tbody>
+<tr><td>기본</td><td>데이터 존재</td><td>전 패널 정상 표출</td></tr>
+<tr><td>I/F 실패 강조</td><td>최근 I/F 실행결과 중 실패 건 존재</td><td>요약 지표 KPI 카드 빨강 강조 + 최근 I/F 패널 실패 배지</td></tr>
+</tbody></table>
+  </div>
+</div>
+
+
+<div class="screen-section" id="scr-001">
+<div class="meta-box" style="margin:8px 24px 0 24px;"><div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;"><span class="screen-id-badge">SCR-001</span><span style="font-weight:600; font-size:15px; color:#212529;">부품 공정 자동화 현황</span></div><div style="display:flex; gap:28px; flex-wrap:wrap;"><div><span class="meta-label">URL</span><div class="meta-value">/pndes/automation/part</div></div><div><span class="meta-label">플랫폼</span><div class="meta-value">PC 사용자</div></div><div><span class="meta-label">접근 권한</span><div class="meta-value">전체 사용자(조회), 생기 업무 담당자 이상(등록/수정 팝업)</div></div><div><span class="meta-label">관련 기능</span><div class="meta-value">F-001(조회), F-002(등록)</div></div><div><span class="meta-label">관련 I/F</span><div class="meta-value">IF-001(부품공정배치 연동), IF-002(중장기 추진계획 연동), IF-006(첨부파일)</div></div><div><span class="meta-label">우선순위</span><div class="meta-value"><span class="badge badge-dark">P0</span></div></div></div></div>
+  <div class="wireframe-wrap" style="margin:0 24px 24px 24px; border-radius:10px; overflow:visible; border:1px solid #dee2e6; background:#fff;">
+    <div class="ind-container" style="padding:20px;">
+<div style="padding:14px 20px; background:#343a40; color:#fff; font-size:13px; border-radius:8px 8px 0 0; margin:-20px -20px 16px -20px;">생기포털 &gt; 공정 자동화 현황 &gt; 부품 공정 자동화 현황 <span style="float:right; color:#adb5bd; font-size:12px;">[사용자명][로그아웃]</span></div>
+<div style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; padding:12px; background:#f8f9fa; border:1px solid #dee2e6; border-radius:8px; margin-bottom:16px;"><div style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:10px; color:#adb5bd;">제품군</span><select class="select" style="width:130px;"><option>전체 v</option></select></div><div style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:10px; color:#adb5bd;">제품</span><select class="select" style="width:130px;"><option>전체 v</option></select></div><div style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:10px; color:#adb5bd;">권역</span><select class="select" style="width:130px;"><option>전체 v</option></select></div><div style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:10px; color:#adb5bd;">공장</span><select class="select" style="width:130px;"><option>전체 v</option></select></div><div style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:10px; color:#adb5bd;">라인</span><select class="select" style="width:130px;"><option>전체 v</option></select></div></div>
+<div style="display:flex; gap:8px; justify-content:flex-end; margin-bottom:12px;"><button class="btn btn-dark btn-sm">부품 공정</button><button class="btn btn-outline btn-sm">초기화</button><button class="btn btn-outline btn-sm">조회</button><button class="btn btn-outline btn-sm">+ 공정 등록</button><button class="btn btn-outline btn-sm">엑셀</button><button class="btn btn-outline btn-sm">메일공유</button></div>
+<table style="margin-bottom:16px;">
+<thead><tr><th>Best Practice</th><th>82%</th><th>41/50</th><th>3조3교대</th><th>12명</th><th>8 / 10명</th></tr></thead>
+<tbody>
+<tr><td>종합계</td><td>65%</td><td>130/200</td><td>-</td><td>98명</td><td>45 / 60명</td></tr>
+<tr><td>A공장 1라인</td><td>70%</td><td>28/40</td><td>2조2교대</td><td>20명</td><td>9 / 12명</td></tr>
+<tr><td>A공장 2라인</td><td>58%</td><td>22/38</td><td>2조2교대</td><td>18명</td><td>7 / 10명</td></tr>
+</tbody></table>
+<table style="margin-bottom:16px;">
+<thead><tr><th>1</th><th>용접공정</th><th>자동용접 적용 사례</th><th>● 자동</th><th>X 수동(사유)</th><th>● 자동</th></tr></thead>
+<tbody>
+<tr><td>2</td><td>조립공정</td><td>협동로봇 적용 사례</td><td>● 자동</td><td>● 자동</td><td>X 수동(사유)</td></tr>
+<tr><td>3</td><td>검사공정</td><td>-</td><td>X 수동</td><td>X 수동</td><td>● 자동</td></tr>
+</tbody></table>
+    </div>
+  </div>
+  <div class="desc-wrap" style="margin:0 24px 24px 24px;">
+    <h3 style="font-size:16px; font-weight:700; color:#212529; margin:0 0 12px 0;">Description</h3>
+<table class="desc-table">
+<thead><tr><th class="num">No</th><th>컴포넌트</th><th>설명 / 인터랙션</th></tr></thead>
+<tbody>
+<tr><td class="num">1</td><td>탭 <span style='color:#adb5bd;font-size:11px;'>(Tabs)</span></td><td>부품 공정 / 모듈 공정(SCR-003 이동)<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 클릭 시 탭 전환</div></td></tr>
+<tr><td class="num">2</td><td>조회조건 드롭다운 <span style='color:#adb5bd;font-size:11px;'>(Dropdown x5)</span></td><td>제품군/제품/권역/공장/라인, 상위 선택에 종속 필터링<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 선택 시 하위 드롭다운 옵션 자동 갱신</div></td></tr>
+<tr><td class="num">3</td><td>조회 버튼 <span style='color:#adb5bd;font-size:11px;'>(Button(primary))</span></td><td>조건 적용<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 클릭 시 요약/상세 테이블 갱신</div></td></tr>
+<tr><td class="num">4</td><td>요약 현황 테이블 <span style='color:#adb5bd;font-size:11px;'>(DataTable(readonly))</span></td><td>Best Practice/종합계/공장·라인별 비교<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 정렬 가능, 행 클릭 없음</div></td></tr>
+<tr><td class="num">5</td><td>공정별 상세 테이블 <span style='color:#adb5bd;font-size:11px;'>(DataTable)</span></td><td>공정×공장/라인 매트릭스<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 셀(●/X) 클릭 시 상세 팝업, 헤더 정렬</div></td></tr>
+<tr><td class="num">6</td><td>공정 등록 버튼 <span style='color:#adb5bd;font-size:11px;'>(Button(secondary))</span></td><td>F-002 등록 팝업 호출<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 생기 업무 담당자 이상만 노출(권한 체크)</div></td></tr>
+<tr><td class="num">7</td><td>엑셀 버튼 <span style='color:#adb5bd;font-size:11px;'>(Button(secondary))</span></td><td>조회결과 다운로드<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 클릭 시 이력 기록(NFR-003)</div></td></tr>
+<tr><td class="num">8</td><td>메일공유 버튼 <span style='color:#adb5bd;font-size:11px;'>(Button(secondary))</span></td><td>담당자 메일 발송<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 클릭 시 수신자 입력 모달</div></td></tr>
+<tr><td class="num">9</td><td>등록/수정 팝업 <span style='color:#adb5bd;font-size:11px;'>(Modal)</span></td><td>공정명/BP지정/적용현황/인원/첨부 입력<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 필수값 검증, 첨부 확장자 검증(IF-006)</div></td></tr>
+</tbody></table>
+<h3 style="font-size:13px; font-weight:700; color:#343a40; margin:18px 0 8px 0;">상태별 화면</h3>
+<table class="desc-table"><thead><tr><th>상태</th><th>조건</th><th>표시 내용</th></tr></thead><tbody>
+<tr><td>기본</td><td>조회조건 선택 후 데이터 존재</td><td>요약/상세 테이블 정상 표출</td></tr>
+<tr><td>로딩</td><td>조회 요청 중</td><td>테이블 영역 스켈레톤</td></tr>
+<tr><td>빈 상태</td><td>집계 데이터 없음</td><td>&quot;데이터 없음&quot; + 최종 동기화 시각(IF-001 배치 기준) 안내</td></tr>
+<tr><td>조건 미선택</td><td>필수 조건 미선택 후 조회 클릭</td><td>안내 메시지 표출, 조회 차단</td></tr>
+<tr><td>정합성 경고</td><td>부품공정배치 정합성 불일치(NFR-008)</td><td>상세 팝업 상단 경고 배너 표출</td></tr>
+</tbody></table>
+  </div>
+</div>
+
+
+<div class="screen-section" id="scr-002">
+<div class="meta-box" style="margin:8px 24px 0 24px;"><div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;"><span class="screen-id-badge">SCR-002</span><span style="font-weight:600; font-size:15px; color:#212529;">표준공정 마스터 관리</span></div><div style="display:flex; gap:28px; flex-wrap:wrap;"><div><span class="meta-label">URL</span><div class="meta-value">/pndes/automation/std-process</div></div><div><span class="meta-label">플랫폼</span><div class="meta-value">PC 어드민</div></div><div><span class="meta-label">접근 권한</span><div class="meta-value">생기기획팀(관리자) — 등록/수정, 전체 사용자 — 조회/다운로드</div></div><div><span class="meta-label">관련 기능</span><div class="meta-value">F-003(등록/수정), F-004(조회/엑셀)</div></div><div><span class="meta-label">관련 I/F</span><div class="meta-value">-</div></div><div><span class="meta-label">우선순위</span><div class="meta-value"><span class="badge badge-dark">P0</span></div></div></div></div>
+  <div class="wireframe-wrap" style="margin:0 24px 24px 24px; border-radius:10px; overflow:visible; border:1px solid #dee2e6; background:#fff;">
+    <div class="ind-container" style="padding:20px;">
+<div style="padding:14px 20px; background:#343a40; color:#fff; font-size:13px; border-radius:8px 8px 0 0; margin:-20px -20px 16px -20px;">생기포털 &gt; 공정 자동화 현황 &gt; 표준공정 마스터 관리 <span style="float:right; color:#adb5bd; font-size:12px;">[사용자명][로그아웃]</span></div>
+<div style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; padding:12px; background:#f8f9fa; border:1px solid #dee2e6; border-radius:8px; margin-bottom:16px;"><div style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:10px; color:#adb5bd;">공장</span><select class="select" style="width:130px;"><option>전체 v</option></select></div><div style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:10px; color:#adb5bd;">라인</span><select class="select" style="width:130px;"><option>전체 v</option></select></div></div>
+<div style="display:flex; gap:8px; justify-content:flex-end; margin-bottom:12px;"><button class="btn btn-dark btn-sm">초기화</button><button class="btn btn-outline btn-sm">조회</button><button class="btn btn-outline btn-sm">엑셀다운</button><button class="btn btn-outline btn-sm">+ 표준공정 등록</button><button class="btn btn-outline btn-sm">수정</button><button class="btn btn-outline btn-sm">삭제</button><button class="btn btn-outline btn-sm">2</button></div>
+<table style="margin-bottom:16px;">
+<thead><tr><th>1</th><th>A공장</th><th>1라인</th><th>용접공정</th><th>10</th><th>-</th><th>[수정][삭제]</th></tr></thead>
+<tbody>
+<tr><td>2</td><td>A공장</td><td>1라인</td><td>조립공정</td><td>20</td><td>-</td><td>[수정][삭제]</td></tr>
+<tr><td>3</td><td>A공장</td><td>2라인</td><td>검사공정</td><td>10</td><td>신설라인</td><td>[수정][삭제]</td></tr>
+</tbody></table>
+    </div>
+  </div>
+  <div class="desc-wrap" style="margin:0 24px 24px 24px;">
+    <h3 style="font-size:16px; font-weight:700; color:#212529; margin:0 0 12px 0;">Description</h3>
+<table class="desc-table">
+<thead><tr><th class="num">No</th><th>컴포넌트</th><th>설명 / 인터랙션</th></tr></thead>
+<tbody>
+<tr><td class="num">1</td><td>조회조건 <span style='color:#adb5bd;font-size:11px;'>(Dropdown x2)</span></td><td>공장/라인<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 선택 후 [조회]</div></td></tr>
+<tr><td class="num">2</td><td>엑셀다운 버튼 <span style='color:#adb5bd;font-size:11px;'>(Button(secondary))</span></td><td>리스트 엑셀 다운로드<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 조회결과 0건 시 비활성화, 다운로드 이력 기록</div></td></tr>
+<tr><td class="num">3</td><td>등록 버튼 <span style='color:#adb5bd;font-size:11px;'>(Button(primary))</span></td><td>관리자 전용 등록 폼 호출<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 비관리자에게는 미노출</div></td></tr>
+<tr><td class="num">4</td><td>마스터 테이블 <span style='color:#adb5bd;font-size:11px;'>(DataTable)</span></td><td>표준공정 리스트<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 정렬, 페이지네이션</div></td></tr>
+<tr><td class="num">5</td><td>수정/삭제 <span style='color:#adb5bd;font-size:11px;'>(Button(small))</span></td><td>행 단위 관리<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 관리자만 노출, 중복 공정명 시 저장 차단</div></td></tr>
+</tbody></table>
+<h3 style="font-size:13px; font-weight:700; color:#343a40; margin:18px 0 8px 0;">상태별 화면</h3>
+<table class="desc-table"><thead><tr><th>상태</th><th>조건</th><th>표시 내용</th></tr></thead><tbody>
+<tr><td>기본</td><td>데이터 존재</td><td>마스터 리스트 표출</td></tr>
+<tr><td>빈 상태</td><td>조회결과 없음</td><td>&quot;등록된 표준공정이 없습니다&quot;, 엑셀 버튼 비활성화</td></tr>
+<tr><td>중복 오류</td><td>동일 공장/라인 내 중복 공정명 등록 시도</td><td>등록 폼 내 경고 메시지</td></tr>
+</tbody></table>
+  </div>
+</div>
+
+
+<div class="screen-section" id="scr-003">
+<div class="meta-box" style="margin:8px 24px 0 24px;"><div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;"><span class="screen-id-badge">SCR-003</span><span style="font-weight:600; font-size:15px; color:#212529;">모듈 공정 자동화 현황</span></div><div style="display:flex; gap:28px; flex-wrap:wrap;"><div><span class="meta-label">URL</span><div class="meta-value">/pndes/automation/module</div></div><div><span class="meta-label">플랫폼</span><div class="meta-value">PC 사용자</div></div><div><span class="meta-label">접근 권한</span><div class="meta-value">전체 사용자(조회), 생기 업무 담당자 이상(공정 등록 팝업)</div></div><div><span class="meta-label">관련 기능</span><div class="meta-value">F-005(조회), F-006(연동반영 결과 표출), F-008(표준작업명 표출)</div></div><div><span class="meta-label">관련 I/F</span><div class="meta-value">IF-003(모듈공정배치 연동)</div></div><div><span class="meta-label">우선순위</span><div class="meta-value"><span class="badge badge-dark">P0</span></div></div></div></div>
+  <div class="wireframe-wrap" style="margin:0 24px 24px 24px; border-radius:10px; overflow:visible; border:1px solid #dee2e6; background:#fff;">
+    <div class="ind-container" style="padding:20px;">
+<div style="padding:14px 20px; background:#343a40; color:#fff; font-size:13px; border-radius:8px 8px 0 0; margin:-20px -20px 16px -20px;">생기포털 &gt; 공정 자동화 현황 &gt; 모듈 공정 자동화 현황 <span style="float:right; color:#adb5bd; font-size:12px;">[사용자명][로그아웃]</span></div>
+<div style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; padding:12px; background:#f8f9fa; border:1px solid #dee2e6; border-radius:8px; margin-bottom:16px;"><div style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:10px; color:#adb5bd;">제품군</span><select class="select" style="width:130px;"><option>전체v</option></select></div><div style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:10px; color:#adb5bd;">제품</span><select class="select" style="width:130px;"><option>전체v</option></select></div><div style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:10px; color:#adb5bd;">권역</span><select class="select" style="width:130px;"><option>전체v</option></select></div><div style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:10px; color:#adb5bd;">공장</span><select class="select" style="width:130px;"><option>전체v</option></select></div><div style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:10px; color:#adb5bd;">엔진타입</span><select class="select" style="width:130px;"><option>전체v</option></select></div></div>
+<div style="display:flex; gap:8px; justify-content:flex-end; margin-bottom:12px;"><button class="btn btn-dark btn-sm">모듈 공정</button><button class="btn btn-outline btn-sm">초기화</button><button class="btn btn-outline btn-sm">조회</button><button class="btn btn-outline btn-sm">모듈 공정 자동화 현황</button><button class="btn btn-outline btn-sm">+작업내용등록</button><button class="btn btn-outline btn-sm">엑셀</button><button class="btn btn-outline btn-sm">이메일공유</button></div>
+<table style="margin-bottom:16px;">
+<thead><tr><th>구분</th><th>Best Practice</th><th>국내/외종합(계)</th><th>조지아</th><th>울산</th><th>차종명</th><th>차종명</th><th>차종명</th></tr></thead>
+<tbody>
+<tr><td>자동화율</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+<tr><td>자동공정/총공정</td><td>-</td><td>-</td><td>-</td><td>11/17</td><td>12/17</td><td>9/15</td><td>9/15</td></tr>
+<tr><td>교대운영</td><td>-</td><td>-</td><td>3교대</td><td>2교대</td><td>2교대</td><td>1교대</td><td>2교대</td></tr>
+<tr><td>UPH</td><td>-</td><td>-</td><td>71UPH</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+<tr><td>조립 인원(직접)</td><td>-</td><td>-</td><td>21명</td><td>10명</td><td>8명</td><td>4명</td><td>8명</td></tr>
+<tr><td>검사 인원(간접)</td><td>-</td><td>-</td><td>???</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+<tr><td>총인원</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+</tbody></table>
+    </div>
+  </div>
+  <div class="desc-wrap" style="margin:0 24px 24px 24px;">
+    <h3 style="font-size:16px; font-weight:700; color:#212529; margin:0 0 12px 0;">Description</h3>
+<table class="desc-table">
+<thead><tr><th class="num">No</th><th>컴포넌트</th><th>설명 / 인터랙션</th></tr></thead>
+<tbody>
+<tr><td class="num">1</td><td>탭 + 좌측 GNB <span style='color:#adb5bd;font-size:11px;'>(Tabs + Navigation(tree))</span></td><td>상단 탭(부품 공정↔모듈 공정, SCR-001↔SCR-003)과 좌측 GNB(SCR-001~SCR-014 전체 이동) 병행<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 탭/메뉴 클릭 시 화면 전환, 현재 화면 하이라이트</div></td></tr>
+<tr><td class="num">2</td><td>조회조건 드롭다운 <span style='color:#adb5bd;font-size:11px;'>(Dropdown x5)</span></td><td>제품군/제품/권역/공장/엔진타입, 상위 선택에 종속 필터링<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 선택 시 하위 드롭다운 자동 갱신, [초기화][조회]</div></td></tr>
+<tr><td class="num">3</td><td>최종 동기화 배지 <span style='color:#adb5bd;font-size:11px;'>(Text(badge))</span></td><td>IF-003 야간 배치(1일 1회) 완료 시각<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 배지 형태(녹색), 정합성 검증 실패 시 별도 경고 배너 병행 노출</div></td></tr>
+<tr><td class="num">4</td><td>정합성 검증 실패 배너 <span style='color:#adb5bd;font-size:11px;'>(Banner(warning))</span></td><td>F-006 정합성 검증(NFR-008) 실패 항목 존재 시에만 노출<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 관리자가 SCR-005(I/F 실행결과 관리)에서 원인 확인</div></td></tr>
+<tr><td class="num">5</td><td>요약 현황 테이블 <span style='color:#adb5bd;font-size:11px;'>(DataTable(readonly))</span></td><td>Best Practice/국내외 종합(계)/조지아/울산/차종명(×3) 7개 컬럼 × 8개 지표 행<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 데이터 없는 셀은 `-`, 정렬 가능</div></td></tr>
+</tbody></table>
+<h3 style="font-size:13px; font-weight:700; color:#343a40; margin:18px 0 8px 0;">상태별 화면</h3>
+<table class="desc-table"><thead><tr><th>상태</th><th>조건</th><th>표시 내용</th></tr></thead><tbody>
+<tr><td>기본</td><td>데이터 존재</td><td>요약 현황·공정별 상세 테이블 정상 표출</td></tr>
+<tr><td>빈 상태</td><td>조회결과 없음</td><td>&quot;데이터 없음&quot; + 최종 동기화 시각(IF-003 기준) 안내</td></tr>
+<tr><td>동영상 미선택</td><td>공정별 상세에서 자동 요소 미선택</td><td>동영상 박스에 안내 문구만 표출(&quot;공정별 상세에서 현재=자동 항목을 선택하세요&quot;)</td></tr>
+<tr><td>정합성 검증 실패</td><td>F-006 정합성 불일치 발견</td><td>상단 경고 배너 + 관리자 확인 필요 표시</td></tr>
+</tbody></table>
+  </div>
+</div>
+
+
+<div class="screen-section" id="scr-004">
+<div class="meta-box" style="margin:8px 24px 0 24px;"><div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;"><span class="screen-id-badge">SCR-004</span><span style="font-weight:600; font-size:15px; color:#212529;">모듈 표준 작업명 관리</span></div><div style="display:flex; gap:28px; flex-wrap:wrap;"><div><span class="meta-label">URL</span><div class="meta-value">/pndes/automation/std-task</div></div><div><span class="meta-label">플랫폼</span><div class="meta-value">PC 어드민</div></div><div><span class="meta-label">접근 권한</span><div class="meta-value">생기기획팀(관리자)</div></div><div><span class="meta-label">관련 기능</span><div class="meta-value">F-007</div></div><div><span class="meta-label">관련 I/F</span><div class="meta-value">-</div></div><div><span class="meta-label">우선순위</span><div class="meta-value"><span class="badge badge-dark">P0</span></div></div></div></div>
+  <div class="wireframe-wrap" style="margin:0 24px 24px 24px; border-radius:10px; overflow:visible; border:1px solid #dee2e6; background:#fff;">
+    <div class="ind-container" style="padding:20px;">
+<div style="padding:14px 20px; background:#343a40; color:#fff; font-size:13px; border-radius:8px 8px 0 0; margin:-20px -20px 16px -20px;">생기포털 &gt; 공정 자동화 현황 &gt; 모듈 표준 작업명 관리 <span style="float:right; color:#adb5bd; font-size:12px;">[사용자명][로그아웃]</span></div>
+<div style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; padding:12px; background:#f8f9fa; border:1px solid #dee2e6; border-radius:8px; margin-bottom:16px;"><div style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:10px; color:#adb5bd;">공정구분</span><select class="select" style="width:130px;"><option>전체v</option></select></div><div style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:10px; color:#adb5bd;">검색</span><select class="select" style="width:130px;"><option>작업명 입력</option></select></div></div>
+<div style="display:flex; gap:8px; justify-content:flex-end; margin-bottom:12px;"><button class="btn btn-dark btn-sm">검색</button><button class="btn btn-outline btn-sm">+ 표준작업명 등록</button><button class="btn btn-outline btn-sm">삭제</button></div>
+<table style="margin-bottom:16px;">
+<thead><tr><th>1</th><th>볼트체결</th><th>조립</th><th>12</th><th>2026-01-10</th><th>[삭제]</th></tr></thead>
+<tbody>
+<tr><td>2</td><td>배선연결</td><td>배선</td><td>8</td><td>2026-02-15</td><td>[삭제]</td></tr>
+</tbody></table>
+    </div>
+  </div>
+  <div class="desc-wrap" style="margin:0 24px 24px 24px;">
+    <h3 style="font-size:16px; font-weight:700; color:#212529; margin:0 0 12px 0;">Description</h3>
+<table class="desc-table">
+<thead><tr><th class="num">No</th><th>컴포넌트</th><th>설명 / 인터랙션</th></tr></thead>
+<tbody>
+<tr><td class="num">1</td><td>등록 버튼 <span style='color:#adb5bd;font-size:11px;'>(Button(primary))</span></td><td>신규 표준작업명 입력 모달<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 중복 작업명 검증</div></td></tr>
+<tr><td class="num">2</td><td>사용현황 컬럼 <span style='color:#adb5bd;font-size:11px;'>(Text(count))</span></td><td>SCR-003(F-008)에서 연동 중인 모듈 수<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 클릭 시 연동 모듈 목록 팝업</div></td></tr>
+<tr><td class="num">3</td><td>삭제 버튼 <span style='color:#adb5bd;font-size:11px;'>(Button(danger, small))</span></td><td>작업명 삭제<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 사용현황&gt;0인 경우 경고 후 재확인 모달</div></td></tr>
+</tbody></table>
+<h3 style="font-size:13px; font-weight:700; color:#343a40; margin:18px 0 8px 0;">상태별 화면</h3>
+<table class="desc-table"><thead><tr><th>상태</th><th>조건</th><th>표시 내용</th></tr></thead><tbody>
+<tr><td>기본</td><td>데이터 존재</td><td>리스트 표출</td></tr>
+<tr><td>삭제 차단 경고</td><td>연동 중인 작업명 삭제 시도</td><td>&quot;N개 모듈에서 사용 중입니다. 계속하시겠습니까?&quot; 확인 모달</td></tr>
+<tr><td>빈 상태</td><td>검색결과 없음</td><td>&quot;검색 결과가 없습니다&quot;</td></tr>
+</tbody></table>
+  </div>
+</div>
+
+
+<div class="screen-section" id="scr-005">
+<div class="meta-box" style="margin:8px 24px 0 24px;"><div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;"><span class="screen-id-badge">SCR-005</span><span style="font-weight:600; font-size:15px; color:#212529;">I/F 실행결과 관리</span></div><div style="display:flex; gap:28px; flex-wrap:wrap;"><div><span class="meta-label">URL</span><div class="meta-value">/pndes/automation/if-log</div></div><div><span class="meta-label">플랫폼</span><div class="meta-value">PC 어드민</div></div><div><span class="meta-label">접근 권한</span><div class="meta-value">생기기획팀(관리자)</div></div><div><span class="meta-label">관련 기능</span><div class="meta-value">F-009</div></div><div><span class="meta-label">관련 I/F</span><div class="meta-value">IF-003</div></div><div><span class="meta-label">우선순위</span><div class="meta-value"><span class="badge badge-dark">P1</span></div></div></div></div>
+  <div class="wireframe-wrap" style="margin:0 24px 24px 24px; border-radius:10px; overflow:visible; border:1px solid #dee2e6; background:#fff;">
+    <div class="ind-container" style="padding:20px;">
+<div style="padding:14px 20px; background:#343a40; color:#fff; font-size:13px; border-radius:8px 8px 0 0; margin:-20px -20px 16px -20px;">생기포털 &gt; 공정 자동화 현황 &gt; I/F 실행결과 관리 <span style="float:right; color:#adb5bd; font-size:12px;">[사용자명][로그아웃]</span></div>
+<div style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; padding:12px; background:#f8f9fa; border:1px solid #dee2e6; border-radius:8px; margin-bottom:16px;"><div style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:10px; color:#adb5bd;">기간</span><select class="select" style="width:130px;"><option>시작일</option></select></div><div style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:10px; color:#adb5bd;">I/F구분</span><select class="select" style="width:130px;"><option>전체v</option></select></div><div style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:10px; color:#adb5bd;">결과</span><select class="select" style="width:130px;"><option>전체v</option></select></div></div>
+<div style="display:flex; gap:8px; justify-content:flex-end; margin-bottom:12px;"><button class="btn btn-dark btn-sm">종료일</button><button class="btn btn-outline btn-sm">조회</button></div>
+<table style="margin-bottom:16px;">
+<thead><tr><th>2026-08-07 03:00:12</th><th>IF-003</th><th>배치</th><th>1,204</th><th>성공</th><th>-</th></tr></thead>
+<tbody>
+<tr><td>2026-08-06 03:00:08</td><td>IF-003</td><td>배치</td><td>980</td><td>실패</td><td>원본 DB 접속 타임아웃</td></tr>
+<tr><td>2026-08-06 03:05:01</td><td>IF-003</td><td>배치(재시도)</td><td>980</td><td>성공</td><td>-</td></tr>
+</tbody></table>
+    </div>
+  </div>
+  <div class="desc-wrap" style="margin:0 24px 24px 24px;">
+    <h3 style="font-size:16px; font-weight:700; color:#212529; margin:0 0 12px 0;">Description</h3>
+<table class="desc-table">
+<thead><tr><th class="num">No</th><th>컴포넌트</th><th>설명 / 인터랙션</th></tr></thead>
+<tbody>
+<tr><td class="num">1</td><td>결과 필터 <span style='color:#adb5bd;font-size:11px;'>(Dropdown)</span></td><td>성공/실패/전체<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 실패만 필터링 시 담당자 알림 대상 강조</div></td></tr>
+<tr><td class="num">2</td><td>실행결과 테이블 <span style='color:#adb5bd;font-size:11px;'>(DataTable(readonly))</span></td><td>I/F 실행 이력<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 실패 행 클릭 시 상세 오류 로그 팝업</div></td></tr>
+</tbody></table>
+<h3 style="font-size:13px; font-weight:700; color:#343a40; margin:18px 0 8px 0;">상태별 화면</h3>
+<table class="desc-table"><thead><tr><th>상태</th><th>조건</th><th>표시 내용</th></tr></thead><tbody>
+<tr><td>기본</td><td>이력 존재</td><td>실행결과 리스트</td></tr>
+<tr><td>빈 상태</td><td>조회결과 없음</td><td>&quot;실행 이력이 없습니다&quot;</td></tr>
+<tr><td>실패 강조</td><td>실패 건 존재</td><td>결과 컬럼 빨간색 뱃지 표시</td></tr>
+</tbody></table>
+  </div>
+</div>
+
+
+<div class="screen-section" id="dash-mtrm">
+<div class="meta-box" style="margin:8px 24px 0 24px;"><div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;"><span class="screen-id-badge">DASH-MTRM</span><span style="font-weight:600; font-size:15px; color:#212529;">중장기 방향성 공유 통합 대시보드</span></div><div style="display:flex; gap:28px; flex-wrap:wrap;"><div><span class="meta-label">URL</span><div class="meta-value">/pndes/mtrm/dashboard-summary</div></div><div><span class="meta-label">플랫폼</span><div class="meta-value">PC 사용자</div></div><div><span class="meta-label">접근 권한</span><div class="meta-value">전체 사용자(조회)</div></div><div><span class="meta-label">관련 기능</span><div class="meta-value">F-010(통합 로드맵 요약), F-011(상세과제 요약), F-016(협의체 요약), F-019(기술동향 요약)</div></div><div><span class="meta-label">관련 I/F</span><div class="meta-value">-</div></div><div><span class="meta-label">우선순위</span><div class="meta-value"><span class="badge badge-dark">P0</span></div></div></div></div>
+  <div class="wireframe-wrap" style="margin:0 24px 24px 24px; border-radius:10px; overflow:visible; border:1px solid #dee2e6; background:#fff;">
+    <div class="ind-container" style="padding:20px;">
+<div style="padding:14px 20px; background:#343a40; color:#fff; font-size:13px; border-radius:8px 8px 0 0; margin:-20px -20px 16px -20px;">생기포털 &gt; 중장기 방향성 공유 &gt; 통합 대시보드 <span style="float:right; color:#adb5bd; font-size:12px;">[사용자명][로그아웃]</span></div>
+<div style="display:flex; gap:8px; justify-content:flex-end; margin-bottom:12px;"><button class="btn btn-dark btn-sm">==========</button><button class="btn btn-outline btn-sm">================</button><button class="btn btn-outline btn-sm">통합로드맵</button><button class="btn btn-outline btn-sm">상세과제</button><button class="btn btn-outline btn-sm">mTRM간트</button><button class="btn btn-outline btn-sm">TechPR</button><button class="btn btn-outline btn-sm">TechPR관리</button><button class="btn btn-outline btn-sm">협의체</button></div>
+<table style="margin-bottom:16px;">
+<thead><tr><th>등록로드맵</th><th></th><th>진행중상세과제</th><th></th><th>예정협의체</th><th></th><th>TechPR자료</th><th></th><th>등록기술동향</th></tr></thead>
+<tbody>
+<tr><td>2건</td><td></td><td>1건</td><td></td><td>1건</td><td></td><td>4건</td><td></td><td>4건</td></tr>
+</tbody></table>
+<table style="margin-bottom:16px;">
+<thead><tr><th>로드맵 진행률</th><th></th><th>최근 기술동향</th></tr></thead>
+<tbody>
+<tr><td>차체 진행중 ████████░░ 60%</td><td></td><td>글로벌 자동화 트렌드 A · 2026-07-01</td></tr>
+<tr><td>조립 승인대기 ███░░░░░░ 25%</td><td></td><td>신기술 소재 자료 B · 2026-07-05</td></tr>
+</tbody></table>
+    </div>
+  </div>
+  <div class="desc-wrap" style="margin:0 24px 24px 24px;">
+    <h3 style="font-size:16px; font-weight:700; color:#212529; margin:0 0 12px 0;">Description</h3>
+<table class="desc-table">
+<thead><tr><th class="num">No</th><th>컴포넌트</th><th>설명 / 인터랙션</th></tr></thead>
+<tbody>
+<tr><td class="num">1</td><td>요약 지표 KPI 카드 <span style='color:#adb5bd;font-size:11px;'>(Card x5)</span></td><td>등록 로드맵/진행중 상세과제/예정 협의체/Tech PR 자료/등록 기술동향 건수<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ -</div></td></tr>
+<tr><td class="num">2</td><td>통합 로드맵 간트 미리보기 <span style='color:#adb5bd;font-size:11px;'>(Mini gantt)</span></td><td>대표(top-level) 로드맵만 요약 표시<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ &quot;전체 보기 ›&quot; 클릭 시 SCR-008(mTRM 통합 로드맵 대시보드) 이동</div></td></tr>
+<tr><td class="num">3</td><td>로드맵 진행률 패널 <span style='color:#adb5bd;font-size:11px;'>(Progress list)</span></td><td>로드맵별 상태 배지 + 진행률(%) 바<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ -</div></td></tr>
+<tr><td class="num">4</td><td>최근 기술동향 패널 <span style='color:#adb5bd;font-size:11px;'>(List)</span></td><td>SCR-014(기술동향) 최신 3건 미리보기<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 항목 클릭 시 SCR-014 상세로 즉시 이동</div></td></tr>
+<tr><td class="num">5</td><td>바로가기 그리드 <span style='color:#adb5bd;font-size:11px;'>(Card grid)</span></td><td>중장기 방향성 공유 그룹 내 9개 화면(SCR-006~014)<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 카드 클릭 시 해당 화면 이동</div></td></tr>
+</tbody></table>
+<h3 style="font-size:13px; font-weight:700; color:#343a40; margin:18px 0 8px 0;">상태별 화면</h3>
+<table class="desc-table"><thead><tr><th>상태</th><th>조건</th><th>표시 내용</th></tr></thead><tbody>
+<tr><td>기본</td><td>데이터 존재</td><td>전 패널 정상 표출</td></tr>
+</tbody></table>
+  </div>
+</div>
+
+
+<div class="screen-section" id="scr-006">
+<div class="meta-box" style="margin:8px 24px 0 24px;"><div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;"><span class="screen-id-badge">SCR-006</span><span style="font-weight:600; font-size:15px; color:#212529;">통합 로드맵 관리</span></div><div style="display:flex; gap:28px; flex-wrap:wrap;"><div><span class="meta-label">URL</span><div class="meta-value">/pndes/mtrm/roadmap</div></div><div><span class="meta-label">플랫폼</span><div class="meta-value">PC 사용자</div></div><div><span class="meta-label">접근 권한</span><div class="meta-value">생기 업무 담당자 이상(등록/수정), 전체 사용자(조회)</div></div><div><span class="meta-label">관련 기능</span><div class="meta-value">F-010</div></div><div><span class="meta-label">관련 I/F</span><div class="meta-value">-</div></div><div><span class="meta-label">우선순위</span><div class="meta-value"><span class="badge badge-dark">P0</span></div></div></div></div>
+  <div class="wireframe-wrap" style="margin:0 24px 24px 24px; border-radius:10px; overflow:visible; border:1px solid #dee2e6; background:#fff;">
+    <div class="ind-container" style="padding:20px;">
+<div style="padding:14px 20px; background:#343a40; color:#fff; font-size:13px; border-radius:8px 8px 0 0; margin:-20px -20px 16px -20px;">생기포털 &gt; 중장기 방향성 공유 &gt; 통합 로드맵 관리 <span style="float:right; color:#adb5bd; font-size:12px;">[사용자명][로그아웃]</span></div>
+<div style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; padding:12px; background:#f8f9fa; border:1px solid #dee2e6; border-radius:8px; margin-bottom:16px;"><div style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:10px; color:#adb5bd;">분과</span><select class="select" style="width:130px;"><option>전체v</option></select></div><div style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:10px; color:#adb5bd;">상태</span><select class="select" style="width:130px;"><option>전체v</option></select></div></div>
+<div style="display:flex; gap:8px; justify-content:flex-end; margin-bottom:12px;"><button class="btn btn-dark btn-sm">+ 로드맵 등록</button><button class="btn btn-outline btn-sm">이력보기</button><button class="btn btn-outline btn-sm">간트차트로 보기 &gt;</button></div>
+<table style="margin-bottom:16px;">
+<thead><tr><th>차체</th><th>차체 자동화 로드맵</th><th>2026.01~2028.12</th><th>용접자동화</th><th>진행중</th><th>[이력보기]</th></tr></thead>
+<tbody>
+<tr><td>조립</td><td>조립 자동화 로드맵</td><td>2026.03~2029.06</td><td>협동로봇 도입</td><td>승인대기</td><td>[이력보기]</td></tr>
+</tbody></table>
+    </div>
+  </div>
+  <div class="desc-wrap" style="margin:0 24px 24px 24px;">
+    <h3 style="font-size:16px; font-weight:700; color:#212529; margin:0 0 12px 0;">Description</h3>
+<table class="desc-table">
+<thead><tr><th class="num">No</th><th>컴포넌트</th><th>설명 / 인터랙션</th></tr></thead>
+<tbody>
+<tr><td class="num">1</td><td>등록 버튼 <span style='color:#adb5bd;font-size:11px;'>(Button(primary))</span></td><td>로드맵 등록 폼(분과/기간/대표과제/상태)<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 필수값 검증, 기간 역전 시 오류</div></td></tr>
+<tr><td class="num">2</td><td>로드맵 리스트 <span style='color:#adb5bd;font-size:11px;'>(DataTable)</span></td><td>통합 로드맵 목록<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 행 클릭 시 상세 과제 로드맵(SCR-007) 이동</div></td></tr>
+<tr><td class="num">3</td><td>개정이력 버튼 <span style='color:#adb5bd;font-size:11px;'>(Button(small))</span></td><td>버전별 변경 이력 조회<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 클릭 시 이력 타임라인 모달</div></td></tr>
+<tr><td class="num">4</td><td>간트차트로 보기 <span style='color:#adb5bd;font-size:11px;'>(LinkButton)</span></td><td>SCR-008 이동<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 클릭 시 대시보드 이동</div></td></tr>
+</tbody></table>
+<h3 style="font-size:13px; font-weight:700; color:#343a40; margin:18px 0 8px 0;">상태별 화면</h3>
+<table class="desc-table"><thead><tr><th>상태</th><th>조건</th><th>표시 내용</th></tr></thead><tbody>
+<tr><td>기본</td><td>데이터 존재</td><td>로드맵 리스트</td></tr>
+<tr><td>입력 오류</td><td>필수값 누락/기간 역전</td><td>오류 안내 후 재입력 요구</td></tr>
+<tr><td>빈 상태</td><td>등록된 로드맵 없음</td><td>&quot;등록된 통합 로드맵이 없습니다&quot;</td></tr>
+</tbody></table>
+  </div>
+</div>
+
+
+<div class="screen-section" id="scr-007">
+<div class="meta-box" style="margin:8px 24px 0 24px;"><div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;"><span class="screen-id-badge">SCR-007</span><span style="font-weight:600; font-size:15px; color:#212529;">상세 과제 로드맵 관리</span></div><div style="display:flex; gap:28px; flex-wrap:wrap;"><div><span class="meta-label">URL</span><div class="meta-value">/pndes/mtrm/roadmap/detail</div></div><div><span class="meta-label">플랫폼</span><div class="meta-value">PC 사용자</div></div><div><span class="meta-label">접근 권한</span><div class="meta-value">생기 업무 담당자 이상(등록/수정), 전체 사용자(조회)</div></div><div><span class="meta-label">관련 기능</span><div class="meta-value">F-011</div></div><div><span class="meta-label">관련 I/F</span><div class="meta-value">-</div></div><div><span class="meta-label">우선순위</span><div class="meta-value"><span class="badge badge-dark">P0</span></div></div></div></div>
+  <div class="wireframe-wrap" style="margin:0 24px 24px 24px; border-radius:10px; overflow:visible; border:1px solid #dee2e6; background:#fff;">
+    <div class="ind-container" style="padding:20px;">
+<div style="padding:14px 20px; background:#343a40; color:#fff; font-size:13px; border-radius:8px 8px 0 0; margin:-20px -20px 16px -20px;">생기포털 &gt; 중장기 방향성 공유 &gt; 상세 과제 로드맵 관리 <span style="float:right; color:#adb5bd; font-size:12px;">[사용자명][로그아웃]</span></div>
+<div style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; padding:12px; background:#f8f9fa; border:1px solid #dee2e6; border-radius:8px; margin-bottom:16px;"><div style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:10px; color:#adb5bd;">로드맵</span><select class="select" style="width:130px;"><option>차체 자동화 로드맵 v</option></select></div></div>
+<div style="display:flex; gap:8px; justify-content:flex-end; margin-bottom:12px;"><button class="btn btn-dark btn-sm">+ 상세과제 등록</button><button class="btn btn-outline btn-sm">수정</button></div>
+<table style="margin-bottom:16px;">
+<thead><tr><th>용접로봇 도입</th><th>홍**</th><th>2026.03~2026.09</th><th>진행중</th><th>[수정]</th></tr></thead>
+<tbody>
+<tr><td>검사공정 자동화</td><td>김**</td><td>2026.06~2027.02</td><td>계획</td><td>[수정]</td></tr>
+</tbody></table>
+    </div>
+  </div>
+  <div class="desc-wrap" style="margin:0 24px 24px 24px;">
+    <h3 style="font-size:16px; font-weight:700; color:#212529; margin:0 0 12px 0;">Description</h3>
+<table class="desc-table">
+<thead><tr><th class="num">No</th><th>컴포넌트</th><th>설명 / 인터랙션</th></tr></thead>
+<tbody>
+<tr><td class="num">1</td><td>소속 로드맵 선택 <span style='color:#adb5bd;font-size:11px;'>(Dropdown)</span></td><td>상위 통합 로드맵 지정(필수)<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 미지정 시 등록 버튼 비활성화</div></td></tr>
+<tr><td class="num">2</td><td>상세과제 등록 폼 <span style='color:#adb5bd;font-size:11px;'>(Modal)</span></td><td>과제명/담당자/기간/진행상태<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 상위 로드맵 미지정 시 저장 차단</div></td></tr>
+<tr><td class="num">3</td><td>상세과제 테이블 <span style='color:#adb5bd;font-size:11px;'>(DataTable)</span></td><td>과제 리스트<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 정렬, 진행상태 뱃지 컬러</div></td></tr>
+</tbody></table>
+<h3 style="font-size:13px; font-weight:700; color:#343a40; margin:18px 0 8px 0;">상태별 화면</h3>
+<table class="desc-table"><thead><tr><th>상태</th><th>조건</th><th>표시 내용</th></tr></thead><tbody>
+<tr><td>기본</td><td>데이터 존재</td><td>상세과제 리스트</td></tr>
+<tr><td>저장 차단</td><td>상위 로드맵 미지정</td><td>&quot;소속 통합 로드맵을 먼저 선택하세요&quot;</td></tr>
+<tr><td>빈 상태</td><td>상세과제 없음</td><td>&quot;등록된 상세 과제가 없습니다&quot;</td></tr>
+</tbody></table>
+  </div>
+</div>
+
+
+<div class="screen-section" id="scr-008">
+<div class="meta-box" style="margin:8px 24px 0 24px;"><div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;"><span class="screen-id-badge">SCR-008</span><span style="font-weight:600; font-size:15px; color:#212529;">mTRM 통합 로드맵 대시보드(간트차트)</span></div><div style="display:flex; gap:28px; flex-wrap:wrap;"><div><span class="meta-label">URL</span><div class="meta-value">/pndes/mtrm/dashboard</div></div><div><span class="meta-label">플랫폼</span><div class="meta-value">PC 사용자</div></div><div><span class="meta-label">접근 권한</span><div class="meta-value">전체 사용자(조회)</div></div><div><span class="meta-label">관련 기능</span><div class="meta-value">F-012</div></div><div><span class="meta-label">관련 I/F</span><div class="meta-value">-</div></div><div><span class="meta-label">우선순위</span><div class="meta-value"><span class="badge badge-dark">P0</span></div></div></div></div>
+  <div class="wireframe-wrap" style="margin:0 24px 24px 24px; border-radius:10px; overflow:visible; border:1px solid #dee2e6; background:#fff;">
+    <div class="ind-container" style="padding:20px;">
+<div style="padding:14px 20px; background:#343a40; color:#fff; font-size:13px; border-radius:8px 8px 0 0; margin:-20px -20px 16px -20px;">생기포털 &gt; 중장기 방향성 공유 &gt; mTRM 통합 로드맵 대시보드 <span style="float:right; color:#adb5bd; font-size:12px;">[사용자명][로그아웃]</span></div>
+<div style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; padding:12px; background:#f8f9fa; border:1px solid #dee2e6; border-radius:8px; margin-bottom:16px;"><div style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:10px; color:#adb5bd;">분과</span><select class="select" style="width:130px;"><option>전체v</option></select></div><div style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:10px; color:#adb5bd;">기간</span><select class="select" style="width:130px;"><option>2026 v</option></select></div><div style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:10px; color:#adb5bd;">상태</span><select class="select" style="width:130px;"><option>전체v</option></select></div></div>
+<div style="display:flex; gap:8px; justify-content:flex-end; margin-bottom:12px;"><button class="btn btn-dark btn-sm">2029 v</button><button class="btn btn-outline btn-sm">====================</button><button class="btn btn-outline btn-sm">========</button><button class="btn btn-outline btn-sm">============</button></div>
+<pre style="background:#f8f9fa; border:1px solid #dee2e6; border-radius:8px; padding:16px; font-size:11px; line-height:1.6; color:#495057; white-space:pre-wrap; font-family:Consolas,monospace; overflow-x:auto;">+------------------------------------------------------------------------------------------+  1920px
+|  [PNDES 로고]  생기포털 &gt; 중장기 방향성 공유 &gt; mTRM 통합 로드맵 대시보드 [사용자명][로그아웃] |
+|  분과:[전체v]  기간:[2026 v]~[2029 v]  상태:[전체v]      보기: ( )요약본  (o)전체보기       |
+|  |             2026.Q1  Q2  Q3  Q4 | 2027.Q1  Q2  Q3  Q4 | 2028.Q1  Q2 ...              | |
+|  | 차체 자동화 로드맵  [====================]                                           | |
+|  |  ㄴ 용접로봇 도입      [========]                                                     | |
+|  |  ㄴ 검사공정 자동화        [============]                                            | |
+|  | 조립 자동화 로드맵          [========================]                               | |
+|  (Highcharts Gantt 컴포넌트, 막대 클릭 시 상세 팝업, 색상=상태별 구분)                       |</pre>
+    </div>
+  </div>
+  <div class="desc-wrap" style="margin:0 24px 24px 24px;">
+    <h3 style="font-size:16px; font-weight:700; color:#212529; margin:0 0 12px 0;">Description</h3>
+<table class="desc-table">
+<thead><tr><th class="num">No</th><th>컴포넌트</th><th>설명 / 인터랙션</th></tr></thead>
+<tbody>
+<tr><td class="num">1</td><td>보기 전환 <span style='color:#adb5bd;font-size:11px;'>(RadioGroup)</span></td><td>요약본/전체보기<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 선택 시 간트 데이터 재구성(F-012)</div></td></tr>
+<tr><td class="num">2</td><td>간트 차트 <span style='color:#adb5bd;font-size:11px;'>(GanttChart(Highcharts))</span></td><td>기간 막대 + 상태 색상<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 막대 클릭 시 상세 팝업, 가로 스크롤로 기간 이동</div></td></tr>
+<tr><td class="num">3</td><td>상세 팝업 <span style='color:#adb5bd;font-size:11px;'>(Modal)</span></td><td>과제 상세정보<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 읽기 전용, [상세과제 관리로 이동] 링크(SCR-007)</div></td></tr>
+</tbody></table>
+<h3 style="font-size:13px; font-weight:700; color:#343a40; margin:18px 0 8px 0;">상태별 화면</h3>
+<table class="desc-table"><thead><tr><th>상태</th><th>조건</th><th>표시 내용</th></tr></thead><tbody>
+<tr><td>기본</td><td>데이터 존재</td><td>간트 차트 렌더링</td></tr>
+<tr><td>빈 상태</td><td>조회결과 없음</td><td>&quot;조회된 로드맵이 없습니다&quot;</td></tr>
+</tbody></table>
+  </div>
+</div>
+
+
+<div class="screen-section" id="scr-009">
+<div class="meta-box" style="margin:8px 24px 0 24px;"><div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;"><span class="screen-id-badge">SCR-009</span><span style="font-weight:600; font-size:15px; color:#212529;">생산기술 Tech PR</span></div><div style="display:flex; gap:28px; flex-wrap:wrap;"><div><span class="meta-label">URL</span><div class="meta-value">/pndes/mtrm/techpr</div></div><div><span class="meta-label">플랫폼</span><div class="meta-value">PC 사용자</div></div><div><span class="meta-label">접근 권한</span><div class="meta-value">전체 사용자(조회/재생/문의발송)</div></div><div><span class="meta-label">관련 기능</span><div class="meta-value">F-013(그리드 조회/재생), F-014(메일발송)</div></div><div><span class="meta-label">관련 I/F</span><div class="meta-value">IF-004(메일), IF-006(첨부), IF-008(이력)</div></div><div><span class="meta-label">우선순위</span><div class="meta-value"><span class="badge badge-dark">P0</span></div></div></div></div>
+  <div class="wireframe-wrap" style="margin:0 24px 24px 24px; border-radius:10px; overflow:visible; border:1px solid #dee2e6; background:#fff;">
+    <div class="ind-container" style="padding:20px;">
+<div style="padding:14px 20px; background:#343a40; color:#fff; font-size:13px; border-radius:8px 8px 0 0; margin:-20px -20px 16px -20px;">생기포털 &gt; 중장기 방향성 공유 &gt; 생산기술 Tech PR <span style="float:right; color:#adb5bd; font-size:12px;">[사용자명][로그아웃]</span></div>
+<div style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; padding:12px; background:#f8f9fa; border:1px solid #dee2e6; border-radius:8px; margin-bottom:16px;"><div style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:10px; color:#adb5bd;">과제</span><select class="select" style="width:130px;"><option>전체v</option></select></div><div style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:10px; color:#adb5bd;">분과</span><select class="select" style="width:130px;"><option>전체v</option></select></div><div style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:10px; color:#adb5bd;">자료구분</span><select class="select" style="width:130px;"><option>전체v</option></select></div></div>
+<div style="display:flex; gap:8px; justify-content:flex-end; margin-bottom:12px;"><button class="btn btn-dark btn-sm">기술 문의/제안하기</button><button class="btn btn-outline btn-sm">썸네일/재생▶</button></div>
+<table style="margin-bottom:16px;">
+<thead><tr><th>[썸네일/재생▶]</th><th></th><th>[썸네일/재생▶]</th><th></th><th>[썸네일/재생▶]</th><th></th><th>[썸네일/재생▶]</th></tr></thead>
+<tbody>
+<tr><td>용접로봇 소개</td><td></td><td>검사AI 적용</td><td></td><td>협동로봇 사례</td><td></td><td>배선자동화</td></tr>
+<tr><td>차체분과</td><td></td><td>검사분과</td><td></td><td>조립분과</td><td></td><td>배선분과</td></tr>
+</tbody></table>
+    </div>
+  </div>
+  <div class="desc-wrap" style="margin:0 24px 24px 24px;">
+    <h3 style="font-size:16px; font-weight:700; color:#212529; margin:0 0 12px 0;">Description</h3>
+<table class="desc-table">
+<thead><tr><th class="num">No</th><th>컴포넌트</th><th>설명 / 인터랙션</th></tr></thead>
+<tbody>
+<tr><td class="num">1</td><td>자료 그리드 <span style='color:#adb5bd;font-size:11px;'>(CardGrid)</span></td><td>썸네일 + 제목 + 분과<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 썸네일 클릭 시 인라인 동영상 재생(IF-006)</div></td></tr>
+<tr><td class="num">2</td><td>문의/제안 버튼 <span style='color:#adb5bd;font-size:11px;'>(Button(primary))</span></td><td>메일 발송 모달 호출<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 클릭 시 대상 자료 자동 지정</div></td></tr>
+<tr><td class="num">3</td><td>발송 버튼 <span style='color:#adb5bd;font-size:11px;'>(Button(primary, modal))</span></td><td>담당자 메일 발송(IF-004)<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 담당자 미등록 시 비활성화 안내</div></td></tr>
+</tbody></table>
+<h3 style="font-size:13px; font-weight:700; color:#343a40; margin:18px 0 8px 0;">상태별 화면</h3>
+<table class="desc-table"><thead><tr><th>상태</th><th>조건</th><th>표시 내용</th></tr></thead><tbody>
+<tr><td>기본</td><td>자료 존재</td><td>카드 그리드 표출</td></tr>
+<tr><td>재생 오류</td><td>미지원 포맷/재생 실패</td><td>안내 메시지 + 재시도 버튼</td></tr>
+<tr><td>발송 실패</td><td>메일 발송 실패</td><td>오류 안내 + 재시도</td></tr>
+<tr><td>빈 상태</td><td>조회결과 없음</td><td>&quot;등록된 자료가 없습니다&quot;</td></tr>
+</tbody></table>
+  </div>
+</div>
+
+
+<div class="screen-section" id="scr-010">
+<div class="meta-box" style="margin:8px 24px 0 24px;"><div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;"><span class="screen-id-badge">SCR-010</span><span style="font-weight:600; font-size:15px; color:#212529;">Tech PR 관리자</span></div><div style="display:flex; gap:28px; flex-wrap:wrap;"><div><span class="meta-label">URL</span><div class="meta-value">/pndes/mtrm/techpr/admin</div></div><div><span class="meta-label">플랫폼</span><div class="meta-value">PC 어드민</div></div><div><span class="meta-label">접근 권한</span><div class="meta-value">생기기획팀(관리자)</div></div><div><span class="meta-label">관련 기능</span><div class="meta-value">F-015</div></div><div><span class="meta-label">관련 I/F</span><div class="meta-value">IF-006</div></div><div><span class="meta-label">우선순위</span><div class="meta-value"><span class="badge badge-dark">P1</span></div></div></div></div>
+  <div class="wireframe-wrap" style="margin:0 24px 24px 24px; border-radius:10px; overflow:visible; border:1px solid #dee2e6; background:#fff;">
+    <div class="ind-container" style="padding:20px;">
+<div style="padding:14px 20px; background:#343a40; color:#fff; font-size:13px; border-radius:8px 8px 0 0; margin:-20px -20px 16px -20px;">생기포털 &gt; 중장기 방향성 공유 &gt; Tech PR 관리자 <span style="float:right; color:#adb5bd; font-size:12px;">[사용자명][로그아웃]</span></div>
+<div style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; padding:12px; background:#f8f9fa; border:1px solid #dee2e6; border-radius:8px; margin-bottom:16px;"><div style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:10px; color:#adb5bd;">과제</span><select class="select" style="width:130px;"><option>전체v</option></select></div></div>
+<div style="display:flex; gap:8px; justify-content:flex-end; margin-bottom:12px;"><button class="btn btn-dark btn-sm">+ 자료 등록</button><button class="btn btn-outline btn-sm">수정</button></div>
+<pre style="background:#f8f9fa; border:1px solid #dee2e6; border-radius:8px; padding:16px; font-size:11px; line-height:1.6; color:#495057; white-space:pre-wrap; font-family:Consolas,monospace; overflow-x:auto;">+------------------------------------------------------------------------------------------+  1920px
+|  [PNDES 로고]  생기포털 &gt; 중장기 방향성 공유 &gt; Tech PR 관리자            [사용자명][로그아웃] |
+|  과제:[전체v]                                                          [+ 자료 등록]       |
+|  | No | 제목          | 과제       | 담당자 | 첨부(문서/영상)     | 등록일     | 관리    | |
+|  | 1  | 용접로봇 소개  | 용접자동화 | 홍**   | 동영상 1건          | 2026-07-01 | [수정]  | |</pre>
+    </div>
+  </div>
+  <div class="desc-wrap" style="margin:0 24px 24px 24px;">
+    <h3 style="font-size:16px; font-weight:700; color:#212529; margin:0 0 12px 0;">Description</h3>
+<table class="desc-table">
+<thead><tr><th class="num">No</th><th>컴포넌트</th><th>설명 / 인터랙션</th></tr></thead>
+<tbody>
+<tr><td class="num">1</td><td>자료 등록 폼 <span style='color:#adb5bd;font-size:11px;'>(Modal)</span></td><td>제목/과제/첨부/담당자<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 허용 확장자 검증(IF-006), 등록 즉시 SCR-009 반영</div></td></tr>
+<tr><td class="num">2</td><td>첨부 업로드 <span style='color:#adb5bd;font-size:11px;'>(FileDropzone)</span></td><td>문서/이미지/영상<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 용량/확장자 초과 시 오류</div></td></tr>
+<tr><td class="num">3</td><td>자료 리스트 <span style='color:#adb5bd;font-size:11px;'>(DataTable)</span></td><td>등록된 자료<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 행 클릭 시 수정 폼</div></td></tr>
+</tbody></table>
+<h3 style="font-size:13px; font-weight:700; color:#343a40; margin:18px 0 8px 0;">상태별 화면</h3>
+<table class="desc-table"><thead><tr><th>상태</th><th>조건</th><th>표시 내용</th></tr></thead><tbody>
+<tr><td>업로드 차단</td><td>허용 확장자 외 첨부</td><td>&quot;허용되지 않는 파일 형식입니다&quot;</td></tr>
+<tr><td>기본</td><td>데이터 존재</td><td>자료 리스트</td></tr>
+</tbody></table>
+  </div>
+</div>
+
+
+<div class="screen-section" id="scr-011">
+<div class="meta-box" style="margin:8px 24px 0 24px;"><div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;"><span class="screen-id-badge">SCR-011</span><span style="font-weight:600; font-size:15px; color:#212529;">mTRM 협의체 관리</span></div><div style="display:flex; gap:28px; flex-wrap:wrap;"><div><span class="meta-label">URL</span><div class="meta-value">/pndes/mtrm/council</div></div><div><span class="meta-label">플랫폼</span><div class="meta-value">PC 어드민</div></div><div><span class="meta-label">접근 권한</span><div class="meta-value">생기기획팀(관리자)</div></div><div><span class="meta-label">관련 기능</span><div class="meta-value">F-016</div></div><div><span class="meta-label">관련 I/F</span><div class="meta-value">IF-004, IF-008</div></div><div><span class="meta-label">우선순위</span><div class="meta-value"><span class="badge badge-dark">P0</span></div></div></div></div>
+  <div class="wireframe-wrap" style="margin:0 24px 24px 24px; border-radius:10px; overflow:visible; border:1px solid #dee2e6; background:#fff;">
+    <div class="ind-container" style="padding:20px;">
+<div style="padding:14px 20px; background:#343a40; color:#fff; font-size:13px; border-radius:8px 8px 0 0; margin:-20px -20px 16px -20px;">생기포털 &gt; 중장기 방향성 공유 &gt; mTRM 협의체 관리 <span style="float:right; color:#adb5bd; font-size:12px;">[사용자명][로그아웃]</span></div>
+<div style="display:flex; gap:8px; justify-content:flex-end; margin-bottom:12px;"><button class="btn btn-dark btn-sm">+ 협의체 등록</button></div>
+<pre style="background:#f8f9fa; border:1px solid #dee2e6; border-radius:8px; padding:16px; font-size:11px; line-height:1.6; color:#495057; white-space:pre-wrap; font-family:Consolas,monospace; overflow-x:auto;">+------------------------------------------------------------------------------------------+  1920px
+|  [PNDES 로고]  생기포털 &gt; 중장기 방향성 공유 &gt; mTRM 협의체 관리          [사용자명][로그아웃] |
+|                                                                    [+ 협의체 등록]          |
+|  | 협의체명       | 분과 | 안건        | 대상 분과장 | 일정        | 메일발송 상태 |         |
+|  | 26년 상반기 협의 | 차체 | 로드맵 검토 | 이**        | 2026-08-20 | 발송완료      |         |</pre>
+    </div>
+  </div>
+  <div class="desc-wrap" style="margin:0 24px 24px 24px;">
+    <h3 style="font-size:16px; font-weight:700; color:#212529; margin:0 0 12px 0;">Description</h3>
+<table class="desc-table">
+<thead><tr><th class="num">No</th><th>컴포넌트</th><th>설명 / 인터랙션</th></tr></thead>
+<tbody>
+<tr><td class="num">1</td><td>등록 모달 <span style='color:#adb5bd;font-size:11px;'>(Modal)</span></td><td>협의체 정보 입력<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 대상 분과장 미지정 시 저장 차단</div></td></tr>
+<tr><td class="num">2</td><td>등록 버튼(모달 내) <span style='color:#adb5bd;font-size:11px;'>(Button(primary))</span></td><td>등록 + 메일발송(IF-004) 트리거<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 등록 성공 시 분과장 메일 발송, 발송 이력(IF-008) 기록</div></td></tr>
+<tr><td class="num">3</td><td>협의체 리스트 <span style='color:#adb5bd;font-size:11px;'>(DataTable)</span></td><td>협의체 목록<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 메일발송 상태 뱃지(발송완료/실패)</div></td></tr>
+</tbody></table>
+<h3 style="font-size:13px; font-weight:700; color:#343a40; margin:18px 0 8px 0;">상태별 화면</h3>
+<table class="desc-table"><thead><tr><th>상태</th><th>조건</th><th>표시 내용</th></tr></thead><tbody>
+<tr><td>저장 차단</td><td>대상 분과장 미지정</td><td>&quot;대상 분과장을 지정하세요&quot;</td></tr>
+<tr><td>발송 실패</td><td>메일 발송 실패</td><td>리스트 내 &quot;발송 실패&quot; 뱃지 + 재발송 버튼</td></tr>
+</tbody></table>
+  </div>
+</div>
+
+
+<div class="screen-section" id="scr-012">
+<div class="meta-box" style="margin:8px 24px 0 24px;"><div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;"><span class="screen-id-badge">SCR-012</span><span style="font-weight:600; font-size:15px; color:#212529;">mTRM 관리</span></div><div style="display:flex; gap:28px; flex-wrap:wrap;"><div><span class="meta-label">URL</span><div class="meta-value">/pndes/mtrm/manage</div></div><div><span class="meta-label">플랫폼</span><div class="meta-value">PC 어드민</div></div><div><span class="meta-label">접근 권한</span><div class="meta-value">생기기획팀(관리자) — CRUD, 그 외 — 조회만</div></div><div><span class="meta-label">관련 기능</span><div class="meta-value">F-017</div></div><div><span class="meta-label">관련 I/F</span><div class="meta-value">-</div></div><div><span class="meta-label">우선순위</span><div class="meta-value"><span class="badge badge-dark">P1</span></div></div></div></div>
+  <div class="wireframe-wrap" style="margin:0 24px 24px 24px; border-radius:10px; overflow:visible; border:1px solid #dee2e6; background:#fff;">
+    <div class="ind-container" style="padding:20px;">
+<div style="padding:14px 20px; background:#343a40; color:#fff; font-size:13px; border-radius:8px 8px 0 0; margin:-20px -20px 16px -20px;">생기포털 &gt; 중장기 방향성 공유 &gt; mTRM 관리 <span style="float:right; color:#adb5bd; font-size:12px;">[사용자명][로그아웃]</span></div>
+<div style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; padding:12px; background:#f8f9fa; border:1px solid #dee2e6; border-radius:8px; margin-bottom:16px;"><div style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:10px; color:#adb5bd;">검색</span><select class="select" style="width:130px;"><option></option></select></div></div>
+<div style="display:flex; gap:8px; justify-content:flex-end; margin-bottom:12px;"><button class="btn btn-dark btn-sm">검색</button><button class="btn btn-outline btn-sm">+ mTRM 등록</button><button class="btn btn-outline btn-sm">수정</button><button class="btn btn-outline btn-sm">삭제</button></div>
+<pre style="background:#f8f9fa; border:1px solid #dee2e6; border-radius:8px; padding:16px; font-size:11px; line-height:1.6; color:#495057; white-space:pre-wrap; font-family:Consolas,monospace; overflow-x:auto;">+------------------------------------------------------------------------------------------+  1920px
+|  [PNDES 로고]  생기포털 &gt; 중장기 방향성 공유 &gt; mTRM 관리                 [사용자명][로그아웃] |
+|  검색:[            ] [검색]                                          [+ mTRM 등록](관리자) |
+|  | No | mTRM명       | 분과 | 상태  | 등록일     | 관리(관리자 전용)                     | |
+|  | 1  | 차체 mTRM     | 차체 | 활성  | 2026-01-05 | [수정][삭제]                         | |</pre>
+    </div>
+  </div>
+  <div class="desc-wrap" style="margin:0 24px 24px 24px;">
+    <h3 style="font-size:16px; font-weight:700; color:#212529; margin:0 0 12px 0;">Description</h3>
+<table class="desc-table">
+<thead><tr><th class="num">No</th><th>컴포넌트</th><th>설명 / 인터랙션</th></tr></thead>
+<tbody>
+<tr><td class="num">1</td><td>CRUD 버튼 <span style='color:#adb5bd;font-size:11px;'>(Button(small))</span></td><td>등록/수정/삭제<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 관리자만 노출, 권한 없는 접근 시 API 단에서도 차단</div></td></tr>
+<tr><td class="num">2</td><td>삭제 확인 모달 <span style='color:#adb5bd;font-size:11px;'>(Modal)</span></td><td>연계 확인(F-018 연동 여부)<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 타 기능 연계 항목 삭제 시 경고 후 재확인</div></td></tr>
+</tbody></table>
+<h3 style="font-size:13px; font-weight:700; color:#343a40; margin:18px 0 8px 0;">상태별 화면</h3>
+<table class="desc-table"><thead><tr><th>상태</th><th>조건</th><th>표시 내용</th></tr></thead><tbody>
+<tr><td>삭제 경고</td><td>기술과제(F-018)에 연계된 mTRM 삭제 시도</td><td>&quot;해당 mTRM은 기술과제에 연계되어 있습니다. 계속하시겠습니까?&quot;</td></tr>
+<tr><td>권한 없음</td><td>비관리자 CRUD 접근 시도</td><td>버튼 미노출 + 접근 차단 안내</td></tr>
+</tbody></table>
+  </div>
+</div>
+
+
+<div class="screen-section" id="scr-013">
+<div class="meta-box" style="margin:8px 24px 0 24px;"><div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;"><span class="screen-id-badge">SCR-013</span><span style="font-weight:600; font-size:15px; color:#212529;">기술과제 계획등록(mTRM 연동 영역)</span></div><div style="display:flex; gap:28px; flex-wrap:wrap;"><div><span class="meta-label">URL</span><div class="meta-value">/pndes/mtrm/task-plan</div></div><div><span class="meta-label">플랫폼</span><div class="meta-value">PC 사용자</div></div><div><span class="meta-label">접근 권한</span><div class="meta-value">생기 업무 담당자, 경영진/과제 관리자</div></div><div><span class="meta-label">관련 기능</span><div class="meta-value">F-018</div></div><div><span class="meta-label">관련 I/F</span><div class="meta-value">IF-007(기술과제관리 시스템 연동)</div></div><div><span class="meta-label">우선순위</span><div class="meta-value"><span class="badge badge-dark">P0</span></div></div></div></div>
+  <div class="wireframe-wrap" style="margin:0 24px 24px 24px; border-radius:10px; overflow:visible; border:1px solid #dee2e6; background:#fff;">
+    <div class="ind-container" style="padding:20px;">
+<div style="padding:14px 20px; background:#343a40; color:#fff; font-size:13px; border-radius:8px 8px 0 0; margin:-20px -20px 16px -20px;">생기포털 &gt; 중장기 방향성 공유 &gt; 기술과제 계획등록 <span style="float:right; color:#adb5bd; font-size:12px;">[사용자명][로그아웃]</span></div>
+<div style="display:flex; gap:8px; justify-content:flex-end; margin-bottom:12px;"><button class="btn btn-dark btn-sm">자동 매핑 결과</button><button class="btn btn-outline btn-sm">취소</button><button class="btn btn-outline btn-sm">등록</button></div>
+<pre style="background:#f8f9fa; border:1px solid #dee2e6; border-radius:8px; padding:16px; font-size:11px; line-height:1.6; color:#495057; white-space:pre-wrap; font-family:Consolas,monospace; overflow-x:auto;">+------------------------------------------------------------------------------------------+  1920px
+|  [PNDES 로고]  생기포털 &gt; 중장기 방향성 공유 &gt; 기술과제 계획등록         [사용자명][로그아웃] |
+|  과제명 * [                                    ]   담당자 * [선택하세요  v]                |
+|  계획등록일 * [YYYY-MM-DD]                                                                 |
+|  -------------------------------------- mTRM 연동 영역 ------------------------------------ |
+|  연계 대상 mTRM 로드맵 *  [선택하세요                                    v]                 |
+|  [자동 매핑 결과]                                                                          |
+|  | 매핑 로드맵명   | 매핑 상세과제        | 매핑 상태                                     | |
+|  | 차체 자동화 로드맵 | 용접로봇 도입        | 매핑 완료                                    | |
+|                                                                    [취소]   [등록]          |</pre>
+    </div>
+  </div>
+  <div class="desc-wrap" style="margin:0 24px 24px 24px;">
+    <h3 style="font-size:16px; font-weight:700; color:#212529; margin:0 0 12px 0;">Description</h3>
+<table class="desc-table">
+<thead><tr><th class="num">No</th><th>컴포넌트</th><th>설명 / 인터랙션</th></tr></thead>
+<tbody>
+<tr><td class="num">1</td><td>mTRM 연동 영역 <span style='color:#adb5bd;font-size:11px;'>(Section)</span></td><td>연계 대상 로드맵 선택 및 자동 매핑 결과 표시<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 선택 시 IF-007 통해 매핑 자동 실행</div></td></tr>
+<tr><td class="num">2</td><td>매핑 결과 테이블 <span style='color:#adb5bd;font-size:11px;'>(DataTable(readonly))</span></td><td>매핑된 로드맵/과제/상태<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 매핑 보류 시 &quot;확인 필요&quot; 뱃지</div></td></tr>
+<tr><td class="num">3</td><td>등록 버튼 <span style='color:#adb5bd;font-size:11px;'>(Button(primary))</span></td><td>계획 등록 확정<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 등록 시 기술과제관리 시스템에 회신(IF-007)</div></td></tr>
+</tbody></table>
+<h3 style="font-size:13px; font-weight:700; color:#343a40; margin:18px 0 8px 0;">상태별 화면</h3>
+<table class="desc-table"><thead><tr><th>상태</th><th>조건</th><th>표시 내용</th></tr></thead><tbody>
+<tr><td>매핑 보류</td><td>연계 대상 mTRM 로드맵 삭제/부재</td><td>&quot;매핑 보류 — 담당자 확인이 필요합니다&quot;</td></tr>
+<tr><td>기본</td><td>매핑 성공</td><td>&quot;매핑 완료&quot; 표시</td></tr>
+</tbody></table>
+  </div>
+</div>
+
+
+<div class="screen-section" id="scr-014">
+<div class="meta-box" style="margin:8px 24px 0 24px;"><div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;"><span class="screen-id-badge">SCR-014</span><span style="font-weight:600; font-size:15px; color:#212529;">기술동향 목록/상세</span></div><div style="display:flex; gap:28px; flex-wrap:wrap;"><div><span class="meta-label">URL</span><div class="meta-value">/pndes/mtrm/trend</div></div><div><span class="meta-label">플랫폼</span><div class="meta-value">PC 사용자</div></div><div><span class="meta-label">접근 권한</span><div class="meta-value">생기기획팀(등록), 전체 사용자(조회)</div></div><div><span class="meta-label">관련 기능</span><div class="meta-value">F-019</div></div><div><span class="meta-label">관련 I/F</span><div class="meta-value">IF-006</div></div><div><span class="meta-label">우선순위</span><div class="meta-value"><span class="badge badge-dark">P1</span></div></div></div></div>
+  <div class="wireframe-wrap" style="margin:0 24px 24px 24px; border-radius:10px; overflow:visible; border:1px solid #dee2e6; background:#fff;">
+    <div class="ind-container" style="padding:20px;">
+<div style="padding:14px 20px; background:#343a40; color:#fff; font-size:13px; border-radius:8px 8px 0 0; margin:-20px -20px 16px -20px;">생기포털 &gt; 중장기 방향성 공유 &gt; 기술동향 <span style="float:right; color:#adb5bd; font-size:12px;">[사용자명][로그아웃]</span></div>
+<div style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; padding:12px; background:#f8f9fa; border:1px solid #dee2e6; border-radius:8px; margin-bottom:16px;"><div style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:10px; color:#adb5bd;">태그</span><select class="select" style="width:130px;"><option></option></select></div></div>
+<div style="display:flex; gap:8px; justify-content:flex-end; margin-bottom:12px;"><button class="btn btn-dark btn-sm">+ 등록</button><button class="btn btn-outline btn-sm">썸네일</button></div>
+<table style="margin-bottom:16px;">
+<thead><tr><th>[썸네일]</th><th></th><th>[썸네일]</th><th></th><th>[썸네일]</th><th></th><th>[썸네일]</th></tr></thead>
+<tbody>
+<tr><td>제목A</td><td></td><td>제목B</td><td></td><td>제목C</td><td></td><td>제목D</td></tr>
+<tr><td>조회수 120</td><td></td><td>조회수 85</td><td></td><td>조회수 42</td><td></td><td>조회수 200</td></tr>
+</tbody></table>
+    </div>
+  </div>
+  <div class="desc-wrap" style="margin:0 24px 24px 24px;">
+    <h3 style="font-size:16px; font-weight:700; color:#212529; margin:0 0 12px 0;">Description</h3>
+<table class="desc-table">
+<thead><tr><th class="num">No</th><th>컴포넌트</th><th>설명 / 인터랙션</th></tr></thead>
+<tbody>
+<tr><td class="num">1</td><td>카드형 목록 <span style='color:#adb5bd;font-size:11px;'>(CardGrid)</span></td><td>제목/조회수/작성일/담당부서/담당자/태그/썸네일<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 카드 클릭 시 상세 이동, 조회수 +1</div></td></tr>
+<tr><td class="num">2</td><td>등록 버튼 <span style='color:#adb5bd;font-size:11px;'>(Button(primary))</span></td><td>생기기획팀 전용 등록 폼<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 비관리자 미노출</div></td></tr>
+<tr><td class="num">3</td><td>이전/다음 네비게이션 <span style='color:#adb5bd;font-size:11px;'>(Button x2)</span></td><td>상세 화면 내 인접 항목 이동<div style="color:#6c757d; font-size:11px; margin-top:4px;">▸ 첫/마지막 항목에서 비활성화</div></td></tr>
+</tbody></table>
+<h3 style="font-size:13px; font-weight:700; color:#343a40; margin:18px 0 8px 0;">상태별 화면</h3>
+<table class="desc-table"><thead><tr><th>상태</th><th>조건</th><th>표시 내용</th></tr></thead><tbody>
+<tr><td>기본</td><td>데이터 존재</td><td>카드 목록/상세 정상 표출</td></tr>
+<tr><td>빈 상태</td><td>조회결과 없음</td><td>&quot;등록된 기술동향이 없습니다&quot;</td></tr>
+<tr><td>네비게이션 경계</td><td>첫/마지막 항목</td><td>해당 방향 버튼 비활성화</td></tr>
+</tbody></table>
+  </div>
+</div>
+
+<!-- ==================== JAVASCRIPT ==================== -->
+<script>
+function showScreen(screenId, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const target = document.getElementById(screenId);
+  if (target) {
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+function initSidebars() {
+  const template = document.getElementById('sidebar-template');
+  if (!template) return;
+  document.querySelectorAll('.admin-sidebar').forEach(placeholder => {
+    const clone = template.content.cloneNode(true);
+    const activeScreen = placeholder.getAttribute('data-active');
+    clone.querySelectorAll('.sidebar-item').forEach(item => {
+      if (item.getAttribute('data-screen') === activeScreen) {
+        item.classList.add('active');
+      }
+      item.addEventListener('click', () => {
+        const targetScreen = item.getAttribute('data-screen');
+        if (targetScreen) {
+          document.querySelectorAll('.tab-btn').forEach(btn => {
+            if (btn.textContent.includes(targetScreen.replace('scr-', ''))) {
+              showScreen(targetScreen, btn);
+            }
+          });
+        }
+      });
+    });
+    placeholder.appendChild(clone);
+  });
+}
+
+document.getElementById('cover-page').addEventListener('click', (e) => {
+  if (!e.target.closest('button') && !e.target.closest('.download-btns')) {
+    showScreen('scr-001', document.querySelectorAll('.tab-btn')[1]);
+  }
+});
+
+// Scroll spy: update active tab based on scroll position
+function updateActiveTab() {
+  const sections = document.querySelectorAll('.screen-section');
+  const tabs = document.querySelectorAll('.tab-btn');
+  let current = 0;
+  sections.forEach((section, idx) => {
+    const rect = section.getBoundingClientRect();
+    if (rect.top <= 80) current = idx;
+  });
+  tabs.forEach(t => t.classList.remove('active'));
+  if (tabs[current]) tabs[current].classList.add('active');
+}
+
+// --- PDF download (window.print). Editable PPTX is added by sb-creator-pptx. ---
+function downloadPDF(e) {
+  e.stopPropagation();
+  window.print();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initSidebars();
+  document.getElementById('cover-page').style.cursor = 'pointer';
+  window.addEventListener('scroll', updateActiveTab, { passive: true });
+});
+</script>
+
+<!-- BEGIN sb-creator-pptx script (auto-injected) -->
+<script>
+/* ============================================================
+ * sb-creator-pptx — HTML to Editable PPTX Export
+ *   - 각 SECTION_SELECTOR 요소를 슬라이드로 변환
+ *   - DOM 요소 → PptxGenJS addShape/addText (편집 가능 네이티브 형태)
+ *   - body 폭 1440px 강제 측정으로 사용자 창 크기 무관 일정한 스케일
+ *   - 단일행 자동 감지 → wrap:false (짧은 한글 잘림 방지)
+ *   - 폰트 폭 보정 (단일행 +15%, 다행 +8%)
+ *   - 세로로 긴 화면은 SLIDE_HEIGHT 단위로 자동 분할 (멀티 슬라이드)
+ *
+ * 템플릿 변수 (inject.py가 치환):
+ *   .screen-section   기본 .screen-section
+ *   13.33         기본 13.33 (인치, Widescreen)
+ *   7.5        기본 7.5
+ *   화면설계서_kbt_editable         기본 PPTX_Export
+ * ============================================================ */
+
+async function downloadPPTX(e) {
+  if (e && e.stopPropagation) e.stopPropagation();
+  const btn = document.getElementById('btn-pptx');
+  const progress = document.getElementById('download-progress');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="animation:sbpptx-spin 1s linear infinite;"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> 생성 중...';
+  }
+  if (progress) progress.style.display = '';
+
+  if (!document.getElementById('sbpptx-spin-style')) {
+    const s = document.createElement('style');
+    s.id = 'sbpptx-spin-style';
+    s.textContent = '@keyframes sbpptx-spin{to{transform:rotate(360deg)}}';
+    document.head.appendChild(s);
+  }
+
+  const hideEls = document.querySelectorAll('.no-print, .sbpptx-hide');
+  const bodyOrigCss = document.body.style.cssText;
+  const htmlOrigCss = document.documentElement.style.cssText;
+
+  try {
+    await loadScript('https://cdn.jsdelivr.net/gh/gitbrent/PptxGenJS@3.12.0/dist/pptxgen.bundle.js');
+
+    const pptx = new PptxGenJS();
+    const SLIDE_W = 13.33;
+    const SLIDE_H = 7.5;
+    pptx.defineLayout({ name: 'WIDE', width: SLIDE_W, height: SLIDE_H });
+    pptx.layout = 'WIDE';
+
+    // 측정 일관성을 위해 본문 폭을 1440px로 고정
+    hideEls.forEach(el => el.dataset._origDisplay = el.style.display);
+    hideEls.forEach(el => el.style.display = 'none');
+    document.documentElement.style.width = '1440px';
+    document.documentElement.style.overflowX = 'hidden';
+    document.body.style.width = '1440px';
+    document.body.style.minWidth = '1440px';
+    document.body.style.maxWidth = '1440px';
+    void document.body.offsetHeight;
+    window.scrollTo(0, 0);
+    await new Promise(r => setTimeout(r, 400));
+
+    const sections = document.querySelectorAll('.screen-section');
+    if (sections.length === 0) {
+      throw new Error('변환할 섹션이 없습니다. 셀렉터: .screen-section');
+    }
+
+    for (let i = 0; i < sections.length; i++) {
+      const section = sections[i];
+      const isCover = (i === 0);
+
+      const sRect = section.getBoundingClientRect();
+      const sx = sRect.left + window.scrollX;
+      const sy = sRect.top + window.scrollY;
+      const sw = sRect.width;
+      const sh = sRect.height;
+      if (sw < 10 || sh < 10) continue;
+
+      // 가로 폭 기준 단일 스케일 (인치/픽셀)
+      const scale = SLIDE_W / sw;
+      const sectionHInches = sh * scale;
+      const numPages = Math.max(1, Math.ceil(sectionHInches / SLIDE_H));
+      const verticalCenterOffset = (numPages === 1) ? Math.max(0, (SLIDE_H - sectionHInches) / 2) : 0;
+
+      for (let p = 0; p < numPages; p++) {
+        if (progress) {
+          progress.textContent = `${i + 1}/${sections.length}` + (numPages > 1 ? ` (페이지 ${p + 1}/${numPages})` : '');
+        }
+        const slide = pptx.addSlide();
+        slide.background = { color: isCover ? '212529' : 'F8F9FA' };
+
+        const pageOffsetY = verticalCenterOffset - p * SLIDE_H;
+        const elements = section.querySelectorAll('*');
+        // 1차 패스: 인디케이터·.on-top 외 모든 요소
+        for (const el of elements) {
+          if (el.classList && (el.classList.contains('indicator') || el.classList.contains('on-top'))) continue;
+          sbpptxRenderElement(pptx, slide, el, sx, sy, scale, 0, pageOffsetY, SLIDE_W, SLIDE_H);
+        }
+        // 2차 패스: 인디케이터·.on-top을 맨 위 레이어로
+        for (const el of elements) {
+          if (!el.classList || (!el.classList.contains('indicator') && !el.classList.contains('on-top'))) continue;
+          sbpptxRenderElement(pptx, slide, el, sx, sy, scale, 0, pageOffsetY, SLIDE_W, SLIDE_H);
+        }
+        await new Promise(r => requestAnimationFrame(r));
+      }
+    }
+
+    // 파일명에 타임스탬프 추가: YYYYMMDD_HHMM
+    const _ts = (() => {
+      const n = new Date();
+      const z = v => String(v).padStart(2, '0');
+      return `${n.getFullYear()}${z(n.getMonth()+1)}${z(n.getDate())}_${z(n.getHours())}${z(n.getMinutes())}`;
+    })();
+    await pptx.writeFile({ fileName: `화면설계서_kbt_editable_${_ts}.pptx` });
+  } catch (err) {
+    console.error('PPTX generation failed:', err);
+    alert('PPTX 생성 실패: ' + err.message);
+  } finally {
+    document.body.style.cssText = bodyOrigCss;
+    document.documentElement.style.cssText = htmlOrigCss;
+    hideEls.forEach(el => { el.style.display = el.dataset._origDisplay || ''; delete el.dataset._origDisplay; });
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> PPTX 다운로드';
+    }
+    if (progress) progress.style.display = 'none';
+  }
+}
+
+function sbpptxRenderElement(pptx, slide, el, baseX, baseY, scale, offsetX, offsetY, slideW, slideH) {
+  const tag = el.tagName;
+  if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'LINK' || tag === 'META' || tag === 'TITLE' || tag === 'HEAD' || tag === 'TEMPLATE' || tag === 'BR' || tag === 'HR') return;
+  if (tag === 'svg' || tag === 'SVG' || tag === 'PATH' || tag === 'CIRCLE' || tag === 'LINE' || tag === 'RECT' || tag === 'POLYLINE' || tag === 'POLYGON') return;
+  if (el.classList && (el.classList.contains('no-print') || el.classList.contains('sbpptx-hide'))) return;
+  if (el.closest && (el.closest('.no-print') || el.closest('.sbpptx-hide'))) return;
+
+  const rect = el.getBoundingClientRect();
+  if (rect.width < 0.5 || rect.height < 0.5) return;
+
+  const style = window.getComputedStyle(el);
+  if (style.display === 'none' || style.visibility === 'hidden') return;
+  if (parseFloat(style.opacity) === 0) return;
+
+  const rx = rect.left + window.scrollX;
+  const ry = rect.top + window.scrollY;
+  const x = offsetX + (rx - baseX) * scale;
+  const y = offsetY + (ry - baseY) * scale;
+  const w = rect.width * scale;
+  const h = rect.height * scale;
+
+  if (x >= slideW + 0.05 || y >= slideH + 0.05) return;
+  if (x + w <= -0.05 || y + h <= -0.05) return;
+  if (w < 0.02 || h < 0.02) return;
+
+  // (1) 배경/테두리 도형
+  const bg = style.backgroundColor;
+  let bgHex = null;
+  if (!sbpptxIsTransparent(bg)) {
+    bgHex = sbpptxRgbToHex(bg);
+    const alpha = sbpptxGetAlpha(bg);
+    if (alpha !== null && alpha < 1) {
+      const parentBg = sbpptxFindOpaqueParentBg(el);
+      bgHex = sbpptxBlendHex(parentBg, bgHex, alpha);
+    }
+  }
+  // backgroundColor 투명 + background-image 그래디언트 → 첫 색상으로 폴백
+  if (!bgHex && style.backgroundImage && style.backgroundImage.includes('gradient')) {
+    const m = style.backgroundImage.match(/rgba?\([^)]+\)|#[0-9a-fA-F]{6,8}|#[0-9a-fA-F]{3}\b/);
+    if (m) {
+      const c = m[0];
+      bgHex = c.startsWith('#')
+        ? (c.length === 4 ? c.slice(1).split('').map(h => h+h).join('') : c.slice(1)).toUpperCase().slice(0, 6)
+        : sbpptxRgbToHex(c);
+    }
+  }
+  const bw = parseFloat(style.borderTopWidth) || 0;
+  const bColor = bw > 0 ? sbpptxRgbToHex(style.borderTopColor) : null;
+  const radiusPx = parseFloat(style.borderTopLeftRadius) || 0;
+
+  if (bgHex || (bw > 0 && bColor)) {
+    const sx = Math.max(0, x);
+    const sy = Math.max(0, y);
+    const sw = Math.min(x + w, slideW) - sx;
+    const sh = Math.min(y + h, slideH) - sy;
+    if (sw > 0.02 && sh > 0.02) {
+      const opts = {
+        x: sx, y: sy, w: sw, h: sh,
+        fill: bgHex ? { color: bgHex } : { type: 'none' },
+        line: (bw > 0 && bColor) ? { color: bColor, width: Math.max(0.25, bw * 0.6) } : { type: 'none' },
+      };
+      // 도형 종류 선택 (단순화):
+      //   - 정사각형(1:1) + border-radius ≥ 절반 → OVAL (완전한 원, 예: 넘버링 인디케이터)
+      //   - 그 외 모든 도형 → RECTANGLE (직각, HTML 둥근 모서리는 무시)
+      const minDim = Math.min(rect.width, rect.height);
+      const aspectRatio = Math.max(rect.width, rect.height) / Math.max(0.1, minDim);
+      const fullyRounded = radiusPx >= minDim / 2 - 1;
+      const isCircle = fullyRounded && aspectRatio <= 1.2;
+      const shapeType = isCircle ? pptx.shapes.OVAL : pptx.shapes.RECTANGLE;
+      try { slide.addShape(shapeType, opts); } catch (err) { /* ignore */ }
+    }
+  }
+
+  // (1-b) ::after 가상 요소 렌더 (예: 토글 스위치 핸들 등 CSS pseudo로 만들어진 동그라미)
+  try {
+    const after = window.getComputedStyle(el, '::after');
+    if (after) {
+      const contentVal = after.content;
+      if (contentVal && contentVal !== 'none' && contentVal !== 'normal') {
+        const aW = parseFloat(after.width) || 0;
+        const aH = parseFloat(after.height) || 0;
+        const aBg = after.backgroundColor;
+        if (aW > 0 && aH > 0 && !sbpptxIsTransparent(aBg)) {
+          const aLeft = parseFloat(after.left) || 0;
+          const aTop = parseFloat(after.top) || 0;
+          const ax = x + aLeft * scale;
+          const ay = y + aTop * scale;
+          const aw = aW * scale;
+          const ah = aH * scale;
+          const aR = parseFloat(after.borderTopLeftRadius) || 0;
+          const aFullyRounded = aR >= Math.min(aW, aH) / 2 - 1;
+          const aIsCircle = aFullyRounded && Math.abs(aW - aH) < 2;
+          const aShape = aIsCircle ? pptx.shapes.OVAL : pptx.shapes.RECTANGLE;
+          slide.addShape(aShape, {
+            x: ax, y: ay, w: aw, h: ah,
+            fill: { color: sbpptxRgbToHex(aBg) },
+            line: { type: 'none' },
+          });
+        }
+      }
+    }
+  } catch (err) { /* ignore */ }
+
+  // (2-a) 폼 요소(input/select/textarea) — 직접 표시 텍스트 추출하여 렌더
+  if (el.tagName === 'INPUT' || el.tagName === 'SELECT' || el.tagName === 'TEXTAREA') {
+    let formText = '';
+    let isPlaceholder = false;
+    try {
+      if (el.tagName === 'SELECT') {
+        const opt = el.querySelector('option[selected]') || el.querySelector('option');
+        if (opt) formText = String(opt.textContent || '').trim();
+      } else {
+        formText = String(el.value || '').trim();
+        if (!formText) {
+          const ph = el.getAttribute('placeholder');
+          if (ph) {
+            formText = String(ph).trim();
+            isPlaceholder = !!formText;
+          }
+        }
+        if (!formText) {
+          const inputType = el.type || el.getAttribute('type') || '';
+          if (inputType === 'date') {
+            formText = 'YYYY.MM.DD';
+            isPlaceholder = true;
+          } else if (inputType === 'time') {
+            formText = 'HH:MM';
+            isPlaceholder = true;
+          } else if (inputType === 'datetime-local') {
+            formText = 'YYYY.MM.DD HH:MM';
+            isPlaceholder = true;
+          }
+        }
+      }
+    } catch (e) { /* form access failed */ }
+
+    if (formText) {
+      // 폼 요소는 본문 텍스트 → 7pt 고정
+      const fontPt = 7;
+      const color = isPlaceholder ? '6C757D' : (sbpptxRgbToHex(style.color) || '212529');
+      const fontFace = sbpptxFontName(style.fontFamily);
+      const padL = (parseFloat(style.paddingLeft) || 0) * scale;
+      const padR = (parseFloat(style.paddingRight) || 0) * scale;
+      const tx = Math.max(0, x + padL);
+      const ty = Math.max(0, y);
+      const tw = Math.max(0.3, Math.min(slideW - tx, w - padL - padR + w * 0.2));
+      const th = Math.max(0.15, Math.min(slideH - ty, h));
+      const opts = {
+        x: tx, y: ty, w: tw, h: th,
+        fontFace: fontFace,
+        fontSize: fontPt,
+        color: color,
+        align: 'left',
+        valign: 'middle',
+        margin: 0,
+        wrap: false,
+        fit: 'shrink',
+        isTextBox: true,
+      };
+      try {
+        slide.addText(formText, opts);
+      } catch (err) {
+        console.warn('form addText failed:', err, formText, opts);
+      }
+    }
+    return;
+  }
+
+  // (2) 텍스트 리프 요소만 텍스트박스로 추가
+  if (sbpptxIsTextLeaf(el)) {
+    const text = (el.textContent || '').replace(/\s+/g, ' ').trim();
+    if (text && text.length > 0 && text.length < 2500) {
+      const fontPx = parseFloat(style.fontSize) || 13;
+      // 폰트 규칙:
+      //   - 본문 글씨 (HTML font-size < 20px) → 7pt 고정 (전체 영역 통일)
+      //   - 헤딩·큰 숫자 (HTML font-size ≥ 20px) → 8~14pt 클램프 (h1, stat-value 등 강조)
+      const rawPt = fontPx * scale * 72;
+      const isLargeText = fontPx >= 20;
+      const fontPt = isLargeText
+        ? Math.max(8, Math.min(14, rawPt))
+        : 7;
+      const color = sbpptxRgbToHex(style.color) || '212529';
+      const fw = parseInt(style.fontWeight) || 400;
+      const bold = fw >= 600;
+      const italic = style.fontStyle === 'italic';
+      const fontFace = sbpptxFontName(style.fontFamily);
+      let align = 'left';
+      if (style.textAlign === 'center') align = 'center';
+      else if (style.textAlign === 'right') align = 'right';
+      // flex의 justify-content:center도 가로 중앙 정렬로 처리
+      if (style.display === 'flex' && style.justifyContent === 'center') align = 'center';
+      // .desc-table/.desc-wrap/.always-top 영역은 예외 없이 상단 정렬
+      const forceTop = el.closest && (el.closest('.desc-table') || el.closest('.desc-wrap') || el.closest('.always-top'));
+      const valign = forceTop ? 'top' :
+                     (style.display === 'flex' && style.alignItems === 'center') ? 'middle' :
+                     (style.verticalAlign === 'middle') ? 'middle' : 'top';
+
+      // 단일행 텍스트 자동 감지:
+      //   - white-space:nowrap/pre, 또는
+      //   - 버튼·배지·사이드바·탭 항목, 또는
+      //   - 요소 높이 < line-height × 1.8
+      let lineHeightPx = parseFloat(style.lineHeight);
+      if (!isFinite(lineHeightPx) || style.lineHeight === 'normal') {
+        lineHeightPx = fontPx * 1.2;
+      }
+      const nowrapCss = style.whiteSpace === 'nowrap' || style.whiteSpace === 'pre';
+      const tagName = el.tagName;
+      const cls = el.classList || { contains: () => false };
+      const isButtonLike = tagName === 'BUTTON' || tagName === 'A'
+                          || cls.contains('btn') || cls.contains('badge')
+                          || cls.contains('sidebar-item') || cls.contains('tab-btn')
+                          || cls.contains('chip') || cls.contains('pill') || cls.contains('tag');
+      const isSingleLine = nowrapCss || isButtonLike || (rect.height < lineHeightPx * 1.8);
+
+      // padding inset
+      const padT = (parseFloat(style.paddingTop) || 0) * scale;
+      const padL = (parseFloat(style.paddingLeft) || 0) * scale;
+      const padR = (parseFloat(style.paddingRight) || 0) * scale;
+      const padB = (parseFloat(style.paddingBottom) || 0) * scale;
+
+      // 텍스트박스 폭 버퍼: 단일행 +15% / Description 영역 0% / 기타 다행 +5%
+      // Description 영역은 우측 슬라이드 가장자리 안전 여백 확대 (텍스트가 모서리에 닿지 않도록)
+      const inDescAreaText = el.closest && (el.closest('.desc-wrap') || el.closest('.desc-table') || el.closest('.always-top'));
+      const widthBufferRatio = isSingleLine ? 0.15 : (inDescAreaText ? 0 : 0.05);
+      const widthBuffer = w * widthBufferRatio;
+      const rightSafe = inDescAreaText ? 0.15 : 0.05;
+
+      const tx = Math.max(0, x + padL);
+      const ty = Math.max(0, y + padT);
+      const naturalRight = x + w - padR + widthBuffer;
+      const trEdge = Math.min(slideW - rightSafe, naturalRight);
+      const tbEdge = Math.min(slideH, y + h - padB);
+      const tw = Math.max(0.1, trEdge - tx);
+      const th = Math.max(0.1, tbEdge - ty);
+
+      try {
+        slide.addText(text, {
+          x: tx, y: ty, w: tw, h: th,
+          fontFace: fontFace,
+          fontSize: fontPt,
+          color: color,
+          bold: bold,
+          italic: italic,
+          align: align,
+          valign: valign,
+          margin: 0,
+          wrap: !isSingleLine,
+          shrinkText: true,
+          autoFit: true,
+          isTextBox: true,
+        });
+      } catch (err) { /* ignore */ }
+    }
+  }
+}
+
+function sbpptxIsTextLeaf(el) {
+  if (!el.textContent || !el.textContent.trim()) return false;
+  if (el.children.length === 0) return true;
+  for (const child of el.children) {
+    const t = child.tagName;
+    if (t === 'svg' || t === 'BR' || t === 'IMG' || t === 'INPUT' || t === 'HR') continue;
+    if (child.textContent && child.textContent.trim()) return false;
+  }
+  return true;
+}
+
+function sbpptxRgbToHex(s) {
+  if (!s) return null;
+  if (s === 'transparent') return null;
+  const m = s.match(/rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)/);
+  if (!m) return null;
+  const a = s.match(/rgba?\([^,]+,[^,]+,[^,]+,\s*([\d.]+)\s*\)/);
+  if (a && parseFloat(a[1]) === 0) return null;
+  const r = Math.round(parseFloat(m[1]));
+  const g = Math.round(parseFloat(m[2]));
+  const b = Math.round(parseFloat(m[3]));
+  return ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0').toUpperCase();
+}
+
+function sbpptxIsTransparent(c) {
+  if (!c) return true;
+  if (c === 'transparent') return true;
+  if (c === 'rgba(0, 0, 0, 0)') return true;
+  const a = c.match(/rgba?\([^,]+,[^,]+,[^,]+,\s*([\d.]+)\s*\)/);
+  if (a && parseFloat(a[1]) === 0) return true;
+  return false;
+}
+
+// rgba 알파 값 추출
+function sbpptxGetAlpha(c) {
+  if (!c) return null;
+  const a = c.match(/rgba\([^,]+,[^,]+,[^,]+,\s*([\d.]+)\s*\)/);
+  if (a) return parseFloat(a[1]);
+  if (c.startsWith('rgb(')) return 1;
+  return null;
+}
+
+// 상위 요소를 거슬러 올라가며 불투명한 background-color 검색
+function sbpptxFindOpaqueParentBg(el) {
+  let p = el.parentElement;
+  while (p) {
+    const ps = window.getComputedStyle(p);
+    const pbg = ps.backgroundColor;
+    if (!sbpptxIsTransparent(pbg)) {
+      const alpha = sbpptxGetAlpha(pbg);
+      if (alpha === null || alpha >= 1) {
+        return sbpptxRgbToHex(pbg);
+      }
+    }
+    p = p.parentElement;
+  }
+  return 'FFFFFF';
+}
+
+// 알파 블렌딩 (bg + alpha*fg)
+function sbpptxBlendHex(bgHex, fgHex, alpha) {
+  if (!bgHex || !fgHex) return fgHex || bgHex;
+  const br = parseInt(bgHex.slice(0, 2), 16);
+  const bgC = parseInt(bgHex.slice(2, 4), 16);
+  const bb = parseInt(bgHex.slice(4, 6), 16);
+  const fr = parseInt(fgHex.slice(0, 2), 16);
+  const fgC = parseInt(fgHex.slice(2, 4), 16);
+  const fb = parseInt(fgHex.slice(4, 6), 16);
+  const r = Math.round(alpha * fr + (1 - alpha) * br);
+  const g = Math.round(alpha * fgC + (1 - alpha) * bgC);
+  const b = Math.round(alpha * fb + (1 - alpha) * bb);
+  return ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0').toUpperCase();
+}
+
+function sbpptxFontName(ff) {
+  if (!ff) return '맑은 고딕';
+  const f = ff.toLowerCase();
+  if (f.includes('mono') || f.includes('courier') || f.includes('consolas')) return 'Consolas';
+  return '맑은 고딕';
+}
+
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = resolve;
+    s.onerror = () => reject(new Error('Failed to load: ' + src));
+    document.head.appendChild(s);
+  });
+}
+
+</script>
+<!-- END sb-creator-pptx script -->
+</body>
+</html>

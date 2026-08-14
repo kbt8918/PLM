@@ -20,3 +20,8 @@ Thumbs.db
 
 # AP-Framework 템플릿 원본 (읽기전용, 산출물 아님)
 AP-Lecture-01-main/
+
+# 로컬 검증/캐시 산출물 (산출물 아님)
+.http-server.log
+__pycache__/
+*.pyc
