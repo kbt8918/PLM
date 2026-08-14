@@ -17,8 +17,9 @@
   var state = {
     currentScreen: 'DASH-AUTO',
     activeModal: null,
-    ganttView: 'summary',
-    selectedParentRoadmap: 'body',
+    chartMode: 'summary', // SCR-008 통합 로드맵 차트 요약본/전체보기 토글
+    expandedChartRoadmaps: [], // SCR-008에서 아코디언으로 펼쳐진 로드맵명 목록(여러 개 동시 펼침 유지)
+    chartTaskDetail: null, // SCR-008 간트 막대 클릭 시 표시할 과제 상세 정보
     trendView: 'list',
     trendIndex: 0,
     videoProcess: null, // SCR-001 "현재=자동"/SCR-003 "기술현황=●" 클릭 시 자동화 설비 동영상 모달에 표시할 공정/작업명
@@ -26,6 +27,11 @@
     navSubOpen: { 'SCR-006': true }, // 하위 메뉴(SCR-006 -> SCR-007/008) 펼침 상태
     techPrDetailIndex: null, // SCR-009/MTRM-MAIN Tech PR 카드 클릭 시 표시할 커스텀 상세 오버레이 인덱스
     toast: null, // 화면 우상단(하단) 토스트 알림 메시지, showToast()로 세팅 후 일정 시간 뒤 자동 소멸
+    masterPage: 1, // SCR-002 표준공정 마스터 관리 페이지네이션
+    taskPage: 1, // SCR-004 모듈 표준 작업명 관리 페이지네이션
+    ifPage: 1, // SCR-005 I/F 실행결과 관리 페이지네이션
+    roadmapPage: 1, // SCR-006 통합 로드맵 페이지네이션
+    taskRoadmapPage: 1, // SCR-007 상세과제 로드맵 관리 페이지네이션
   };
   var toastTimer = null;
 
@@ -66,10 +72,8 @@
     $('#toast-root').html(render.toast ? render.toast(state) : '');
   }
 
-  function selectScreen(id, roadmapId) {
-    var patch = { currentScreen: id, activeModal: null };
-    if (roadmapId) patch.selectedParentRoadmap = roadmapId;
-    setState(patch);
+  function selectScreen(id) {
+    setState({ currentScreen: id, activeModal: null });
   }
 
   $(function () {
@@ -79,7 +83,7 @@
 
       switch (action) {
         case 'select-screen':
-          selectScreen($el.data('screenId'), $el.data('roadmapId'));
+          selectScreen($el.data('screenId'));
           break;
         case 'open-modal':
           setState({ activeModal: $el.data('modalId') });
@@ -104,14 +108,17 @@
           // 근거: onExcel — 부품 공정 자동화 현황 엑셀 다운로드 버튼 클릭 시 토스트 알림
           showToast('엑셀 다운로드 기능이 실행되었습니다.');
           break;
+        case 'set-page': {
+          var patch = {};
+          patch[$el.data('key')] = Number($el.data('page'));
+          setState(patch);
+          break;
+        }
         case 'toggle-nav-sub':
           var subId = $el.data('screenId');
           var navSubOpen = $.extend({}, state.navSubOpen);
           navSubOpen[subId] = !navSubOpen[subId];
           setState({ navSubOpen: navSubOpen });
-          break;
-        case 'select-parent-roadmap':
-          setState({ selectedParentRoadmap: $el.data('roadmapId') });
           break;
         case 'open-techpr-detail':
           setState({ techPrDetailIndex: Number($el.data('index')) });
@@ -122,8 +129,27 @@
         case 'run-search':
           // 프로토타입 단계: 실 연동 시 조회조건 기반 API 호출로 교체
           break;
-        case 'set-gantt-view':
-          setState({ ganttView: $el.data('view') });
+        case 'set-chart-mode':
+          // 근거: setChartModeSummary/Full — 'full'일 때는 상세과제가 있는 모든 로드맵이 강제로 펼쳐진다.
+          setState({ chartMode: $el.data('mode') });
+          break;
+        case 'toggle-chart-expand': {
+          var category = $el.data('category');
+          var idx = state.expandedChartRoadmaps.indexOf(category);
+          var next = idx === -1
+            ? state.expandedChartRoadmaps.concat([category])
+            : state.expandedChartRoadmaps.filter(function (c) { return c !== category; });
+          setState({ expandedChartRoadmaps: next });
+          break;
+        }
+        case 'open-chart-detail':
+          setState({
+            activeModal: 'chartDetail',
+            chartTaskDetail: {
+              category: $el.data('category'), manager: $el.data('manager'),
+              status: $el.data('status'), progress: $el.data('progress'), period: $el.data('period'),
+            },
+          });
           break;
         case 'go-to-gantt':
           e.preventDefault();

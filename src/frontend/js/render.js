@@ -57,6 +57,24 @@
     );
   }
 
+  // 근거: design_handoff_생기포털 README "페이지네이션 — 목록 하단 중앙 정렬, 숫자 버튼 나열 + 현재 페이지는
+  // accent-600 배경으로 강조". pageKey는 app.js state의 페이지 번호 필드명(예: 'masterPage')과 대응합니다.
+  function renderPagination(totalItems, page, pageSize, pageKey) {
+    var totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+    var cur = Math.min(page, totalPages);
+    if (totalPages <= 1) return '';
+    var btn = function (label, targetPage, disabled, active) {
+      var cls = active ? 'btn-primary' : 'btn-secondary';
+      return '<button type="button" class="btn ' + cls + '" style="width:32px;height:32px;padding:0"' +
+        (disabled ? ' disabled' : ' data-action="set-page" data-key="' + pageKey + '" data-page="' + targetPage + '"') + '>' + label + '</button>';
+    };
+    var numbers = '';
+    for (var i = 1; i <= totalPages; i++) { numbers += btn(String(i), i, false, i === cur); }
+    return '<div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:var(--sp-md)">' +
+      btn('&lsaquo;', cur - 1, cur <= 1, false) + numbers + btn('&rsaquo;', cur + 1, cur >= totalPages, false) +
+    '</div>';
+  }
+
   function td(content, align, extraClass) {
     var cls = [];
     if (align === 'right') cls.push('al-r');
@@ -484,7 +502,7 @@
       '<div data-screen-label="MTRM-MAIN 메인 대시보드">' +
         '<div class="section-title" style="margin-bottom:2px">메인 대시보드</div>' +
         '<div class="screen-subtitle">통합 로드맵·생산기술 Tech PR·기술동향을 한 화면에서 확인</div>' +
-        renderStatGrid(computeScr006Stats()) +
+        renderRoadmapKpiCards(computeRoadmapKpis()) +
         renderMtrmMainGantt() +
         '<div class="panel-row">' +
           '<div class="panel" style="flex:1">' +
@@ -608,7 +626,9 @@
   }
 
   function scr003Value(v) {
-    return v == null || v === '-' ? '<span class="muted">-</span>' : esc(v);
+    if (v == null || v === '-') return '<span class="muted">-</span>';
+    if (v === '미확인') return '<span class="muted" style="font-style:italic">' + esc(v) + '</span>';
+    return esc(v);
   }
 
   // 근거: scr003SummaryCols(7열: Best Practice/국내외종합(계)/조지아 대표차종/울산 차종명/차종명x3)과
@@ -627,15 +647,19 @@
     return '<table class="data-table"><thead><tr>' + head + '</tr></thead><tbody>' + rows + '</tbody></table>';
   }
 
-  // 근거: scr003ProcessDetail.cells(5열: 조지아/울산/차종명x3) — auto는 클릭 가능한 "● 자동" 필,
-  // manual은 텍스트 "X 수동"(클릭 불가), null은 '-'.
+  // 근거: design_handoff_생기포털/source/부품 공정 자동화 현황.dc.html scr003ProcessDetail.cells(5열: 조지아/
+  // 울산/차종명x3) — 'auto'는 검정 필 버튼("재생아이콘 자동", video:true인 셀만 클릭 가능), 'manual'은 빨간
+  // 텍스트("X 수동", 클릭 불가), null은 '-'.
   function renderScr003ExpansionCell(kind, row) {
     switch (kind) {
-      case 'auto':
-        var attrs = row.hasVideo ? ' style="cursor:pointer" data-action="open-video" data-process="' + esc(row.task) + '"' : '';
-        return '<td class="al-c"' + attrs + ' style="padding:10px 16px;border-bottom:1px solid var(--color-table-row-border)"><span class="badge badge-success">&#9679; 자동</span></td>';
+      case 'auto': {
+        var attrs = row.hasVideo ? ' data-action="open-video" data-process="' + esc(row.task) + '" data-kind="module"' : '';
+        return '<td class="al-c" style="padding:10px 16px;border-bottom:1px solid var(--color-table-row-border)">' +
+          '<span' + attrs + ' style="display:inline-flex;align-items:center;gap:4px;background:#111827;color:#fff;font-size:10px;font-weight:500;padding:2px 8px;border-radius:4px' + (row.hasVideo ? ';cursor:pointer' : '') + '">' +
+          (row.hasVideo ? '<i class="video-play-icon" style="font-size:8px;animation:none">&#9658;</i>' : '') + '자동</span></td>';
+      }
       case 'manual':
-        return '<td class="al-c" style="padding:10px 16px;border-bottom:1px solid var(--color-table-row-border);color:var(--color-text-sub)">X 수동</td>';
+        return '<td class="al-c" style="padding:10px 16px;border-bottom:1px solid var(--color-table-row-border);color:var(--badge-danger-text);font-weight:600">X 수동</td>';
       default:
         return '<td class="matrix-cell none">-</td>';
     }
@@ -644,29 +668,27 @@
   function renderScr003ProcessDetailTable() {
     var head =
       '<tr>' +
-        '<th rowspan="2" style="min-width:60px">NO</th><th rowspan="2" style="min-width:220px">작업내용</th>' +
-        '<th class="al-c" colspan="2" style="background:var(--badge-warning-bg)">Best Practice</th>' +
+        '<th rowspan="2" style="min-width:50px">NO</th><th rowspan="2" style="min-width:200px">작업내용</th>' +
+        '<th class="al-c" colspan="2" style="background:var(--badge-info-bg)">Best Practice</th>' +
         D.scr003DetailCols.map(function (c) { return '<th rowspan="2" class="al-c" style="min-width:110px">' + esc(c) + '</th>'; }).join('') +
       '</tr>' +
       '<tr>' +
-        '<th class="al-c" style="min-width:80px">기술 현황</th><th style="min-width:240px">상세 계획</th>' +
+        '<th class="al-c" style="min-width:80px;background:var(--badge-info-bg)">기술현황</th><th style="min-width:220px;background:var(--badge-info-bg)">상세계획</th>' +
       '</tr>';
 
     var rowsHtml = D.scr003ProcessDetail.map(function (row) {
       var techSymbol = row.tech === 'auto' ? '&#9679;' : row.tech === 'partial' ? '&#9650;' : 'X';
-      var techKind = row.tech === 'auto' ? 'success' : row.tech === 'partial' ? 'warning' : 'neutral';
-      var techAttrs = row.tech === 'auto' && row.hasVideo ? ' style="cursor:pointer" data-action="open-video" data-process="' + esc(row.task) + '"' : '';
       var expansionCells = row.cells.map(function (kind) { return renderScr003ExpansionCell(kind, row); }).join('');
       return '<tr>' +
         td(row.no, 'center') +
         td('<strong>' + esc(row.task) + '</strong>') +
-        '<td class="al-c"' + techAttrs + '><span class="badge badge-' + techKind + '">' + techSymbol + '</span></td>' +
-        '<td class="muted">' + esc(row.plan) + '</td>' +
+        '<td class="al-c" style="font-weight:600">' + techSymbol + '</td>' +
+        '<td class="muted" style="text-align:left">' + esc(row.plan) + '</td>' +
         expansionCells +
       '</tr>';
     }).join('');
 
-    return '<table class="data-table"><thead>' + head + '</thead><tbody>' + rowsHtml + '</tbody></table>';
+    return '<table class="data-table sticky-head"><thead>' + head + '</thead><tbody>' + rowsHtml + '</tbody></table>';
   }
 
   function renderSCR003() {
@@ -679,81 +701,118 @@
         '<div class="section-title">요약 현황 <span style="font-size:12px;color:var(--color-text-faint);font-weight:400">(공장/차종별 자동화율·인원 및 성인화 실적/계획)</span></div>' +
         renderScr003SummaryTable() +
         '<div class="actions-row" style="margin-top:var(--sp-lg)">' +
-          '<div class="section-title" style="margin-bottom:0">작업내용별 상세 <span style="font-size:12px;color:var(--color-text-faint);font-weight:400">(Best Practice 기술현황/상세계획 · 차종별 확대전개계획, 자동 선택 시 상세 팝업)</span></div>' +
+          '<div class="section-title" style="margin-bottom:0">작업내용별 상세 (NO 1~15) <span style="font-size:12px;color:var(--color-text-faint);font-weight:400">(Best Practice 기술현황/상세계획 · 차종별 확대전개계획, 자동 선택 시 상세 팝업)</span></div>' +
           '<div class="actions-group">' +
             '<button type="button" class="btn btn-primary" data-action="open-modal" data-modal-id="registerProcess">+ 작업내용 등록</button>' +
-            '<button type="button" class="btn btn-secondary">엑셀</button>' +
+            '<button type="button" class="btn btn-secondary" data-action="run-search">엑셀</button>' +
             '<button type="button" class="btn btn-secondary" data-action="open-modal" data-modal-id="emailShare">이메일 공유</button>' +
           '</div>' +
         '</div>' +
-        '<div style="overflow-x:auto">' + renderScr003ProcessDetailTable() + '</div>' +
+        '<div class="scroll-panel" style="max-height:520px">' + renderScr003ProcessDetailTable() + '</div>' +
       '</div>'
     );
   }
 
   // ---------- SCR-002 표준공정 마스터 관리 ----------
 
-  function renderSCR002() {
-    var rows = D.scr002Rows.map(function (r) {
-      return '<tr>' + td(esc(r.plant)) + td(esc(r.line)) + td(esc(r.name)) + td(r.seq, 'right') + td(esc(r.note), null, 'muted') +
-        td('<button type="button" class="btn-link">수정</button><button type="button" class="btn-link-danger" style="margin-left:8px">삭제</button>', 'center') +
+  // 근거: design_handoff_생기포털/source/부품 공정 자동화 현황.dc.html isStdMaster — 필터 5종(공장/라인/
+  // 표준공정명 검색/순서 검색/비고 검색, 라벨 없음) + 우측 조회·엑셀 다운로드·표준공정 등록 버튼, 목록은
+  // NO(내림차순)/공장/라인/표준공정명/순서/비고(있으면 파란 글씨, 없으면 "-")/관리(수정·삭제), 30건 페이지네이션.
+  function renderSCR002(state) {
+    var filtered = D.scr002Rows;
+    var pageSize = 10;
+    var page = state.masterPage || 1;
+    var totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+    page = Math.min(page, totalPages);
+    var pageRows = filtered.slice((page - 1) * pageSize, page * pageSize);
+    var rows = pageRows.map(function (r, i) {
+      var no = filtered.length - ((page - 1) * pageSize + i);
+      var descCell = r.desc ? '<td style="color:var(--color-primary);font-weight:600">' + esc(r.desc) + '</td>' : td('-', null, 'muted');
+      return '<tr>' + td(no, null, 'muted') + td(esc(r.factory)) + td(esc(r.line)) +
+        '<td style="font-weight:600">' + esc(r.name) + '</td>' +
+        td(r.seq, 'right') + descCell +
+        td('<button type="button" class="btn-link" data-action="open-modal" data-modal-id="stdProcessRegister">수정</button>' +
+           '<button type="button" class="btn-link-danger" style="margin-left:8px" data-action="open-modal" data-modal-id="deleteConfirm">삭제</button>', 'center') +
       '</tr>';
     }).join('');
     return (
       '<div class="admin-screen" data-screen-label="SCR-002 표준공정 마스터 관리">' +
         '<div class="filter-bar">' +
-          '<div class="filter-field"><label>공장</label><select><option>전체</option></select></div>' +
-          '<div class="filter-field"><label>라인</label><select><option>전체</option></select></div>' +
+          '<select style="height:32px;min-width:100px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>공장 전체</option><option>A공장</option><option>B공장</option></select>' +
+          '<select style="height:32px;min-width:100px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>라인 전체</option><option>1라인</option><option>2라인</option><option>3라인</option></select>' +
+          '<input placeholder="표준공정명 검색" style="height:32px;min-width:140px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 10px" />' +
+          '<input placeholder="순서" style="height:32px;width:80px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 10px" />' +
+          '<input placeholder="비고 검색" style="height:32px;min-width:120px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 10px" />' +
           '<div class="filter-spacer"></div>' +
-          '<button type="button" class="btn btn-secondary">초기화</button>' +
           '<button type="button" class="btn btn-primary" data-action="run-search">조회</button>' +
-          '<button type="button" class="btn btn-secondary">엑셀 다운로드</button>' +
-        '</div>' +
-        '<div style="display:flex;justify-content:flex-end;margin-bottom:var(--sp-md)">' +
-          '<button type="button" class="btn btn-primary" data-action="open-modal" data-modal-id="stdProcessRegister">+ 표준공정 등록</button>' +
+          '<button type="button" class="btn btn-secondary" data-action="run-search">엑셀 다운로드</button>' +
+          '<button type="button" class="btn btn-secondary" data-action="open-modal" data-modal-id="stdProcessRegister">+ 표준공정 등록</button>' +
         '</div>' +
         renderTable([
-          { label: '공장' }, { label: '라인' }, { label: '표준공정명' }, { label: '순서', align: 'right' }, { label: '비고' }, { label: '관리', align: 'center' },
+          { label: 'NO' }, { label: '공장' }, { label: '라인' }, { label: '표준공정명' }, { label: '순서', align: 'right' }, { label: '비고' }, { label: '관리', align: 'center' },
         ], rows) +
+        renderPagination(filtered.length, page, pageSize, 'masterPage') +
       '</div>'
     );
   }
 
   // ---------- SCR-004 모듈 표준 작업명 관리 ----------
 
-  function renderSCR004() {
-    var rows = D.scr004Rows.map(function (r) {
-      return '<tr>' + td(esc(r.name)) + td(esc(r.type)) +
-        td(r.usage, 'right') +
+  // 근거: isModuleTask — 필터(공정유형/작업명 검색/사용현황/등록일) + 우측 표준 작업명 등록 버튼,
+  // 목록 NO(내림차순)/표준 작업명/공정유형/사용현황(연동모듈수, 파란 글씨)/등록일/관리(삭제), 24건 페이지네이션.
+  function renderSCR004(state) {
+    var filtered = D.scr004Rows;
+    var pageSize = 10;
+    var page = state.taskPage || 1;
+    var totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+    page = Math.min(page, totalPages);
+    var pageRows = filtered.slice((page - 1) * pageSize, page * pageSize);
+    var rows = pageRows.map(function (r, i) {
+      var no = filtered.length - ((page - 1) * pageSize + i);
+      return '<tr>' + td(no, null, 'muted') +
+        '<td style="font-weight:600">' + esc(r.name) + '</td>' + td(esc(r.type)) +
+        '<td class="al-r" style="color:var(--color-primary);font-weight:600">' + r.usage + '</td>' +
         td(esc(r.registered), null, 'muted') +
         td('<button type="button" class="btn-link-danger" data-action="open-modal" data-modal-id="deleteConfirm">삭제</button>', 'center') +
       '</tr>';
     }).join('');
     return (
       '<div class="admin-screen" data-screen-label="SCR-004 모듈 표준 작업명 관리">' +
-        '<div style="display:flex;align-items:center;gap:var(--sp-sm);margin-bottom:var(--sp-lg)">' +
-          '<select style="height:32px;min-width:140px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>전체 공정유형</option></select>' +
-          '<input placeholder="작업명 검색" style="height:32px;min-width:200px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 10px" />' +
+        '<div style="display:flex;align-items:center;gap:var(--sp-sm);margin-bottom:var(--sp-lg);flex-wrap:wrap">' +
+          '<select style="height:32px;min-width:130px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>전체 공정유형</option><option>조립</option><option>배선</option><option>검사</option></select>' +
+          '<input placeholder="표준 작업명 검색" style="height:32px;min-width:160px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 10px" />' +
+          '<input placeholder="사용현황(연동모듈수)" style="height:32px;min-width:150px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 10px" />' +
+          '<input type="date" style="height:32px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;cursor:pointer" />' +
           '<button type="button" class="btn btn-primary" data-action="run-search">조회</button>' +
           '<div class="filter-spacer"></div>' +
           '<button type="button" class="btn btn-primary" data-action="open-modal" data-modal-id="stdTaskRegister">+ 표준 작업명 등록</button>' +
         '</div>' +
         renderTable([
-          { label: '표준 작업명' }, { label: '공정유형' }, { label: '사용현황(연동모듈수)', align: 'right' }, { label: '등록일' }, { label: '관리', align: 'center' },
+          { label: 'NO' }, { label: '표준 작업명' }, { label: '공정유형' }, { label: '사용현황(연동모듈수)', align: 'right' }, { label: '등록일' }, { label: '관리', align: 'center' },
         ], rows) +
+        renderPagination(filtered.length, page, pageSize, 'taskPage') +
       '</div>'
     );
   }
 
   // ---------- SCR-005 I/F 실행결과 관리 ----------
 
-  function renderSCR005() {
-    var rows = D.scr005Rows.map(function (r) {
-      var trAttrs = r.clickable ? ' class="row-clickable" data-action="open-modal" data-modal-id="' + r.modal + '"' : '';
-      return '<tr' + trAttrs + '>' +
-        td(esc(r.time)) + td(esc(r.ifId)) + td(esc(r.type)) + td(esc(r.count), 'right') +
-        td(badge(r.result, r.resultKind), 'center') +
-        td(esc(r.reason), null, 'muted') +
+  // 근거: isIfResult — 기간(시작~종료)+I/F 유형+결과 필터, 목록 NO(내림차순)/실행시각/I·F-ID/유형/처리건수/
+  // 결과(성공=초록·실패=빨강 rounded-full 배지)/실패 원인("-"), 23건 페이지네이션. 실패 행 클릭 팝업은
+  // 최종 소스에는 없어 제거(정적 표시만).
+  function renderSCR005(state) {
+    var filtered = D.scr005Rows;
+    var pageSize = 10;
+    var page = state.ifPage || 1;
+    var totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+    page = Math.min(page, totalPages);
+    var pageRows = filtered.slice((page - 1) * pageSize, page * pageSize);
+    var rows = pageRows.map(function (r, i) {
+      var no = filtered.length - ((page - 1) * pageSize + i);
+      var resultKind = r.result === '성공' ? 'success' : 'danger';
+      return '<tr>' + td(no, null, 'muted') + td(esc(r.time)) + td(esc(r.ifId)) + td(esc(r.type)) + td(r.count, 'right') +
+        td(badge(r.result, resultKind), 'center') +
+        td(esc(r.reason || '-'), null, 'muted') +
       '</tr>';
     }).join('');
     return (
@@ -762,42 +821,60 @@
           '<input type="date" style="height:32px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px" />' +
           '<span>~</span>' +
           '<input type="date" style="height:32px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px" />' +
-          '<select style="height:32px;min-width:120px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>전체 I/F 유형</option></select>' +
-          '<select style="height:32px;min-width:120px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>전체 결과</option></select>' +
+          '<select style="height:32px;min-width:120px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>전체 I/F 유형</option><option>배치</option><option>배치(재처리)</option><option>실시간</option></select>' +
+          '<select style="height:32px;min-width:100px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>전체 결과</option><option>성공</option><option>실패</option></select>' +
           '<button type="button" class="btn btn-primary" data-action="run-search">조회</button>' +
         '</div>' +
         renderTable([
-          { label: '실행시각' }, { label: 'I/F-ID' }, { label: '유형' }, { label: '처리건수', align: 'right' }, { label: '결과', align: 'center' }, { label: '실패 원인' },
+          { label: 'NO' }, { label: '실행시각' }, { label: 'I/F-ID' }, { label: '유형' }, { label: '처리건수', align: 'right' }, { label: '결과', align: 'center' }, { label: '실패 원인' },
         ], rows) +
+        renderPagination(filtered.length, page, pageSize, 'ifPage') +
       '</div>'
     );
   }
 
   // ---------- SCR-006 통합 로드맵 ----------
 
-  // 근거: scr006Stats = [등록 로드맵(전체 건수), 진행중(파랑), 계획(주황)] — scr006Rows로부터 집계
-  function computeScr006Stats() {
-    var total = D.scr006Rows.length;
-    var inProgress = D.scr006Rows.filter(function (r) { return r.status === '진행중'; }).length;
-    var planned = D.scr006Rows.filter(function (r) { return r.status === '계획'; }).length;
-    return [
-      { label: '등록 로드맵', value: total + '건', color: '' },
-      { label: '진행중', value: inProgress + '건', color: 'var(--color-primary)' },
-      { label: '계획', value: planned + '건', color: 'var(--badge-warning-text)' },
-    ];
+  // 근거: design_handoff_생기포털/source/부품 공정 자동화 현황.dc.html isRoadmapOverview/isMainDash — 5개 KPI
+  // 카드(등록 로드맵/진행중/계획/반려/보류)는 상단 4px 액센트 보더 + 컬러 점 라벨 + 큰 숫자로 구성되며,
+  // SCR-006과 메인 대시보드(MTRM-MAIN)가 동일한 스타일을 공유한다. scr006Rows(14건)로부터 실시간 집계한다.
+  var ROADMAP_KPI_DEFS = [
+    { label: '등록 로드맵', status: null, color: 'var(--color-text-sub)' },
+    { label: '진행중', status: '진행중', color: 'var(--color-primary)' },
+    { label: '계획', status: '계획', color: 'var(--badge-warning-text)' },
+    { label: '반려', status: '반려', color: 'var(--badge-danger-text)' },
+    { label: '보류', status: '보류', color: 'var(--color-text-faint)' },
+  ];
+  function computeRoadmapKpis() {
+    return ROADMAP_KPI_DEFS.map(function (def) {
+      var count = def.status ? D.scr006Rows.filter(function (r) { return r.status === def.status; }).length : D.scr006Rows.length;
+      return { label: def.label, value: count + '건', color: def.color };
+    });
   }
-
-  function renderStatGrid(stats) {
-    return '<div class="stat-grid">' + stats.map(function (s) {
-      return '<div class="stat-card"><div class="stat-value" style="' + (s.color ? 'color:' + s.color : '') + '">' + esc(s.value) + '</div><div class="stat-label">' + esc(s.label) + '</div></div>';
+  function renderRoadmapKpiCards(kpis) {
+    return '<div class="kpi-grid">' + kpis.map(function (k) {
+      return '<div class="kpi-card" style="border-top:4px solid ' + k.color + '" data-action="select-screen" data-screen-id="SCR-006">' +
+        '<div style="display:flex;align-items:center;gap:6px;color:var(--color-text-muted);font-weight:500;margin-bottom:8px">' +
+          '<span style="width:6px;height:6px;border-radius:50%;background:' + k.color + '"></span><span>' + esc(k.label) + '</span>' +
+        '</div>' +
+        '<div class="kpi-value">' + esc(k.value) + '</div>' +
+      '</div>';
     }).join('') + '</div>';
   }
 
-  function renderSCR006() {
-    var rows = D.scr006Rows.map(function (r) {
-      return '<tr class="row-clickable" data-action="select-screen" data-screen-id="SCR-007" data-roadmap-id="' + r.roadmapId + '">' +
-        '<td style="color:var(--color-primary);font-weight:600">' + esc(r.section) + '</td>' +
-        '<td style="font-weight:500">' + esc(r.name) + '</td>' +
+  function renderSCR006(state) {
+    var filtered = D.scr006Rows;
+    var pageSize = 10;
+    var page = state.roadmapPage || 1;
+    var totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+    page = Math.min(page, totalPages);
+    var pageRows = filtered.slice((page - 1) * pageSize, page * pageSize);
+    var rows = pageRows.map(function (r, i) {
+      var no = filtered.length - ((page - 1) * pageSize + i);
+      return '<tr>' +
+        td(no, null, 'muted') +
+        '<td style="font-weight:500">' + esc(r.section) + '</td>' +
+        '<td style="color:var(--color-primary);font-weight:600;cursor:pointer" data-action="select-screen" data-screen-id="SCR-007">' + esc(r.name) + '</td>' +
         td(esc(r.period), null, 'muted') + td(esc(r.task)) +
         td(badge(r.status, r.statusKind), 'center') +
         td('<button type="button" class="btn-outline-sm" data-action="open-modal" data-modal-id="history">이력보기</button>', 'center') +
@@ -807,96 +884,171 @@
       '<div data-screen-label="SCR-006 통합 로드맵">' +
         '<div class="section-title" style="margin-bottom:2px">통합 로드맵</div>' +
         '<div class="screen-subtitle">분과별 중장기 자동화 로드맵 등록/조회 · 로드맵명 선택 시 상세 이동</div>' +
-        renderStatGrid(computeScr006Stats()) +
-        '<div style="display:flex;align-items:center;gap:var(--sp-sm);margin-bottom:var(--sp-lg)">' +
-          '<select style="height:32px;min-width:120px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>전체 분과</option></select>' +
-          '<select style="height:32px;min-width:120px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>전체 상태</option></select>' +
+        renderRoadmapKpiCards(computeRoadmapKpis()) +
+        '<div style="display:flex;align-items:center;gap:var(--sp-sm);margin-bottom:var(--sp-lg);flex-wrap:wrap">' +
+          '<select style="height:32px;min-width:110px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>전체 분과</option></select>' +
+          '<input placeholder="로드맵명 검색" style="height:32px;min-width:140px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 10px" />' +
+          '<select style="height:32px;min-width:100px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>전체 기간</option></select>' +
+          '<input placeholder="대표과제 검색" style="height:32px;min-width:140px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 10px" />' +
+          '<select style="height:32px;min-width:100px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>전체 상태</option></select>' +
+          '<button type="button" class="btn btn-primary" data-action="run-search">조회</button>' +
           '<div class="filter-spacer"></div>' +
           '<a href="#" data-action="go-to-gantt" style="font-size:13px;font-weight:600;margin-right:8px">간트차트로 보기 &rsaquo;</a>' +
           '<button type="button" class="btn btn-primary" data-action="open-modal" data-modal-id="roadmapRegister">+ 로드맵 등록</button>' +
         '</div>' +
         renderTable([
-          { label: '분과' }, { label: '로드맵명' }, { label: '기간' }, { label: '대표과제' }, { label: '상태', align: 'center' }, { label: '개정이력', align: 'center' },
+          { label: 'NO' }, { label: '분과' }, { label: '로드맵명' }, { label: '기간' }, { label: '대표과제' }, { label: '상태', align: 'center' }, { label: '개정이력', align: 'center' },
         ], rows) +
+        renderPagination(filtered.length, page, pageSize, 'roadmapPage') +
       '</div>'
     );
   }
 
   // ---------- SCR-007 상세과제 로드맵 관리 ----------
 
-  // 근거: SCR-007은 드롭다운이 아니라 세그먼트 탭(pill) 형태로 소속 통합 로드맵을 전환합니다.
-  // 빈 상태(과제 없음)에는 안내문 + "+ 상세과제 등록" CTA 버튼을 함께 노출합니다.
+  // 근거: design_handoff_생기포털/source/부품 공정 자동화 현황.dc.html isRoadmapMgmt — 통합 로드맵별 세그먼트
+  // 탭이 아니라 "통합 로드맵/담당자/기간/진행상태" 드롭다운으로 필터링하는 단일 목록(16건, 10건 단위 페이지네이션).
   function renderSCR007(state) {
-    var selected = state.selectedParentRoadmap;
-    var rows = D.scr007Data[selected] || [];
-    var tabs = D.roadmapOptions.map(function (o) {
-      return '<div class="tab-pill' + (o.id === selected ? ' active' : '') + '" data-action="select-parent-roadmap" data-roadmap-id="' + o.id + '">' + esc(o.label) + '</div>';
+    var filtered = D.taskRoadmapList;
+    var pageSize = 10;
+    var page = state.taskRoadmapPage || 1;
+    var totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+    page = Math.min(page, totalPages);
+    var pageRows = filtered.slice((page - 1) * pageSize, page * pageSize);
+    var body = pageRows.map(function (r, i) {
+      var no = filtered.length - ((page - 1) * pageSize + i);
+      return '<tr>' + td(no, null, 'muted') + td('<strong>' + esc(r.name) + '</strong>') + td(esc(r.owner)) + td(esc(r.period), null, 'muted') +
+        td(badge(r.status, r.statusKind), 'center') +
+        td('<button type="button" class="btn-outline-sm" data-action="open-modal" data-modal-id="detailTaskRegister">수정</button>', 'center') +
+      '</tr>';
     }).join('');
-    var body = rows.length
-      ? rows.map(function (r) {
-          return '<tr>' + td('<strong>' + esc(r.name) + '</strong>') + td(esc(r.owner)) + td(esc(r.period), null, 'muted') +
-            td(badge(r.status, r.statusKind), 'center') +
-            td('<button type="button" class="btn-outline-sm">수정</button>', 'center') +
-          '</tr>';
-        }).join('')
-      : '<tr><td colspan="5" class="empty-row-cell">' +
-          '<div style="margin-bottom:12px">등록된 상세과제가 없습니다</div>' +
-          '<button type="button" class="btn btn-primary" data-action="open-modal" data-modal-id="detailTaskRegister">+ 상세과제 등록</button>' +
-        '</td></tr>';
+    var roadmapFilterOptions = D.taskRoadmapFilterRoadmaps.map(function (r) { return '<option>통합 로드맵: ' + esc(r) + '</option>'; }).join('');
 
     return (
       '<div data-screen-label="SCR-007 상세과제 로드맵 관리">' +
-        '<div class="section-title" style="margin-bottom:2px">상세과제 로드맵 관리</div>' +
-        '<div class="screen-subtitle">통합 로드맵에 속한 세부 과제의 담당자·기간·진행상태 관리</div>' +
-        '<div style="display:flex;align-items:center;gap:var(--sp-md);margin-bottom:var(--sp-lg)">' +
-          '<div class="tab-pill-group">' + tabs + '</div>' +
-          '<div class="filter-spacer"></div>' +
+        '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:var(--sp-md)">' +
+          '<div><div class="section-title" style="margin-bottom:2px">상세과제 로드맵 관리</div>' +
+          '<div class="screen-subtitle" style="margin-bottom:0">통합 로드맵에 속한 세부 과제의 담당자·기간·진행상태 관리</div></div>' +
           '<button type="button" class="btn btn-primary" data-action="open-modal" data-modal-id="detailTaskRegister">+ 상세과제 등록</button>' +
         '</div>' +
+        '<div style="display:flex;align-items:center;gap:var(--sp-sm);margin-bottom:var(--sp-lg);flex-wrap:wrap">' +
+          '<select style="height:32px;min-width:170px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>통합 로드맵: 전체</option>' + roadmapFilterOptions + '</select>' +
+          '<select style="height:32px;min-width:110px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>담당자: 전체</option></select>' +
+          '<select style="height:32px;min-width:100px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>기간: 전체</option></select>' +
+          '<select style="height:32px;min-width:130px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>진행상태: 전체</option></select>' +
+          '<button type="button" class="btn btn-primary" data-action="run-search">조회</button>' +
+        '</div>' +
         renderTable([
-          { label: '과제명' }, { label: '담당자' }, { label: '기간' }, { label: '진행상태', align: 'center' }, { label: '관리', align: 'center' },
+          { label: 'NO' }, { label: '과제명' }, { label: '담당자' }, { label: '기간' }, { label: '진행상태', align: 'center' }, { label: '관리', align: 'center' },
         ], body) +
+        renderPagination(filtered.length, page, pageSize, 'taskRoadmapPage') +
       '</div>'
     );
   }
 
-  // ---------- SCR-008 mTRM 통합 로드맵 대시보드(간트) ----------
+  // ---------- SCR-008 통합 로드맵 차트 (계층형 간트: 로드맵 막대 + 하위 상세과제 아코디언) ----------
 
-  // 근거: SCR-008은 (1) 분과 색상 범례(차체=파랑/조립=주황), (2) 분기 헤더 위 연도 그룹 헤더 행,
-  // (3) 요약본/전체보기 토글(state.ganttView)로 부모행만/부모+자식행 필터링, (4) 지그재그(줄무늬) 행 배경을 포함합니다.
-  var GANTT_YEARS = [{ label: "'26년", span: 4 }, { label: "'27년", span: 4 }, { label: "'28년", span: 4 }];
+  // 근거: design_handoff_생기포털/source/부품 공정 자동화 현황.dc.html categoryColor() — 차체=파랑/조립=주황,
+  // 그 외(물류/AI 등 taskRoadmapList에 매핑된 상세과제가 없는 로드맵)는 회색 막대로 표시됩니다.
+  function chartCategoryColor(category) {
+    if (category === '차체 자동화 로드맵') return 'var(--gantt-top-progress)';
+    if (category === '조립 자동화 로드맵') return 'var(--gantt-top-pending)';
+    return 'var(--badge-neutral-text)';
+  }
+
+  // 근거: periodToSpan(period) — "YYYY.MM~YYYY.MM" 문자열을 D.chartQuarters(26.Q1~28.Q4, 12개) 기준
+  // 1-based grid-column-start/span으로 변환합니다.
+  function periodToChartSpan(period) {
+    var parts = period.split('~');
+    var qIndex = function (ym) {
+      var y = parseInt(ym.slice(0, 4), 10);
+      var m = parseInt(ym.slice(5, 7), 10);
+      var q = Math.floor((m - 1) / 3) + 1;
+      return D.chartQuarters.indexOf((y - 2000) + '.Q' + q);
+    };
+    var startIdx = qIndex(parts[0]), endIdx = qIndex(parts[1]);
+    if (startIdx < 0) startIdx = 0;
+    if (endIdx < 0) endIdx = D.chartQuarters.length - 1;
+    return { colStart: startIdx + 1, colSpan: Math.max(1, endIdx - startIdx + 1) };
+  }
+
+  var CHART_SUBTASK_STATUS_KIND = { 진행중: 'info', 계획: 'warning', 반려: 'danger', 보류: 'neutral' };
 
   function renderSCR008(state) {
-    var full = state.ganttView === 'full';
-    var yearHeader = GANTT_YEARS.map(function (y) { return '<div class="gantt-year-cell" style="flex:' + y.span + '">' + esc(y.label) + '</div>'; }).join('');
-    var quarters = D.ganttQuarters.map(function (q) { return '<div class="gantt-quarter-cell">' + esc(q) + '</div>'; }).join('');
-    var rows = D.ganttRowsFull.filter(function (r) { return full || r.top; }).map(function (r, i) {
-      return '<div class="gantt-row" style="background:' + (i % 2 === 0 ? 'var(--color-surface)' : 'var(--color-zebra-bg)') + '">' +
-        '<div class="gantt-row-label" style="padding-left:' + r.indent + 'px;font-weight:' + (r.top ? 600 : 400) + '">' + esc(r.label) + '</div>' +
-        '<div class="gantt-track"><div class="gantt-bar ' + r.barClass + '" style="left:' + r.left + '%;width:' + r.width + '%" data-action="open-modal" data-modal-id="' + r.modal + '"></div></div>' +
-      '</div>';
+    var expanded = state.expandedChartRoadmaps || [];
+    var full = state.chartMode === 'full';
+    var yearHeader =
+      '<th class="al-c" style="min-width:280px;background:var(--color-table-head-bg)" rowspan="2">로드맵 / 과제</th>' +
+      '<th class="al-c" colspan="4" style="background:var(--color-table-head-bg)">\'26년</th>' +
+      '<th class="al-c" colspan="4">\'27년</th>' +
+      '<th class="al-c" colspan="4" style="background:var(--color-table-head-bg)">\'28년</th>';
+    var quarterHeader = D.chartQuarters.map(function (q) {
+      return '<th class="al-c" style="font-weight:400;font-size:11px;color:var(--color-text-muted)">' + esc(q) + '</th>';
     }).join('');
+
+    var rowsHtml = D.chartTasks.map(function (t) {
+      var hasSub = D.taskRoadmapList.some(function (r) { return r.roadmap === t.category; });
+      var isExpanded = hasSub && (full || expanded.indexOf(t.category) !== -1);
+      var color = chartCategoryColor(t.category);
+      var barAttrs = 'data-action="open-chart-detail" data-category="' + esc(t.category) + '" data-manager="' + esc(t.manager) +
+        '" data-status="' + esc(t.status) + '" data-progress="' + t.progress + '" data-period="' + esc(t.startQ + ' ~ ' + t.endQ) + '"';
+      var expandAttrs = hasSub ? ' style="cursor:pointer" data-action="toggle-chart-expand" data-category="' + esc(t.category) + '"' : '';
+      var expandIcon = hasSub ? '<span style="display:inline-block;transition:transform .15s;transform:rotate(' + (isExpanded ? '90' : '0') + 'deg);margin-right:4px;font-size:10px;color:var(--color-text-faint)">&#9656;</span>' : '<span style="display:inline-block;width:14px"></span>';
+      var row = '<tr>' +
+        '<td class="' + (hasSub ? 'row-clickable' : '') + '" style="font-weight:600"' + expandAttrs + '>' + expandIcon + esc(t.category) + '</td>' +
+        '<td colspan="12" style="padding:6px 8px">' +
+          '<div style="display:grid;grid-template-columns:repeat(12,1fr);height:24px">' +
+            '<div ' + barAttrs + ' style="grid-column:' + t.colStart + ' / span ' + t.colSpan + ';background:' + color + ';border-radius:4px;cursor:pointer;display:flex;align-items:center;padding:0 8px;color:#fff;font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden"></div>' +
+          '</div>' +
+        '</td>' +
+      '</tr>';
+
+      var subRows = '';
+      if (isExpanded) {
+        if (!hasSub) {
+          subRows = '<tr style="background:var(--color-zebra-bg)"><td colspan="13" style="padding:10px 16px 10px 34px;color:var(--color-text-faint)">등록된 상세과제가 없습니다.</td></tr>';
+        } else {
+          var subs = D.taskRoadmapList.filter(function (r) { return r.roadmap === t.category; });
+          subRows = subs.map(function (r, si) {
+            var span = periodToChartSpan(r.period);
+            return '<tr style="background:' + (si % 2 === 0 ? 'var(--color-zebra-bg)' : 'var(--color-surface)') + '">' +
+              '<td style="padding-left:34px">' +
+                '<div style="font-weight:600;color:var(--color-text-sub)">&#8627; ' + esc(r.name) + '</div>' +
+                '<div style="display:flex;align-items:center;gap:6px;margin-top:4px">' + badge(r.status, CHART_SUBTASK_STATUS_KIND[r.status]) +
+                  '<span style="font-size:10px;color:var(--color-text-muted)">' + esc(r.period) + '</span>' +
+                '</div>' +
+              '</td>' +
+              '<td colspan="12" style="padding:6px 8px">' +
+                '<div style="display:grid;grid-template-columns:repeat(12,1fr);height:10px">' +
+                  '<div style="grid-column:' + span.colStart + ' / span ' + span.colSpan + ';background:' + color + ';border-radius:5px"></div>' +
+                '</div>' +
+              '</td>' +
+            '</tr>';
+          }).join('');
+        }
+      }
+      return row + subRows;
+    }).join('');
+
     return (
       '<div data-screen-label="SCR-008 통합 로드맵 차트">' +
         '<div class="section-title" style="margin-bottom:2px">통합 로드맵 차트</div>' +
         '<div class="screen-subtitle">분과별 로드맵·과제 일정을 간트차트로 조회 · 막대 선택 시 상세 팝업</div>' +
         '<div class="gantt-toolbar">' +
-          '<select style="height:32px;min-width:120px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>전체 분과</option></select>' +
-          '<span style="font-size:12px;color:var(--color-text-muted)">2026 ~ 2028</span>' +
+          '<select style="height:32px;min-width:120px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>전체 분과</option><option>차체 분과</option><option>조립 분과</option><option>물류 분과</option></select>' +
+          '<select style="height:32px;min-width:120px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>2026 ~ 2028</option><option>2026 ~ 2030</option></select>' +
           '<div class="filter-spacer"></div>' +
           '<div class="gantt-legend">' +
             '<span class="gantt-legend-item"><span class="legend-dot" style="border-radius:2px;background:var(--gantt-top-progress)"></span>차체</span>' +
             '<span class="gantt-legend-item"><span class="legend-dot" style="border-radius:2px;background:var(--gantt-top-pending)"></span>조립</span>' +
           '</div>' +
-          '<div class="gantt-view-toggle">' +
-            '<label data-action="set-gantt-view" data-view="summary"><input type="radio" ' + (!full ? 'checked' : '') + ' readonly /> 요약본</label>' +
-            '<label data-action="set-gantt-view" data-view="full"><input type="radio" ' + (full ? 'checked' : '') + ' readonly /> 전체보기</label>' +
+          '<div style="display:flex;border:1px solid var(--color-border-strong);border-radius:4px;overflow:hidden">' +
+            '<button type="button" data-action="set-chart-mode" data-mode="summary" class="btn" style="height:30px;border-radius:0;' + (!full ? 'background:var(--color-primary);color:#fff' : 'background:#fff;color:var(--color-text-muted)') + '">요약본</button>' +
+            '<button type="button" data-action="set-chart-mode" data-mode="full" class="btn" style="height:30px;border-radius:0;' + (full ? 'background:var(--color-primary);color:#fff' : 'background:#fff;color:var(--color-text-muted)') + '">전체보기</button>' +
           '</div>' +
         '</div>' +
-        '<div class="gantt-container">' +
-          '<div class="gantt-header-row"><div class="gantt-label-col"></div><div class="gantt-quarters">' + yearHeader + '</div></div>' +
-          '<div class="gantt-header-row"><div class="gantt-label-col">로드맵 / 과제</div><div class="gantt-quarters">' + quarters + '</div></div>' +
-          rows +
+        '<div style="overflow-x:auto" class="gantt-container">' +
+          '<table class="data-table" style="min-width:900px"><thead><tr>' + yearHeader + '</tr><tr>' + quarterHeader + '</tr></thead><tbody>' + rowsHtml + '</tbody></table>' +
         '</div>' +
       '</div>'
     );
@@ -1201,9 +1353,33 @@
     );
   }
 
+  // 근거: design_handoff_생기포털/source/부품 공정 자동화 현황.dc.html chartTaskDetail — SCR-008 간트 막대 클릭 시
+  // 담당자/진행상태(%)/기간을 보여주는 상세 팝업(어두운 헤더 + 회색 안내 문단 + 읽기전용 기간 입력).
+  function renderChartDetailModal(state) {
+    var d = state.chartTaskDetail || {};
+    return (
+      '<div class="modal-box" style="width:560px">' +
+        '<div class="modal-header" style="background:#1F2937;color:#fff">' +
+          '<div class="modal-title" style="color:#fff;font-size:14px">[과제 상세 정보] ' + esc(d.category) + '</div>' +
+          '<div class="modal-close" style="color:#9CA3AF" data-action="close-modal">&#10005;</div>' +
+        '</div>' +
+        '<div class="modal-body">' +
+          '<div style="display:flex;gap:24px;background:var(--color-bg);padding:12px;border-radius:4px;border:1px solid var(--color-border);margin-bottom:var(--sp-md)">' +
+            '<div><div style="font-size:11px;color:var(--color-text-faint);margin-bottom:4px">담당자</div><div style="font-weight:600">' + esc(d.manager) + '</div></div>' +
+            '<div><div style="font-size:11px;color:var(--color-text-faint);margin-bottom:4px">진행 상태</div>' + badge((d.status || '') + ' (' + d.progress + '%)', 'info') + '</div>' +
+          '</div>' +
+          '<div class="modal-field"><label>과제 목표</label><div class="modal-field-control"><div class="plaintext" style="height:auto;padding:10px;line-height:20px;white-space:normal">본 과제는 자동화 생산라인 효율 극대화를 위한 핵심 프로젝트입니다. 지정된 분기별 일정에 맞춰 파일럿 테스트 및 양산 적용 검증을 수행합니다.</div></div></div>' +
+          '<div class="modal-field"><label>일정</label><div class="modal-field-control"><div class="plaintext">' + esc(d.period) + '</div></div></div>' +
+        '</div>' +
+        '<div class="modal-footer"><button type="button" class="btn btn-secondary" style="height:36px" data-action="close-modal">닫기</button></div>' +
+      '</div>'
+    );
+  }
+
   function renderModal(state) {
     if (!state.activeModal) return '';
     if (state.activeModal === 'autoVideo') return renderAutoVideoModal(state);
+    if (state.activeModal === 'chartDetail') return renderChartDetailModal(state);
     var modal = MODALS[state.activeModal];
     if (!modal) return '';
     var fields = modal.fields.map(function (f) {

@@ -254,7 +254,7 @@
     { label: '교대운영', cells: ['-', '-', '3교대', '2교대', '2교대', '1교대', '2교대'] },
     { label: 'UPH', cells: ['-', '-', '71UPH', '-', '-', '-', '-'] },
     { label: '조립 인원 (직접)', cells: ['-', '-', '21명', '10명', '8명', '4명', '8명'] },
-    { label: '검사 인원 (간접)', cells: ['-', '-', '???', '-', '-', '-', '-'] },
+    { label: '검사 인원 (간접)', cells: ['-', '-', '미확인', '-', '-', '-', '-'] },
     { label: '총인원', cells: ['-', '-', '-', '-', '-', '-', '-'] },
     { label: '총 성인화 (실적/계획)', cells: ['-', '-', '-', "'28년 0명/6명", "'27년 0명/4명", '-', "'30년 0명/2명"] },
   ];
@@ -262,20 +262,23 @@
   // 작업내용별 상세 매트릭스 공통 헤더(일반화된 5개 라인열)
   var scr003DetailCols = ['조지아', '울산', '차종명', '차종명', '차종명'];
 
-  // 기술현황(tech): auto(완료 ●) / partial(개발중 ▲) / manual(불가 X)
-  // cells: scr003DetailCols와 동일한 순서(5열). 'auto'/'manual'은 확대전개계획 pill 노출, null은 '-'.
+  // 기술현황(tech): auto(완료 ●) / partial(개발중 ▲) / manual(불가 X) — 셋 다 배지 없는 일반 텍스트(font-semibold)로
+  // 표시되고 클릭도 불가하다(디자인 원본에 색상/버튼 없음). cells: scr003DetailCols와 동일한 순서(5열).
+  // 'auto'는 검정 필 버튼(재생 아이콘)로 클릭 시 동영상 모달이 열리고, 'manual'은 빨간 텍스트, null은 '-'.
+  // 근거: design_handoff_생기포털/source/부품 공정 자동화 현황.dc.html — 매트릭스에서 실제로 값이 채워지고
+  // 클릭 가능한 셀은 NO.1(이대치조정)의 "조지아" 열 하나뿐이며, 나머지 11개 행은 5열 모두 공란('-')이다.
   var scr003ProcessDetail = [
-    { no: 1, task: '이대치조정', tech: 'auto', plan: '기술 확보 完', hasVideo: true, videoLabel: '이대치조정 자동화 설비 동영상', cells: ['auto', null, null, null, null] },
+    { no: 1, task: '이대치조정', tech: 'auto', plan: '기술 확보 完', hasVideo: true, cells: ['auto', null, null, null, null] },
     { no: 2, task: '디프로딩(4WD)', tech: 'partial', plan: "기술개발 중('27)", cells: ['manual', null, null, null, null] },
-    { no: 3, task: '멤버로딩', tech: 'auto', plan: '기술 확보 完', hasVideo: true, videoLabel: '멤버로딩 자동화 설비 동영상', cells: [null, null, null, null, null] },
+    { no: 3, task: '멤버로딩', tech: 'auto', plan: '기술 확보 完', cells: [null, null, null, null, null] },
     { no: 4, task: '리어 로워암 로딩', tech: 'manual', plan: '유동으로 인한 現기술 자동화 불가', cells: [null, null, null, null, null] },
     { no: 6, task: '디프/멤버 가체결(4WD)', tech: 'partial', plan: "기술개발 중('29)", cells: [null, null, null, null, null] },
-    { no: 8, task: '디프/멤버 완체결(4WD)', tech: 'auto', plan: '기술 확보 完', hasVideo: true, videoLabel: '디프/멤버 완체결(4WD) 자동화 설비 동영상', cells: [null, null, null, null, null] },
+    { no: 8, task: '디프/멤버 완체결(4WD)', tech: 'auto', plan: '기술 확보 完', cells: [null, null, null, null, null] },
     { no: 10, task: '커플링 / 디프케리어 조립(4WD)', tech: 'manual', plan: '커플링 조립 난해로 現기술력 자동화 불가', cells: [null, null, null, null, null] },
-    { no: 11, task: '디프오일주입(4WD)', tech: 'auto', plan: '기술 확보 完', hasVideo: true, videoLabel: '디프오일주입(4WD) 자동화 설비 동영상', cells: [null, null, null, null, null] },
-    { no: 12, task: 'RR로워암/멤버 가체결', tech: 'manual', plan: '유동으로 인한 現기술 자동화 불가', cells: [null, null, null, null, null] },
-    { no: 13, task: '스텝바/멤버 가체결', tech: 'auto', plan: '기술 확보 完', hasVideo: true, videoLabel: '스텝바/멤버 가체결 자동화 설비 동영상', cells: [null, null, null, null, null] },
-    { no: 14, task: '리어 이버암/멤버가체결', tech: 'manual', plan: '체결부 유동으로 現 기술력 자동화 불가', cells: [null, null, null, null, null] },
+    { no: 11, task: '디프오일주입(4WD)', tech: 'auto', plan: '기술 확보 完', cells: [null, null, null, null, null] },
+    { no: 12, task: 'RR로워 암/멤버 가체결', tech: 'manual', plan: '유동으로 인한 現기술 자동화 불가', cells: [null, null, null, null, null] },
+    { no: 13, task: '스텝바/멤버 가체결', tech: 'auto', plan: '기술 확보 完', cells: [null, null, null, null, null] },
+    { no: 14, task: '리어 어퍼암/멤버 가체결', tech: 'manual', plan: '체결부 유동으로 現 기술력 자동화 불가', cells: [null, null, null, null, null] },
     { no: 15, task: '스텝바 링크/스텝바 가체결', tech: 'manual', plan: '체결부 유동으로 現 기술력 자동화 불가', cells: [null, null, null, null, null] },
   ];
 
@@ -283,43 +286,132 @@
   var scr003LastSync = '2026-08-07 03:00';
 
   // ---- SCR-002 ----
-  var scr002Rows = [
-    { plant: 'A공장', line: '1라인', name: '용접', seq: 10, note: '-' },
-    { plant: 'A공장', line: '1라인', name: '조립', seq: 20, note: '-' },
-    { plant: 'A공장', line: '2라인', name: '검사', seq: 10, note: '신규 라인' },
-  ];
+  // 근거: design_handoff_생기포털/source/부품 공정 자동화 현황.dc.html state.masterList 생성 로직을 그대로 이식(30건).
+  // NO는 화면에서 내림차순(최신 등록이 위)으로 계산되므로 렌더링 시점에 filtered.length - index로 매긴다.
+  var scr002Rows = (function () {
+    var names = ['용접', '조립', '검사', '도장', '프레스', '이송', '체결', '포장', '세척', '라벨링'];
+    var factories = ['A공장', 'B공장'];
+    var lines = ['1라인', '2라인', '3라인'];
+    var rows = [];
+    for (var i = 0; i < 30; i++) {
+      rows.push({
+        factory: factories[i % factories.length],
+        line: lines[i % lines.length],
+        name: names[i % names.length] + (i >= names.length ? ' ' + (Math.floor(i / names.length) + 1) : ''),
+        seq: String((i % 10 + 1) * 10),
+        desc: i % 7 === 0 ? '신규 라인' : '',
+      });
+    }
+    return rows;
+  })();
 
   // ---- SCR-004 ----
-  var scr004Rows = [
-    { name: '볼트 체결', type: '조립', usage: 12, registered: '2026-01-10' },
-    { name: '와이어링', type: '배선', usage: 8, registered: '2026-02-15' },
-  ];
+  // 근거: 위 소스 state.taskList 생성 로직 이식(24건).
+  var scr004Rows = (function () {
+    var names = ['볼트 체결', '와이어링', '용접', '검사', '도장', '이송', '조립', '포장', '세척', '라벨링', '프레스', '체결확인'];
+    var types = ['조립', '배선', '용접', '검사', '도장', '물류'];
+    var rows = [];
+    for (var i = 0; i < 24; i++) {
+      rows.push({
+        name: names[i % names.length] + (i >= names.length ? ' ' + (Math.floor(i / names.length) + 1) : ''),
+        type: types[i % types.length],
+        usage: (i % 12) + 1,
+        registered: '2026-' + String((i % 12) + 1).padStart(2, '0') + '-' + String((i % 27) + 1).padStart(2, '0'),
+      });
+    }
+    return rows;
+  })();
 
   // ---- SCR-005 ----
-  var scr005Rows = [
-    { time: '2026-08-07 03:00:12', ifId: 'IF-003', type: '배치', count: '1,204', result: '성공', resultKind: 'success', reason: '-', clickable: false },
-    { time: '2026-08-06 03:00:08', ifId: 'IF-003', type: '배치', count: '980', result: '실패', resultKind: 'danger', reason: '원본 DB 연결 타임아웃', clickable: true, modal: 'ifError' },
-    { time: '2026-08-06 03:05:01', ifId: 'IF-003', type: '배치(재처리)', count: '980', result: '성공', resultKind: 'success', reason: '-', clickable: false },
-  ];
+  // 근거: 위 소스 state.ifList 생성 로직 이식(23건).
+  var scr005Rows = (function () {
+    var ids = ['IF-001', 'IF-002', 'IF-003', 'IF-004', 'IF-005'];
+    var types = ['배치', '배치(재처리)', '실시간'];
+    var reasons = ['원본 DB 연결 타임아웃', '스키마 불일치', '외부 API 응답 지연'];
+    var rows = [];
+    for (var i = 0; i < 23; i++) {
+      var isFail = i % 5 === 1;
+      var day = 7 - Math.floor(i / 3);
+      rows.push({
+        time: '2026-08-' + String(Math.max(1, day)).padStart(2, '0') + ' 03:' + String((i % 6) * 10).padStart(2, '0') + ':' + String((i * 7) % 60).padStart(2, '0'),
+        ifId: ids[i % ids.length],
+        type: types[i % types.length],
+        count: String(800 + i * 37),
+        result: isFail ? '실패' : '성공',
+        reason: isFail ? reasons[i % reasons.length] : '',
+      });
+    }
+    return rows;
+  })();
 
   // ---- SCR-006 ----
-  var scr006Rows = [
-    { section: '차체', name: '차체 자동화 로드맵', period: '2026.01~2028.12', task: '용접 자동화', status: '진행중', statusKind: 'info', roadmapId: 'body' },
-    { section: '조립', name: '조립 자동화 로드맵', period: '2026.03~2029.06', task: '코봇 도입', status: '계획', statusKind: 'warning', roadmapId: 'assembly' },
-  ];
+  // 근거: 위 소스 state.roadmapList 생성 로직 이식(14건: 기본 5건 + 확장 9건).
+  var STATUS_KIND = { 진행중: 'info', 계획: 'warning', 반려: 'danger', 보류: 'neutral' };
+  var scr006Rows = (function () {
+    var base = [
+      { section: '차체', name: '차체 자동화 로드맵', period: '2026.01~2026.12', task: '용접 자동화', status: '진행중' },
+      { section: '조립', name: '조립 자동화 로드맵', period: '2026.04~2027.06', task: '코봇 도입', status: '계획' },
+      { section: '도장', name: '도장 자동화 로드맵', period: '2026.01~2026.09', task: '도장 로봇 재검토', status: '반려' },
+      { section: '엔진', name: '엔진 자동화 로드맵', period: '2026.10~2027.09', task: '조립라인 자동화', status: '보류' },
+      { section: '물류', name: '물류/반송 자동화 로드맵', period: '2027.01~2027.12', task: '물류 반송 표준화', status: '계획' },
+    ];
+    var depts = ['차체', '조립', '도장', '엔진', '물류', '검사', '배선', '냉각'];
+    var statuses = ['진행중', '계획', '반려', '보류'];
+    var rows = base.slice();
+    for (var i = 5; i < 14; i++) {
+      var dept = depts[i % depts.length];
+      rows.push({
+        section: dept,
+        name: dept + ' 자동화 로드맵 ' + (Math.floor(i / depts.length) + 1),
+        period: '202' + (6 + (i % 3)) + '.0' + ((i % 9) + 1) + '~20' + (29 + (i % 2)) + '.12',
+        task: '확대전개 검토',
+        status: statuses[i % statuses.length],
+      });
+    }
+    rows.forEach(function (r) { r.statusKind = STATUS_KIND[r.status]; });
+    return rows;
+  })();
   var roadmapOptions = [
     { id: 'body', label: '차체 자동화 로드맵' },
     { id: 'assembly', label: '조립 자동화 로드맵' },
   ];
 
-  // ---- SCR-007 (소속 로드맵별) ----
-  var scr007Data = {
-    body: [
-      { name: '용접 로봇 도입', owner: '홍**', period: '2026.03~2026.09', status: '진행중', statusKind: 'info' },
-      { name: '검사공정 자동화', owner: '김**', period: '2026.06~2027.02', status: '계획', statusKind: 'neutral' },
-    ],
-    assembly: [],
-  };
+  // ---- SCR-007 ----
+  // 근거: design_handoff_생기포털/source/부품 공정 자동화 현황.dc.html isRoadmapMgmt — 상세과제 로드맵 관리는
+  // (구버전처럼) 통합 로드맵별 탭이 아니라, "통합 로드맵/담당자/기간/진행상태" 드롭다운으로 필터링하는
+  // 단일 목록(16건)이다. state.taskRoadmapList 생성 로직을 그대로 이식.
+  var taskRoadmapFilterRoadmaps = ['차체 자동화 로드맵', '조립 자동화 로드맵', '물류/반송 자동화 표준화', 'AI 비전 검사 시스템 도입'];
+  var taskRoadmapList = (function () {
+    var base = [
+      { name: '용접 로봇 도입', owner: '홍**', period: '2026.03~2026.09', status: '진행중', roadmap: '차체 자동화 로드맵' },
+      { name: '검사공정 자동화', owner: '김**', period: '2026.06~2027.02', status: '계획', roadmap: '조립 자동화 로드맵' },
+      { name: '엔진 조립라인 자동화', owner: '최**', period: '2026.10~2027.06', status: '진행중', roadmap: '엔진 자동화 로드맵' },
+      { name: 'ECU S/W 다운 자동화', owner: '정**', period: '2027.01~2027.09', status: '보류', roadmap: '엔진 자동화 로드맵' },
+      { name: '차체 세부과제(28.Q4 종료 예시)', owner: '박**', period: '2026.10~2028.12', status: '계획', roadmap: '차체 자동화 로드맵' },
+    ];
+    var windows = {
+      '차체 자동화 로드맵': ['2026.01', '2026.12'],
+      '조립 자동화 로드맵': ['2026.04', '2027.06'],
+      '도장 자동화 로드맵': ['2026.01', '2026.09'],
+      '엔진 자동화 로드맵': ['2026.10', '2027.09'],
+    };
+    var roadmaps = Object.keys(windows);
+    var owners = ['홍**', '김**', '이**', '박**', '최**', '정**'];
+    var statuses = ['진행중', '계획', '반려', '보류'];
+    var rows = base.slice();
+    for (var i = 4; i < 16; i++) {
+      var rm = roadmaps[i % roadmaps.length];
+      rows.push({
+        name: rm.replace(' 자동화 로드맵', '') + ' 세부과제 ' + (i - 3),
+        owner: owners[i % owners.length],
+        period: windows[rm][0] + '~' + windows[rm][1],
+        status: statuses[i % statuses.length],
+        roadmap: rm,
+      });
+    }
+    rows.forEach(function (r) { r.statusKind = STATUS_KIND[r.status]; });
+    return rows;
+  })();
 
   // ---- SCR-008 간트 ----
   var ganttQuarters = ['26.Q1', 'Q2', 'Q3', 'Q4', '27.Q1', 'Q2', 'Q3', 'Q4', '28.Q1', 'Q2', 'Q3', 'Q4'];
@@ -329,6 +421,17 @@
     { label: 'ㄴ 검사공정 자동화', indent: 28, top: false, left: 4, width: 10, barClass: 'gantt-bar-progress-sub', modal: 'ganttDetail' },
     { label: '조립 자동화 로드맵', indent: 12, top: true, left: 8, width: 33, barClass: 'gantt-bar-pending-top', modal: 'ganttDetail' },
     { label: 'ㄴ 코봇 도입', indent: 28, top: false, left: 9, width: 12, barClass: 'gantt-bar-progress-sub', modal: 'ganttDetail' },
+  ];
+
+  // ---- SCR-008 통합 로드맵 차트 (계층형 간트: 로드맵 막대 + 하위 상세과제 아코디언) ----
+  // 근거: design_handoff_생기포털/source/부품 공정 자동화 현황.dc.html state.chartTasks/QUARTERS —
+  // 분기 인덱스 계산용 전체 라벨(26.Q1~28.Q4, 12개)과 4개 로드맵 막대(colStart/colSpan은 QUARTERS 기준 1-based).
+  var chartQuarters = ['26.Q1', '26.Q2', '26.Q3', '26.Q4', '27.Q1', '27.Q2', '27.Q3', '27.Q4', '28.Q1', '28.Q2', '28.Q3', '28.Q4'];
+  var chartTasks = [
+    { id: 1, category: '차체 자동화 로드맵', manager: '김기획 책임', progress: 75, status: '진행중', colStart: 1, colSpan: 3, startQ: '26.Q1', endQ: '26.Q3' },
+    { id: 2, category: '조립 자동화 로드맵', manager: '박생기 수석', progress: 40, status: '검토중', colStart: 3, colSpan: 4, startQ: '26.Q3', endQ: '27.Q2' },
+    { id: 3, category: '물류/반송 자동화 표준화', manager: '이자동 책임', progress: 15, status: '계획중', colStart: 5, colSpan: 4, startQ: '27.Q1', endQ: '27.Q4' },
+    { id: 4, category: 'AI 비전 검사 시스템 도입', manager: '최지능 선임', progress: 90, status: '완료임박', colStart: 2, colSpan: 3, startQ: '26.Q2', endQ: '26.Q4' },
   ];
 
   // ---- SCR-009 ----
@@ -466,15 +569,16 @@
       { label: '내용', type: 'plaintext', value: '자동용접 적용 사례' },
       { label: '첨부 재생', type: 'file' },
     ] },
-    stdProcessRegister: { title: '표준공정 등록', confirm: '등록', size: 480, fields: [
-      { label: '공장', required: true, type: 'select' },
-      { label: '라인', required: true, type: 'select' },
-      { label: '표준공정명', required: true, type: 'text' },
-      { label: '순서', required: true, type: 'text' },
+    stdProcessRegister: { title: '표준공정 마스터 등록', confirm: '저장', size: 480, successMessage: '성공적으로 저장되었습니다.', fields: [
+      { label: '공장', required: true, type: 'select', options: ['A공장', 'B공장'] },
+      { label: '라인', required: true, type: 'select', options: ['1라인', '2라인'] },
+      { label: '표준공정명', required: true, type: 'text', placeholder: '예: 용접, 조립 등' },
+      { label: '순서', required: true, type: 'text', placeholder: '예: 10, 20 등' },
+      { label: '비고', required: false, type: 'text', placeholder: '비고 입력' },
     ] },
-    stdTaskRegister: { title: '표준 작업명 등록', confirm: '등록', size: 480, fields: [
+    stdTaskRegister: { title: '표준 작업명 등록', confirm: '등록', size: 480, successMessage: '표준 작업명이 등록되었습니다.', fields: [
       { label: '작업명', required: true, type: 'text' },
-      { label: '공정유형', required: true, type: 'select' },
+      { label: '공정유형', required: true, type: 'select', options: ['조립', '배선', '검사'] },
     ] },
     deleteConfirm: { title: '삭제 확인', confirm: '삭제', size: 480, fields: [
       { label: '안내', type: 'plaintext', value: '이 항목은 12개 모듈에서 사용 중입니다. 계속하시겠습니까?' },
@@ -560,8 +664,9 @@
     scr004Rows: scr004Rows,
     scr005Rows: scr005Rows,
     scr006Rows: scr006Rows, roadmapOptions: roadmapOptions,
-    scr007Data: scr007Data,
+    taskRoadmapList: taskRoadmapList, taskRoadmapFilterRoadmaps: taskRoadmapFilterRoadmaps,
     ganttQuarters: ganttQuarters, ganttRowsFull: ganttRowsFull,
+    chartQuarters: chartQuarters, chartTasks: chartTasks,
     techPrCards: techPrCards,
     scr010Rows: scr010Rows,
     scr011Rows: scr011Rows,
