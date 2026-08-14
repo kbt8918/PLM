@@ -1098,18 +1098,27 @@
     '</div>';
   }
 
-  function renderSCR009() {
-    var cards = D.techPrCards.map(function (c, i) { return renderTechPrCard(c, i, true); }).join('');
+  // 근거: design_handoff_생기포털/source/부품 공정 자동화 현황.dc.html isTechPr — 필터는 제목/과제명 검색
+  // 타입 선택 + 검색어 입력 하나뿐이며(techPrFilter.type), 5열 카드 그리드, 10건 초과 시 페이지네이션.
+  function renderSCR009(state) {
+    var pageSize = 10;
+    var page = state.techPrPage || 1;
+    var totalPages = Math.max(1, Math.ceil(D.techPrCards.length / pageSize));
+    page = Math.min(page, totalPages);
+    var pageCards = D.techPrCards.slice((page - 1) * pageSize, page * pageSize);
+    var cards = pageCards.map(function (c) { return renderTechPrCard(c, D.techPrCards.indexOf(c), true); }).join('');
     return (
       '<div data-screen-label="SCR-009 생산기술 Tech PR">' +
-        '<div style="display:flex;align-items:center;gap:var(--sp-sm);margin-bottom:var(--sp-lg)">' +
-          '<select style="height:32px;min-width:120px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>전체 과제</option></select>' +
-          '<select style="height:32px;min-width:120px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>전체 분과</option></select>' +
-          '<select style="height:32px;min-width:120px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>전체 소재유형</option></select>' +
-          '<div class="filter-spacer"></div>' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;gap:var(--sp-sm);margin-bottom:var(--sp-lg)">' +
+          '<div style="display:flex;align-items:center;gap:var(--sp-sm)">' +
+            '<select style="height:32px;min-width:90px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>제목</option><option>과제명</option></select>' +
+            '<input placeholder="제목 검색" style="height:32px;min-width:200px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 10px" />' +
+            '<button type="button" class="btn btn-primary" data-action="run-search">조회</button>' +
+          '</div>' +
           '<button type="button" class="btn btn-primary" data-action="open-modal" data-modal-id="techPrInquiry">기술 문의/제안</button>' +
         '</div>' +
         '<div class="card-grid card-grid-5">' + cards + '</div>' +
+        renderPagination(D.techPrCards.length, page, pageSize, 'techPrPage') +
       '</div>'
     );
   }
@@ -1162,94 +1171,139 @@
 
   // ---------- SCR-010 Tech PR 관리자 ----------
 
-  function renderSCR010() {
-    var rows = D.scr010Rows.map(function (r) {
-      return '<tr>' + td('<strong>' + esc(r.title) + '</strong>') + td(esc(r.task)) + td(esc(r.owner)) +
+  // 근거: isTechPrAdmin — 필터 5종(제목/과제/담당자/첨부 검색/등록일), NO 컬럼(내림차순), 15건 페이지네이션.
+  function renderSCR010(state) {
+    var filtered = D.scr010Rows;
+    var pageSize = 10;
+    var page = state.techPrAdminPage || 1;
+    var totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+    page = Math.min(page, totalPages);
+    var pageRows = filtered.slice((page - 1) * pageSize, page * pageSize);
+    var rows = pageRows.map(function (r, i) {
+      var no = filtered.length - ((page - 1) * pageSize + i);
+      return '<tr>' + td(no, null, 'muted') + td('<strong>' + esc(r.title) + '</strong>') + td(esc(r.task)) + td(esc(r.owner)) +
         td(esc(r.attachment), null, 'muted') + td(esc(r.registered), null, 'muted') +
-        td('<button type="button" class="btn-outline-sm">수정</button>', 'center') +
+        td('<button type="button" class="btn-outline-sm" data-action="open-modal" data-modal-id="materialRegister">수정</button>', 'center') +
       '</tr>';
     }).join('');
     return (
       '<div class="admin-screen" data-screen-label="SCR-010 Tech PR 관리자">' +
-        '<div style="display:flex;align-items:center;gap:var(--sp-sm);margin-bottom:var(--sp-lg)">' +
-          '<select style="height:32px;min-width:140px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>전체 과제</option></select>' +
+        '<div style="display:flex;align-items:center;gap:var(--sp-sm);margin-bottom:var(--sp-lg);flex-wrap:wrap">' +
+          '<input placeholder="제목 검색" style="height:32px;min-width:160px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 10px" />' +
+          '<select style="height:32px;min-width:130px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>전체 과제</option><option>용접 자동화</option><option>검사 자동화</option></select>' +
+          '<input placeholder="담당자 검색" style="height:32px;min-width:120px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 10px" />' +
+          '<input placeholder="첨부(문서/동영상) 검색" style="height:32px;min-width:160px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 10px" />' +
+          '<input type="date" style="height:32px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px" />' +
+          '<button type="button" class="btn btn-primary" data-action="run-search">조회</button>' +
           '<div class="filter-spacer"></div>' +
           '<button type="button" class="btn btn-primary" data-action="open-modal" data-modal-id="materialRegister">+ 자료 등록</button>' +
         '</div>' +
         renderTable([
-          { label: '제목' }, { label: '과제' }, { label: '담당자' }, { label: '첨부(문서/동영상)' }, { label: '등록일' }, { label: '관리', align: 'center' },
+          { label: 'NO' }, { label: '제목' }, { label: '과제' }, { label: '담당자' }, { label: '첨부(문서/동영상)' }, { label: '등록일' }, { label: '관리', align: 'center' },
         ], rows) +
+        renderPagination(filtered.length, page, pageSize, 'techPrAdminPage') +
       '</div>'
     );
   }
 
   // ---------- SCR-011 mTRM 협의체 관리 ----------
 
-  function renderSCR011() {
-    var rows = D.scr011Rows.map(function (r) {
-      return '<tr>' + td('<strong>' + esc(r.name) + '</strong>') + td(esc(r.section)) + td(esc(r.agenda)) + td(esc(r.target)) +
+  // 근거: isMtrmCouncil — 필터 6종(협의체명/분과/의제/대상 분과장 검색/등록일/상태), NO 컬럼, 13건 페이지네이션.
+  function renderSCR011(state) {
+    var filtered = D.scr011Rows;
+    var pageSize = 10;
+    var page = state.mtrmPage || 1;
+    var totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+    page = Math.min(page, totalPages);
+    var pageRows = filtered.slice((page - 1) * pageSize, page * pageSize);
+    var rows = pageRows.map(function (r, i) {
+      var no = filtered.length - ((page - 1) * pageSize + i);
+      return '<tr>' + td(no, null, 'muted') + td('<strong>' + esc(r.name) + '</strong>') + td(esc(r.section)) + td(esc(r.agenda)) + td(esc(r.target)) +
         td(esc(r.schedule), null, 'muted') +
         td(badge(r.mailStatus, r.mailKind), 'center') +
       '</tr>';
     }).join('');
     return (
       '<div class="admin-screen" data-screen-label="SCR-011 mTRM 협의체 관리">' +
-        '<div style="display:flex;justify-content:flex-end;margin-bottom:var(--sp-md)">' +
+        '<div style="display:flex;align-items:center;gap:var(--sp-sm);margin-bottom:var(--sp-lg);flex-wrap:wrap">' +
+          '<input placeholder="협의체명 검색" style="height:32px;min-width:150px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 10px" />' +
+          '<select style="height:32px;min-width:100px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>전체 분과</option><option>차체</option><option>조립</option></select>' +
+          '<input placeholder="의제 검색" style="height:32px;min-width:130px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 10px" />' +
+          '<input placeholder="대상 분과장 검색" style="height:32px;min-width:140px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 10px" />' +
+          '<input type="date" style="height:32px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px" />' +
+          '<select style="height:32px;min-width:110px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>전체 상태</option><option>발송완료</option><option>발송대기</option></select>' +
+          '<button type="button" class="btn btn-primary" data-action="run-search">조회</button>' +
+          '<div class="filter-spacer"></div>' +
           '<button type="button" class="btn btn-primary" data-action="open-modal" data-modal-id="councilRegister">+ 협의체 등록</button>' +
         '</div>' +
         renderTable([
-          { label: '협의체명' }, { label: '분과' }, { label: '의제' }, { label: '대상 분과장' }, { label: '일정' }, { label: '메일상태', align: 'center' },
+          { label: 'NO' }, { label: '협의체명' }, { label: '분과' }, { label: '의제' }, { label: '대상 분과장' }, { label: '일정' }, { label: '메일상태', align: 'center' },
         ], rows) +
+        renderPagination(filtered.length, page, pageSize, 'mtrmPage') +
       '</div>'
     );
   }
 
   // ---------- SCR-012 mTRM 관리 ----------
 
-  function renderSCR012() {
-    var rows = D.scr012Rows.map(function (r) {
-      return '<tr>' + td('<strong>' + esc(r.name) + '</strong>') + td(esc(r.section)) +
+  // 근거: isMtrmMgmt — 필터 4종(mTRM명 검색/분과/상태/등록일), NO 컬럼, 13건 페이지네이션.
+  function renderSCR012(state) {
+    var filtered = D.scr012Rows;
+    var pageSize = 10;
+    var page = state.mtrmMgmtPage || 1;
+    var totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+    page = Math.min(page, totalPages);
+    var pageRows = filtered.slice((page - 1) * pageSize, page * pageSize);
+    var rows = pageRows.map(function (r, i) {
+      var no = filtered.length - ((page - 1) * pageSize + i);
+      return '<tr>' + td(no, null, 'muted') + td('<strong>' + esc(r.name) + '</strong>') + td(esc(r.section)) +
         td(badge(r.status, r.statusKind), 'center') +
         td(esc(r.registered), null, 'muted') +
-        td('<button type="button" class="btn-link">수정</button><button type="button" class="btn-link-danger" style="margin-left:8px" data-action="open-modal" data-modal-id="deleteConfirm">삭제</button>', 'center') +
+        td('<button type="button" class="btn-link" data-action="open-modal" data-modal-id="mtrmRegister">수정</button><button type="button" class="btn-link-danger" style="margin-left:8px" data-action="open-modal" data-modal-id="deleteConfirm">삭제</button>', 'center') +
       '</tr>';
     }).join('');
     return (
       '<div class="admin-screen" data-screen-label="SCR-012 mTRM 관리">' +
-        '<div style="display:flex;align-items:center;gap:var(--sp-sm);margin-bottom:var(--sp-md)">' +
-          '<input placeholder="mTRM명 검색" style="height:32px;min-width:220px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 10px" />' +
+        '<div style="display:flex;align-items:center;gap:var(--sp-sm);margin-bottom:var(--sp-md);flex-wrap:wrap">' +
+          '<input placeholder="mTRM명 검색" style="height:32px;min-width:180px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 10px" />' +
+          '<select style="height:32px;min-width:100px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>전체 분과</option><option>차체</option><option>조립</option></select>' +
+          '<select style="height:32px;min-width:100px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>전체 상태</option><option>활성</option><option>비활성</option></select>' +
+          '<input type="date" style="height:32px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px" />' +
           '<button type="button" class="btn btn-primary" data-action="run-search">조회</button>' +
           '<div class="filter-spacer"></div>' +
           '<button type="button" class="btn btn-primary" data-action="open-modal" data-modal-id="mtrmRegister">+ mTRM 등록</button>' +
         '</div>' +
         renderTable([
-          { label: 'mTRM명' }, { label: '분과' }, { label: '상태', align: 'center' }, { label: '등록일' }, { label: '관리', align: 'center' },
+          { label: 'NO' }, { label: 'mTRM명' }, { label: '분과' }, { label: '상태', align: 'center' }, { label: '등록일' }, { label: '관리', align: 'center' },
         ], rows) +
+        renderPagination(filtered.length, page, pageSize, 'mtrmMgmtPage') +
       '</div>'
     );
   }
 
   // ---------- SCR-013 기술과제 계획 등록 ----------
 
+  // 근거: isTechTask — 연동 mTRM 로드맵을 선택하면 ROADMAP_MAPPINGS[선택값]에 해당하는 자동 매핑 결과
+  // 행이 표시되고, 선택 전(기본값)에는 "연동 mTRM 로드맵을 선택하세요." 안내만 노출된다(techTaskNoMapping).
+  // 이 화면은 초기 로드 상태를 그대로 보여준다(다른 화면과 동일하게 셀렉트는 장식용).
   function renderSCR013() {
-    var m = D.taskPlanMapping;
-    var options = D.roadmapOptions.map(function (o) { return '<option value="' + o.id + '">' + esc(o.label) + '</option>'; }).join('');
+    var options = D.roadmapOptions.map(function (o) { return '<option value="' + esc(o.label) + '">' + esc(o.label) + '</option>'; }).join('');
+    var mappingBody = '<tr><td colspan="3" class="empty-row-cell" style="padding:16px">연동 mTRM 로드맵을 선택하세요.</td></tr>';
     return (
       '<div data-screen-label="SCR-013 기술과제 계획 등록">' +
         '<div class="form-panel">' +
           '<div class="form-row">' +
             '<div class="form-group"><label>과제명 *</label><input /></div>' +
-            '<div class="form-group"><label>담당자 *</label><select><option>선택</option></select></div>' +
+            '<div class="form-group"><label>담당자 *</label><select><option>선택</option><option>홍**</option><option>김**</option></select></div>' +
           '</div>' +
           '<div class="form-group" style="margin-bottom:var(--sp-lg)"><label>계획등록일 *</label><input type="date" style="max-width:200px" /></div>' +
           '<div class="form-divider">' +
             '<div class="form-subtitle">mTRM 연동 영역</div>' +
             '<div class="form-group" style="margin-bottom:var(--sp-md)"><label>연동 mTRM 로드맵 *</label>' +
-              '<select data-role="task-plan-roadmap">' + options + '</select>' +
+              '<select data-role="task-plan-roadmap"><option value="">선택</option>' + options + '</select>' +
             '</div>' +
             '<div style="font-size:12px;color:var(--color-text-muted);margin-bottom:8px">자동 매핑 결과</div>' +
-            renderTable([{ label: '매핑 로드맵명' }, { label: '매핑 상세과제' }, { label: '매핑상태', align: 'center' }],
-              '<tr>' + td(esc(m.roadmapName)) + td(esc(m.detailTask)) + td(badge(m.status, m.statusKind), 'center') + '</tr>') +
+            renderTable([{ label: '매핑 로드맵명' }, { label: '매핑 상세과제' }, { label: '매핑상태', align: 'center' }], mappingBody) +
           '</div>' +
           '<div class="form-actions">' +
             '<button type="button" class="btn btn-secondary" style="height:36px">취소</button>' +
@@ -1262,6 +1316,9 @@
 
   // ---------- SCR-014 기술동향 ----------
 
+  // 근거: design_handoff_생기포털/source/부품 공정 자동화 현황.dc.html isTechTrend — 상세뷰는 목록/이전/다음
+  // 내비게이션 + 큰 이미지 프리뷰(480px) + 본문(content, 없으면 "등록된 설명이 없습니다.")로 구성되고,
+  // 목록은 관리자용 수정/등록 버튼 + 5열 카드(재생 아이콘 오버레이) + 15건 페이지네이션.
   function renderSCR014(state) {
     if (state.trendView === 'detail') {
       var t = D.trendsData[state.trendIndex];
@@ -1279,33 +1336,47 @@
           '<div class="panel">' +
             '<div class="trend-detail-title-row">' +
               '<div style="font-size:20px;font-weight:700">' + esc(t.title) + '</div>' +
-              '<div style="font-size:12px;color:var(--color-text-faint)">조회 ' + (t.views + 1) + ' | ' + esc(t.date) + ' | ' + esc(t.dept) + '/' + esc(t.owner) + '</div>' +
+              '<div style="font-size:12px;color:var(--color-text-faint);white-space:nowrap;margin-left:16px">조회 ' + (t.views + 1) + ' | ' + esc(t.date) + ' | ' + esc(t.dept) + '/' + esc(t.owner) + '</div>' +
             '</div>' +
-            '<div style="font-size:12px;color:var(--color-primary);margin-bottom:var(--sp-md)">' + esc(t.tag) + '</div>' +
-            '<div class="trend-detail-body-preview">본문 / 이미지 / 동영상 프리뷰 영역</div>' +
+            '<div style="font-size:12px;color:var(--color-primary);margin-bottom:var(--sp-md)">#' + esc(t.tag) + '</div>' +
+            '<div class="trend-detail-body-preview" style="aspect-ratio:auto;height:480px">브로슈어 / 이미지 / 동영상 프리뷰 영역</div>' +
+            '<p style="font-size:14px;color:var(--color-text-sub);line-height:24px;margin-top:20px">' + esc(t.content || '등록된 설명이 없습니다.') + '</p>' +
           '</div>' +
         '</div>'
       );
     }
-    var cards = D.trendsData.map(function (c, i) {
+    var pageSize = 10;
+    var page = state.techTrendPage || 1;
+    var totalPages = Math.max(1, Math.ceil(D.trendsData.length / pageSize));
+    page = Math.min(page, totalPages);
+    var pageItems = D.trendsData.slice((page - 1) * pageSize, page * pageSize);
+    var cards = pageItems.map(function (c) {
+      var i = D.trendsData.indexOf(c);
       return '<div class="media-card" data-action="trend-detail" data-index="' + i + '">' +
-        '<div class="media-thumb" style="aspect-ratio:16/9"></div>' +
+        '<div class="media-thumb" style="aspect-ratio:1/1;position:relative">' +
+          '<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none">' +
+            '<span class="play-btn" style="width:44px;height:44px">&#9658;</span>' +
+          '</span>' +
+        '</div>' +
         '<div class="media-body">' +
           '<div class="media-title">' + esc(c.title) + '</div>' +
           '<div class="media-meta">조회 ' + c.views + '</div>' +
-          '<div class="media-meta">' + esc(c.date) + ' · ' + esc(c.dept) + ' · ' + esc(c.owner) + ' · ' + esc(c.tag) + '</div>' +
+          '<div class="media-meta">' + esc(c.date) + ' · ' + esc(c.dept) + ' · ' + esc(c.owner) + ' · #' + esc(c.tag) + '</div>' +
         '</div>' +
       '</div>';
     }).join('');
     return (
       '<div data-screen-label="SCR-014 기술동향">' +
         '<div style="display:flex;align-items:center;gap:var(--sp-sm);margin-bottom:var(--sp-lg)">' +
-          '<select style="height:32px;min-width:180px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>전체(글로벌 트렌드/신기술 자료/기술개발 제안)</option></select>' +
-          '<input placeholder="태그 검색" style="height:32px;min-width:140px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 10px" />' +
+          '<select style="height:32px;min-width:90px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>제목</option><option>태그</option><option>담당자</option></select>' +
+          '<input placeholder="제목 검색" style="height:32px;min-width:180px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 10px" />' +
+          '<button type="button" class="btn btn-primary" data-action="run-search">조회</button>' +
           '<div class="filter-spacer"></div>' +
+          '<button type="button" class="btn btn-secondary" data-action="run-search">수정</button>' +
           '<button type="button" class="btn btn-primary" data-action="open-modal" data-modal-id="trendRegister">+ 등록</button>' +
         '</div>' +
-        renderCardGrid(cards) +
+        '<div class="card-grid card-grid-5">' + cards + '</div>' +
+        renderPagination(D.trendsData.length, page, pageSize, 'techTrendPage') +
       '</div>'
     );
   }

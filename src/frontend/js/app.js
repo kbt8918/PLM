@@ -32,6 +32,11 @@
     ifPage: 1, // SCR-005 I/F 실행결과 관리 페이지네이션
     roadmapPage: 1, // SCR-006 통합 로드맵 페이지네이션
     taskRoadmapPage: 1, // SCR-007 상세과제 로드맵 관리 페이지네이션
+    techPrPage: 1, // SCR-009 생산기술 Tech PR 페이지네이션
+    techPrAdminPage: 1, // SCR-010 생산기술 Tech PR 관리자 페이지네이션
+    mtrmPage: 1, // SCR-011 mTRM 협의체 페이지네이션
+    mtrmMgmtPage: 1, // SCR-012 mTRM 관리 페이지네이션
+    techTrendPage: 1, // SCR-014 기술동향 페이지네이션
   };
   var toastTimer = null;
 

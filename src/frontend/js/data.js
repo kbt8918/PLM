@@ -435,23 +435,44 @@
   ];
 
   // ---- SCR-009 ----
-  // 근거: Claude Design PNDES Portal Prototype.dc.html techPrCards — 자료 유형(type)별로 카드 썸네일과
-  // 상세 오버레이(techPrDetail) 콘텐츠가 달라집니다: video(동영상)/file(파일)/text(텍스트)/multi(복합자료).
+  // 근거: design_handoff_생기포털/source/부품 공정 자동화 현황.dc.html TECH_PR_ITEMS(15건)를 그대로 이식.
+  // 자료 유형(type)별로 카드 썸네일과 상세 오버레이(techPrDetail) 콘텐츠가 달라집니다:
+  // video(동영상)/file(파일)/text(텍스트)/multi(복합자료).
   var techPrCards = [
     { title: '용접 로봇 도입', section: '차체', type: 'video', date: '2026-07-01', owner: '홍**',
       desc: '차체 용접공정에 6축 로봇을 도입한 사례입니다. 기존 수작업 대비 용접 품질 편차를 크게 줄였습니다.' },
     { title: '검사 AI 적용', section: '검사', type: 'file', date: '2026-07-03', owner: '김**',
       fileName: '검사AI_적용사례.pdf', fileSize: '2.4MB' },
     { title: '코봇 활용 사례', section: '조립', type: 'video', date: '2026-07-05', owner: '이**',
-      desc: '협동로봇을 활용한 조립 라인 개선 사례입니다. 협소 공간에서도 안전하게 운용 가능합니다.' },
+      desc: '조립 공정에 협동로봇(코봇)을 도입해 작업자 부담을 줄인 사례입니다.' },
     { title: '배선 자동화', section: '배선', type: 'text', date: '2026-07-08', owner: '박**',
-      body: '배선 자동화 적용 배경과 효과를 정리한 기술 노트입니다.\n\n기존 수작업 배선 공정 대비 불량률을 40% 감소시켰으며, 1일 처리 물량은 1.6배 증가했습니다. 향후 타 라인 확대 적용을 검토 중입니다.' },
+      body: '배선 자동화 적용 배경과 효과를 정리한 기술 노트입니다. 기존 수작업 배선 공정 대비 불량률을 40% 감소시켰으며, 1일 처리 물량은 1.6배 증가했습니다. 향후 타 라인 확대 적용을 검토 중입니다.' },
     { title: '냉각 시스템 개선', section: '냉각', type: 'multi', date: '2026-07-10', owner: '최**',
       items: [
         { type: 'video', desc: '냉각수 순환 자동화 적용 전/후 비교 영상입니다.' },
         { type: 'file', fileName: '냉각시스템_개선보고서.pdf', fileSize: '1.1MB' },
         { type: 'text', body: '냉각 효율을 15% 개선하고 설비 정지시간을 줄인 사례입니다. 관련 부품 표준화도 함께 진행했습니다.' },
       ] },
+    { title: '물류 반송 자동화', section: '배선', type: 'text', date: '2026-07-17', owner: '정**',
+      body: '물류 반송 자동화 적용 배경과 기대 효과를 정리한 기술 노트입니다.' },
+    { title: '도어 조립 자동화', section: '냉각', type: 'video', date: '2026-07-18', owner: '유**',
+      desc: '냉각 공정에 자동화 설비를 도입한 사례를 담은 영상입니다.' },
+    { title: '섀시 검사 고도화', section: '물류', type: 'file', date: '2026-07-19', owner: '한**',
+      fileName: '섀시 검사 고도화_보고서.pdf', fileSize: '1.8MB' },
+    { title: '도장 로봇 튜닝', section: '도어', type: 'text', date: '2026-07-20', owner: '조**',
+      body: '도장 로봇 튜닝 적용 배경과 기대 효과를 정리한 기술 노트입니다.' },
+    { title: '비전 검사 확대', section: '섀시', type: 'video', date: '2026-07-21', owner: '임**',
+      desc: '섀시 공정에 자동화 설비를 도입한 사례를 담은 영상입니다.' },
+    { title: '파워트레인 조립 개선', section: '차체', type: 'file', date: '2026-07-22', owner: '홍**',
+      fileName: '파워트레인 조립 개선_보고서.pdf', fileSize: '1.8MB' },
+    { title: '프레스 라인 무인화', section: '조립', type: 'text', date: '2026-07-23', owner: '김**',
+      body: '프레스 라인 무인화 적용 배경과 기대 효과를 정리한 기술 노트입니다.' },
+    { title: '용접 비드 검사 AI', section: '도장', type: 'video', date: '2026-07-24', owner: '이**',
+      desc: '도장 공정에 자동화 설비를 도입한 사례를 담은 영상입니다.' },
+    { title: '조립 토크 관리 자동화', section: '엔진', type: 'file', date: '2026-07-25', owner: '박**',
+      fileName: '조립 토크 관리 자동화_보고서.pdf', fileSize: '1.8MB' },
+    { title: '부품 이송 로봇 도입', section: '검사', type: 'text', date: '2026-07-26', owner: '최**',
+      body: '부품 이송 로봇 도입 적용 배경과 기대 효과를 정리한 기술 노트입니다.' },
   ];
 
   // 카드 유형별 배지 색상 (design-style-guide.md 3.3 확장 — 복합자료: 보라 #6B46C1/#F1EAFB)
@@ -463,29 +484,90 @@
   };
 
   // ---- SCR-010 ----
-  var scr010Rows = [
-    { title: '용접 로봇 도입', task: '용접 자동화', owner: '홍**', attachment: '동영상 1건', registered: '2026-07-01' },
-  ];
+  // 근거: 위 소스 state.techPrAdminList 생성 로직 이식(15건).
+  var scr010Rows = (function () {
+    var rows = [{ title: '용접 로봇 도입', task: '용접 자동화', owner: '홍**', attachment: '동영상 1건', registered: '2026-07-01' }];
+    var tasks = ['용접 자동화', '검사 자동화', '조립 자동화', '도장 자동화', '물류 자동화'];
+    var owners = ['홍**', '김**', '이**', '박**', '최**'];
+    var attaches = ['동영상 1건', '문서 1건', '동영상 2건', '문서 2건'];
+    for (var i = 1; i < 15; i++) {
+      rows.push({
+        title: tasks[i % tasks.length].replace(' 자동화', '') + ' 자료 ' + i,
+        task: tasks[i % tasks.length],
+        owner: owners[i % owners.length],
+        attachment: attaches[i % attaches.length],
+        registered: '2026-07-' + String((i % 27) + 1).padStart(2, '0'),
+      });
+    }
+    return rows;
+  })();
 
   // ---- SCR-011 ----
-  var scr011Rows = [
-    { name: '26H1 협의체', section: '차체', agenda: '로드맵 리뷰', target: '이**', schedule: '2026-08-20', mailStatus: '발송완료', mailKind: 'success' },
-  ];
+  // 근거: 위 소스 state.mtrmList 생성 로직 이식(13건).
+  var scr011Rows = (function () {
+    var rows = [{ name: '26H1 협의체', section: '차체', agenda: '로드맵 리뷰', target: '이**', schedule: '2026-08-20', mailStatus: '발송완료' }];
+    var depts = ['차체', '조립', '도장', '엔진', '물류'];
+    var agendas = ['로드맵 리뷰', '기술과제 협의', '진행 현황 점검', '차기 계획 수립'];
+    var targets = ['이**', '박**', '최**', '정**'];
+    var statuses = ['발송완료', '발송대기'];
+    for (var i = 1; i < 13; i++) {
+      rows.push({
+        name: '26H' + ((i % 2) + 1) + ' ' + depts[i % depts.length] + ' 협의체 ' + (Math.floor(i / depts.length) + 1),
+        section: depts[i % depts.length],
+        agenda: agendas[i % agendas.length],
+        target: targets[i % targets.length],
+        schedule: '2026-' + String((i % 12) + 1).padStart(2, '0') + '-' + String((i % 27) + 1).padStart(2, '0'),
+        mailStatus: statuses[i % statuses.length],
+      });
+    }
+    rows.forEach(function (r) { r.mailKind = r.mailStatus === '발송완료' ? 'success' : 'neutral'; });
+    return rows;
+  })();
 
   // ---- SCR-012 ----
-  var scr012Rows = [
-    { name: '차체 mTRM', section: '차체', status: '활성', statusKind: 'success', registered: '2026-01-05' },
-  ];
+  // 근거: 위 소스 state.mtrmMgmtList 생성 로직 이식(13건).
+  var scr012Rows = (function () {
+    var rows = [{ name: '차체 mTRM', section: '차체', status: '활성', registered: '2026-01-05' }];
+    var depts = ['차체', '조립', '도장', '엔진', '물류'];
+    var statuses = ['활성', '비활성'];
+    for (var i = 1; i < 13; i++) {
+      rows.push({
+        name: depts[i % depts.length] + ' mTRM ' + (Math.floor(i / depts.length) + 1),
+        section: depts[i % depts.length],
+        status: statuses[i % statuses.length],
+        registered: '2026-' + String((i % 12) + 1).padStart(2, '0') + '-' + String((i % 27) + 1).padStart(2, '0'),
+      });
+    }
+    rows.forEach(function (r) { r.statusKind = r.status === '활성' ? 'success' : 'neutral'; });
+    return rows;
+  })();
 
   // ---- SCR-013 ----
-  var taskPlanMapping = { roadmapName: '차체 자동화 로드맵', detailTask: '용접 로봇 도입', status: '매핑완료', statusKind: 'success' };
+  // 근거: 위 소스 ROADMAP_MAPPINGS — 연동 mTRM 로드맵 선택값에 따라 자동 매핑 결과 테이블 행이 달라진다.
+  // 로드맵을 선택하지 않았을 때는 "연동 mTRM 로드맵을 선택하세요." 안내 문구만 노출된다(techTaskNoMapping).
+  var ROADMAP_MAPPINGS = {
+    '차체 자동화 로드맵': [{ roadmap: '차체 자동화 로드맵', task: '용접 로봇 도입' }],
+    '조립 자동화 로드맵': [{ roadmap: '조립 자동화 로드맵', task: '검사공정 자동화' }],
+  };
 
   // ---- SCR-014 ----
+  // 근거: 위 소스 state.techTrendList(15건)를 그대로 이식.
   var trendsData = [
-    { title: '글로벌 자동화 트렌드 A', views: 120, date: '2026-07-01', dept: '기획팀', owner: '박**', tag: '#자동화' },
-    { title: '신기술 소재 자료 B', views: 85, date: '2026-07-05', dept: '기획팀', owner: '이**', tag: '#신소재' },
-    { title: '기술개발 제안 C', views: 42, date: '2026-07-10', dept: '기획팀', owner: '최**', tag: '#제안' },
-    { title: '글로벌 자동화 트렌드 D', views: 200, date: '2026-07-14', dept: '기획팀', owner: '정**', tag: '#자동화' },
+    { title: '글로벌 자동화 트렌드 A', views: 121, date: '2026-07-01', dept: '기획팀', owner: '박**', tag: '자동화', content: '해외 완성차 OEM의 조립라인 자동화 도입 현황과 협동로봇 적용 사례를 정리한 자료입니다.' },
+    { title: '신기술 소재 자료 B', views: 85, date: '2026-07-05', dept: '기획팀', owner: '이**', tag: '신소재', content: '경량화 신소재 적용을 위한 부품 시험 결과와 원가 영향 분석을 담은 자료입니다.' },
+    { title: '기술개발 제안 C', views: 42, date: '2026-07-10', dept: '기획팀', owner: '최**', tag: '제안', content: '현장 제안 기반 기술개발 아이디어와 기대 효과를 정리한 자료입니다.' },
+    { title: '글로벌 자동화 트렌드 D', views: 200, date: '2026-07-14', dept: '기획팀', owner: '정**', tag: '자동화', content: '해외 완성차 OEM의 조립라인 자동화 도입 현황과 협동로봇 적용 사례를 정리한 자료입니다.' },
+    { title: '로봇 기술동향 E', views: 74, date: '2026-07-19', dept: '기획팀', owner: '한**', tag: '로봇', content: '검사 분야 로봇 관련 최신 동향과 적용 사례를 정리한 자료입니다.' },
+    { title: '설계 기술동향 F', views: 85, date: '2026-07-20', dept: '기획팀', owner: '조**', tag: '설계', content: '배선 분야 설계 관련 최신 동향과 적용 사례를 정리한 자료입니다.' },
+    { title: '품질 기술동향 G', views: 96, date: '2026-07-21', dept: '기획팀', owner: '임**', tag: '품질', content: '냉각 분야 품질 관련 최신 동향과 적용 사례를 정리한 자료입니다.' },
+    { title: '안전 기술동향 H', views: 107, date: '2026-07-22', dept: '기획팀', owner: '홍**', tag: '안전', content: '물류 분야 안전 관련 최신 동향과 적용 사례를 정리한 자료입니다.' },
+    { title: '원가 기술동향 I', views: 118, date: '2026-07-23', dept: '기획팀', owner: '김**', tag: '원가', content: '도어 분야 원가 관련 최신 동향과 적용 사례를 정리한 자료입니다.' },
+    { title: '물류 기술동향 J', views: 129, date: '2026-07-24', dept: '기획팀', owner: '이**', tag: '물류', content: '섀시 분야 물류 관련 최신 동향과 적용 사례를 정리한 자료입니다.' },
+    { title: '자동화 기술동향 K', views: 140, date: '2026-07-25', dept: '기획팀', owner: '박**', tag: '자동화', content: '차체 분야 자동화 관련 최신 동향과 적용 사례를 정리한 자료입니다.' },
+    { title: '신소재 기술동향 L', views: 151, date: '2026-07-26', dept: '기획팀', owner: '최**', tag: '신소재', content: '조립 분야 신소재 관련 최신 동향과 적용 사례를 정리한 자료입니다.' },
+    { title: '제안 기술동향 M', views: 162, date: '2026-07-27', dept: '기획팀', owner: '정**', tag: '제안', content: '도장 분야 제안 관련 최신 동향과 적용 사례를 정리한 자료입니다.' },
+    { title: '비전 기술동향 N', views: 173, date: '2026-07-28', dept: '기획팀', owner: '유**', tag: '비전', content: '엔진 분야 비전 관련 최신 동향과 적용 사례를 정리한 자료입니다.' },
+    { title: '로봇 기술동향 O', views: 184, date: '2026-07-29', dept: '기획팀', owner: '한**', tag: '로봇', content: '검사 분야 로봇 관련 최신 동향과 적용 사례를 정리한 자료입니다.' },
   ];
 
   // ---- 대시보드 KPI / 바로가기 ----
@@ -607,36 +689,40 @@
       { label: '기간', type: 'plaintext', value: '2026.03 ~ 2026.09' },
       { label: '상태', type: 'plaintext', value: '진행중' },
     ] },
-    techPrInquiry: { title: '기술 문의/제안', confirm: '전송', size: 640, fields: [
+    techPrInquiry: { title: '기술 문의/제안', confirm: '전송', size: 640, successMessage: '문의/제안이 전송되었습니다.', fields: [
       { label: '대상 소재', type: 'plaintext', value: '용접 로봇 도입' },
       { label: '문의/제안 내용', required: true, type: 'textarea' },
     ] },
-    materialRegister: { title: '자료 등록', confirm: '등록', size: 800, fields: [
+    materialRegister: { title: '자료 등록', confirm: '등록', size: 800, successMessage: '자료가 등록되었습니다.', fields: [
       { label: '제목', required: true, type: 'text' },
-      { label: '과제', required: true, type: 'select' },
-      { label: '담당자', required: true, type: 'select' },
+      { label: '과제', required: true, type: 'select', options: ['용접 자동화', '검사 자동화'] },
+      { label: '담당자', required: true, type: 'select', options: ['홍**', '김**'] },
+      { label: '담당자 이메일', required: true, type: 'text', placeholder: 'name@company.com' },
       { label: '상세 설명', required: false, type: 'textarea' },
       { label: '첨부 문서', required: false, type: 'file' },
       { label: '첨부 동영상', required: false, type: 'file' },
     ] },
-    mtrmRegister: { title: 'mTRM 등록', confirm: '등록', size: 480, fields: [
+    mtrmRegister: { title: 'mTRM 등록', confirm: '등록', size: 480, successMessage: 'mTRM이 저장되었습니다.', fields: [
       { label: 'mTRM명', required: true, type: 'text' },
-      { label: '분과', required: true, type: 'select' },
-      { label: '상태', required: true, type: 'select' },
+      { label: '분과', required: true, type: 'select', options: ['차체', '조립', '도장'] },
+      { label: '상태', required: true, type: 'select', options: ['활성', '비활성'] },
       { label: '등록일', required: true, type: 'date' },
     ] },
-    trendRegister: { title: '기술동향 등록', confirm: '등록', size: 640, fields: [
+    trendRegister: { title: '기술동향 등록', confirm: '등록', size: 640, successMessage: '기술동향이 등록되었습니다.', fields: [
       { label: '제목', required: true, type: 'text' },
-      { label: '구분', required: true, type: 'select' },
+      { label: '담당자 이름', required: true, type: 'text' },
+      { label: '부서명', required: true, type: 'text' },
       { label: '태그', required: false, type: 'text' },
       { label: '내용', required: true, type: 'textarea' },
       { label: '첨부파일', required: false, type: 'file' },
     ] },
-    councilRegister: { title: '협의체 등록', confirm: '등록', size: 480, fields: [
+    councilRegister: { title: '협의체 등록', confirm: '등록', size: 480, successMessage: '협의체가 등록되었습니다.', fields: [
       { label: '협의체명', required: true, type: 'text' },
-      { label: '분과', required: true, type: 'select' },
+      { label: '분과', required: true, type: 'select', options: ['차체', '조립', '도장'] },
+      { label: '연동 mTRM', required: true, type: 'select', options: ['차체 mTRM', '조립 mTRM'], hint: '분과를 먼저 선택하세요' },
       { label: '의제', required: false, type: 'text' },
-      { label: '대상 분과장', required: true, type: 'select' },
+      { label: '대상 분과장', required: true, type: 'select', options: ['이**', '박**'], hint: '메일 수신자(To)로 자동 발송됩니다' },
+      { label: '참조(CC)', required: false, type: 'text', placeholder: '이메일 입력 후 Enter', hint: 'Enter 또는 쉼표(,)로 여러 명 추가' },
       { label: '일정', required: true, type: 'date' },
     ] },
     ifError: { title: 'I/F 오류 로그', confirm: '닫기', size: 640, fields: [
@@ -671,7 +757,7 @@
     scr010Rows: scr010Rows,
     scr011Rows: scr011Rows,
     scr012Rows: scr012Rows,
-    taskPlanMapping: taskPlanMapping,
+    roadmapMappings: ROADMAP_MAPPINGS,
     trendsData: trendsData,
     dashAutoKpis: dashAutoKpis, dashAutoLinks: dashAutoLinks, scr001Expansion: scr001Expansion,
     dashAutoRateBars: dashAutoRateBars, overallRate: overallRate,
