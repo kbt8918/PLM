@@ -24,9 +24,11 @@
 
   function renderFilterBar(labels, opts) {
     opts = opts || {};
-    var fields = labels.map(function (label) {
-      return '<div class="filter-field"><label>' + esc(label) + '</label>' +
-        '<select><option>전체</option></select></div>';
+    var fields = labels.map(function (label, i) {
+      var placeholder = opts.placeholders ? opts.placeholders[i] : '전체';
+      var labelHtml = opts.hideLabels ? '' : '<label>' + esc(label) + '</label>';
+      return '<div class="filter-field"' + (opts.hideLabels ? ' style="justify-content:flex-end"' : '') + '>' + labelHtml +
+        '<select aria-label="' + esc(label) + '"><option>' + esc(placeholder) + '</option></select></div>';
     }).join('');
     var reset = opts.noReset ? '' : '<button type="button" class="btn btn-secondary">초기화</button>';
     var syncBadge = opts.syncBadge ? '<div class="filter-sync-badge">최종 동기화: ' + esc(opts.syncBadge) + '</div>' : '';
@@ -35,7 +37,7 @@
         fields +
         '<div class="filter-spacer"></div>' +
         reset +
-        '<button type="button" class="btn btn-primary" data-action="run-search">조회</button>' +
+        '<button type="button" class="btn btn-primary" data-action="' + (opts.searchAction || 'run-search') + '">조회</button>' +
       '</div>' +
       syncBadge
     );
@@ -523,102 +525,84 @@
 
   function renderScr001SummaryTable() {
     var head = '<th>구분</th>' + D.scr001SummaryCols.map(function (c) {
-      return '<th class="al-c"' + (c.bp ? ' style="color:var(--color-primary)"' : '') + '>' + esc(c.label) + '</th>';
+      return '<th class="al-c"' + (c.bp ? ' style="color:var(--color-primary);background:var(--badge-info-bg)"' : '') + '>' + esc(c.label) + '</th>';
     }).join('');
     var rows = D.scr001SummaryRows.map(function (row) {
       var cells = D.scr001SummaryCols.map(function (col) {
-        return '<td class="al-c">' + formatDelta(row.values[col.id], row.unit) + '</td>';
+        return '<td class="al-c"' + (col.bp ? ' style="background:var(--badge-info-bg)"' : '') + '>' + formatDelta(row.values[col.id], row.unit) + '</td>';
       }).join('');
       return '<tr><td><strong>' + esc(row.label) + '</strong></td>' + cells + '</tr>';
     }).join('');
     return '<table class="data-table"><thead><tr>' + head + '</tr></thead><tbody>' + rows + '</tbody></table>';
   }
 
-  // 근거: 디자인 원본 확대전개계획 매트릭스 셀은 클릭 불가(정적 배지)입니다. "현재=자동" 상태만 동영상 모달을 엽니다.
-  function renderExpansionCell(cell) {
-    switch (cell.kind) {
-      case 'auto':
-        return '<td class="matrix-cell auto"><span>&#9679;</span> <span>자동</span></td>';
-      case 'na':
-        return '<td class="matrix-cell none">미해당</td>';
-      case 'possible':
-        return '<td class="al-c" style="padding:10px 16px;border-bottom:1px solid var(--color-table-row-border)">' + badge("가능('" + cell.year + ')', 'info') + '</td>';
-      case 'agree':
-        return '<td class="al-c" style="padding:10px 16px;border-bottom:1px solid var(--color-table-row-border)">' + badge('협의必(ROI ' + cell.roi + ') ' + cell.headcount + '명', 'warning') + '</td>';
-      case 'agreeUnrecoverable':
-        return '<td class="al-c" style="padding:10px 16px;border-bottom:1px solid var(--color-table-row-border)">' + badge('협의必(회수불가) ' + cell.headcount + '명', 'warning') + '</td>';
-      case 'review':
-        return '<td class="al-c" style="padding:10px 16px;border-bottom:1px solid var(--color-table-row-border)">' + badge('미적용(협의中) ' + cell.headcount + '명', 'neutral') + '</td>';
+  // 근거: design_handoff_생기포털/source/부품 공정 자동화 현황.dc.html scr001ProcessDetail 셀 종류(k)별 렌더링.
+  // video:true인 셀만 클릭 가능(동영상 모달), 나머지 자동/旣자동화 셀은 정적 표시입니다.
+  function renderScr001Cell(cell, process) {
+    if (!cell || cell.k === 'empty') return '<td></td>';
+    switch (cell.k) {
+      case 'auto': {
+        var attrs = cell.video ? ' style="cursor:pointer" data-action="open-video" data-process="' + esc(process) + '"' : '';
+        return '<td class="al-c"' + attrs + '><span style="color:var(--color-auto-text);font-weight:600;white-space:nowrap">' +
+          '<span style="color:var(--color-auto-text)">&#9679;</span> ' + esc(cell.t) + '</span>' +
+          (cell.video ? ' <span style="color:var(--color-auto-text)">&#9658;</span>' : '') + '</td>';
+      }
+      case 'manual':
+        return '<td class="al-c"><span class="pill-outline">수동</span>' + (cell.n ? ' <span style="color:var(--color-text-faint);font-size:11px">' + esc(cell.n) + '</span>' : '') + '</td>';
+      case 'blue':
+        return '<td class="al-c" style="color:var(--color-primary);font-weight:600;white-space:nowrap">' + esc(cell.t) + '</td>';
+      case 'amber':
+        return '<td class="al-c">' + badge(cell.t, 'warning') + '</td>';
+      case 'orange':
+        return '<td class="al-c" style="color:var(--color-caution-text);font-weight:600">' + esc(cell.t) + '</td>';
+      case 'note':
+        return '<td style="color:var(--color-text-muted);font-size:11px">' + esc(cell.t) + '</td>';
+      case 'muted':
       default:
-        return '<td class="matrix-cell none">-</td>';
+        return '<td class="al-c muted">' + esc(cell.t || '-') + '</td>';
     }
   }
 
-  // 근거: 디자인 원본 헤더는 "현재"가 colspan=2(상태뱃지 + 인원수)로, 개선/주요내용과 함께 4개 리프컬럼을 이룹니다.
-  // "현재" 상태 셀 자체는 절대 rowspan 병합되지 않고 매 행 독립 렌더링되며, 인원수/개선/주요내용만
-  // showCount/showImprovement가 true인 행에서 countRowSpan/groupRowSpan만큼 병합됩니다.
+  // 근거: 디자인 원본 헤더는 BP 라인만 [현재/개선/주요내용] 3개 하위열로 나뉘고, 나머지 8개 라인열은
+  // rowspan=2 단일열입니다. 본문은 rowspan/colspan 없이 매 셀 독립 렌더링됩니다(원본 마크업과 동일).
   function renderScr001ProcessDetailTable() {
     var matrixCols = D.scr001SummaryCols.filter(function (c) { return !c.bp; });
     var head =
       '<tr>' +
-        '<th rowspan="2" style="min-width:60px">NO</th><th rowspan="2" style="min-width:140px">공정</th>' +
-        '<th class="al-c" colspan="4" style="background:var(--badge-info-bg)">[BP]창원2C 라인</th>' +
-        matrixCols.map(function (c) { return '<th rowspan="2" class="al-c" style="min-width:120px">' + esc(c.label) + '</th>'; }).join('') +
+        '<th rowspan="2" style="min-width:50px">NO</th><th rowspan="2" style="min-width:150px">공정</th>' +
+        '<th class="al-c" colspan="3" style="background:var(--badge-info-bg);color:var(--color-primary)">[BP]창원2C 라인</th>' +
+        matrixCols.map(function (c) { return '<th rowspan="2" class="al-c" style="min-width:110px">' + esc(c.label) + '</th>'; }).join('') +
       '</tr>' +
       '<tr>' +
-        '<th class="al-c" colspan="2" style="min-width:170px">현재</th>' +
-        '<th class="al-c" style="min-width:90px">개선</th>' +
-        '<th style="min-width:200px">주요 내용</th>' +
+        '<th class="al-c" style="min-width:90px;background:var(--badge-info-bg)">현재</th>' +
+        '<th class="al-c" style="min-width:80px;background:var(--badge-info-bg)">개선</th>' +
+        '<th style="min-width:170px;background:var(--badge-info-bg)">주요내용</th>' +
       '</tr>';
 
     var rowsHtml = D.scr001ProcessDetail.map(function (row) {
-      var currentBadgeKind = row.current.kind === 'auto' ? 'success' : 'neutral';
-      var currentSymbol = row.current.kind === 'auto' ? '&#9679; ' : '';
-      var currentAttrs = row.hasVideo ? ' style="cursor:pointer" data-action="open-video" data-process="' + esc(row.process) + '"' : '';
-      var currentCell =
-        '<td class="al-c"' + currentAttrs + '>' +
-          '<span class="badge badge-' + currentBadgeKind + '">' + currentSymbol + esc(row.current.label) + '</span>' +
-          (row.hasVideo ? ' <span style="margin-left:2px">&#9658;</span>' : '') +
-        '</td>';
-      var countCell = row.showCount
-        ? '<td class="al-c" rowspan="' + row.countRowSpan + '" style="padding:10px 16px;border-bottom:1px solid var(--color-table-row-border)"><span style="font-size:12px;color:var(--color-text-muted)">' + esc(row.countText) + '</span></td>'
-        : '';
-      var improvementNoteCells = row.showImprovement
-        ? '<td class="al-c" rowspan="' + row.groupRowSpan + '">' + esc(row.improvement) + '</td>' +
-          '<td class="muted" rowspan="' + row.groupRowSpan + '">' + esc(row.note) + '</td>'
-        : '';
-      var expansionCells = matrixCols.map(function (col) { return renderExpansionCell(row.cells[col.id]); }).join('');
-      var processLabel = '<strong>' + esc(row.process) + '</strong>' +
-        (row.processNote ? ' <span style="color:var(--color-text-faint);font-size:12px">(' + esc(row.processNote) + ')</span>' : '');
-      return '<tr>' +
-        td(row.no, 'center') +
-        td(processLabel) +
-        currentCell +
-        countCell +
-        improvementNoteCells +
-        expansionCells +
-      '</tr>';
+      var cellsHtml = row.cells.map(function (cell) { return renderScr001Cell(cell, row.process); }).join('');
+      return '<tr>' + td(row.no, 'center') + td('<strong>' + esc(row.process) + '</strong>') + cellsHtml + '</tr>';
     }).join('');
 
-    return '<table class="data-table"><thead>' + head + '</thead><tbody>' + rowsHtml + '</tbody></table>';
+    return '<table class="data-table sticky-head"><thead>' + head + '</thead><tbody>' + rowsHtml + '</tbody></table>';
   }
 
   function renderSCR001() {
     return (
       '<div data-screen-label="SCR-001 부품 공정 자동화 현황">' +
         renderTabs('part') +
-        renderFilterBar(D.scr001Filters) +
+        renderFilterBar(D.scr001Filters, { placeholders: D.scr001FilterPlaceholders, hideLabels: true, noReset: true, searchAction: 'scr001-search' }) +
         '<div class="section-title">요약 현황 <span style="font-size:12px;color:var(--color-text-faint);font-weight:400">(공장/라인별 자동화율·직접인원 현재&rarr;개선 및 중장기 완료일정)</span></div>' +
         renderScr001SummaryTable() +
         '<div class="actions-row" style="margin-top:var(--sp-lg)">' +
           '<div class="section-title" style="margin-bottom:0">공정별 상세 <span style="font-size:12px;color:var(--color-text-faint);font-weight:400">(현재/개선/주요내용 · 공장/라인별 확대전개계획, 현재=자동 선택 시 동영상 팝업)</span></div>' +
           '<div class="actions-group">' +
             '<button type="button" class="btn btn-primary" data-action="open-modal" data-modal-id="registerProcess">+ 공정 등록</button>' +
-            '<button type="button" class="btn btn-secondary">엑셀</button>' +
+            '<button type="button" class="btn btn-secondary" data-action="scr001-excel">엑셀</button>' +
             '<button type="button" class="btn btn-secondary" data-action="open-modal" data-modal-id="emailShare">이메일 공유</button>' +
           '</div>' +
         '</div>' +
-        '<div style="overflow-x:auto">' + renderScr001ProcessDetailTable() + '</div>' +
+        '<div class="scroll-panel" style="max-height:520px">' + renderScr001ProcessDetailTable() + '</div>' +
       '</div>'
     );
   }
@@ -1177,28 +1161,42 @@
   // ---------- 모달 ----------
 
   function fieldControl(f) {
+    var control;
     switch (f.type) {
-      case 'textarea': return '<textarea></textarea>';
-      case 'select': return '<select><option>선택</option></select>';
-      case 'date': return '<input type="date" />';
-      case 'file': return '<div class="file-drop">파일을 드래그하거나 클릭하여 첨부</div>';
-      case 'plaintext': return '<div class="plaintext">' + esc(f.value) + '</div>';
-      default: return '<input type="text" />';
+      case 'textarea': control = '<textarea></textarea>'; break;
+      case 'select':
+        control = '<select><option>선택</option>' +
+          (f.options || []).map(function (o) { return '<option>' + esc(o) + '</option>'; }).join('') +
+          '</select>';
+        break;
+      case 'checkboxGroup':
+        control = '<div class="checkbox-group">' + (f.options || []).map(function (o) {
+          return '<label class="checkbox-item"><input type="checkbox"' + (o.checked ? ' checked' : '') + ' /> <span>' + esc(o.label) + '</span></label>';
+        }).join('') + '</div>';
+        break;
+      case 'date': control = '<input type="date" />'; break;
+      case 'file': control = '<div class="file-drop">파일을 드래그하거나 클릭하여 첨부</div>'; break;
+      case 'plaintext': control = '<div class="plaintext">' + esc(f.value) + '</div>'; break;
+      default: control = '<input type="text"' + (f.placeholder ? ' placeholder="' + esc(f.placeholder) + '"' : '') + ' />';
     }
+    return control + (f.hint ? '<div class="field-hint">' + esc(f.hint) + '</div>' : '');
   }
 
-  // 근거: openVideo(process) — SCR-001 "현재=자동" 배지 및 SCR-003 "기술현황=●" 배지 클릭 시
-  // 동일한 공용 동영상 모달을 열며, 제목은 "자동화 설비 동영상 — {process}" 형식입니다.
+  // 근거: design_handoff_생기포털/source/부품 공정 자동화 현황.dc.html modalOpen — SCR-001 "현재=자동" 배지(video:true인
+  // 셀) 및 SCR-003 "기술현황=●" 배지 클릭 시 여는 공용 동영상 모달. 제목은 kind에 따라 "[자동화 동영상]"/"[모듈 자동화
+  // 동영상]" 접두어가 붙고, 본문은 검정 플레이어 영역에 재생 아이콘 + 안내 문구를 보여주는 정적 목업입니다.
   function renderAutoVideoModal(state) {
     var process = state.videoProcess || '';
+    var title = (state.videoKind === 'module' ? '[모듈 자동화 동영상] ' : '[자동화 동영상] ') + process;
     return (
-      '<div class="modal-box" style="width:720px">' +
-        '<div class="modal-header"><div class="modal-title">자동화 설비 동영상 &mdash; ' + esc(process) + '</div><div class="modal-close" data-action="close-modal">&#10005;</div></div>' +
-        '<div class="modal-body">' +
-          '<div class="modal-field"><label>공정</label><div class="modal-field-control"><div class="plaintext">' + esc(process) + '</div></div></div>' +
-          '<div class="modal-field"><label>설비 영상</label><div class="modal-field-control"><div class="media-thumb" style="aspect-ratio:16/9"><div class="play-btn" style="width:56px;height:56px;font-size:20px">&#9658;</div></div></div></div>' +
+      '<div class="modal-box" style="width:560px">' +
+        '<div class="modal-header" style="background:#111827;color:#fff"><div class="modal-title" style="color:#fff;font-size:14px">' + esc(title) + '</div><div class="modal-close" style="color:#9CA3AF" data-action="close-modal">&#10005;</div></div>' +
+        '<div style="background:#000;aspect-ratio:16/9;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;gap:6px">' +
+          '<i class="video-play-icon">&#9658;</i>' +
+          '<p style="font-size:13px;font-weight:600;margin:6px 0 0">해당 공정 자동화 시연 동영상 재생 중...</p>' +
+          '<span style="font-size:11px;color:#9CA3AF">(프로토타입 샘플 플레이어)</span>' +
         '</div>' +
-        '<div class="modal-footer"><button type="button" class="btn btn-primary" style="height:36px" data-action="close-modal">닫기</button></div>' +
+        '<div class="modal-footer" style="background:var(--color-bg)"><button type="button" class="btn btn-secondary" style="height:36px" data-action="close-modal">닫기</button></div>' +
       '</div>'
     );
   }
@@ -1212,13 +1210,16 @@
       return '<div class="modal-field"><label>' + esc(f.label) + (f.required ? '<span class="required">*</span>' : '') + '</label>' +
         '<div class="modal-field-control">' + fieldControl(f) + '</div></div>';
     }).join('');
+    var confirmAttrs = modal.successMessage
+      ? ' data-action="confirm-modal" data-message="' + esc(modal.successMessage) + '"'
+      : ' data-action="close-modal"';
     return (
       '<div class="modal-box" style="width:' + modal.size + 'px">' +
         '<div class="modal-header"><div class="modal-title">' + esc(modal.title) + '</div><div class="modal-close" data-action="close-modal">&#10005;</div></div>' +
         '<div class="modal-body">' + fields + '</div>' +
         '<div class="modal-footer">' +
           '<button type="button" class="btn btn-secondary" style="height:36px" data-action="close-modal">취소</button>' +
-          '<button type="button" class="btn btn-primary" style="height:36px" data-action="close-modal">' + esc(modal.confirm) + '</button>' +
+          '<button type="button" class="btn btn-primary" style="height:36px"' + confirmAttrs + '>' + esc(modal.confirm) + '</button>' +
         '</div>' +
       '</div>'
     );
@@ -1257,6 +1258,10 @@
     modal: renderModal,
     techPrDetail: function (state) {
       return state.techPrDetailIndex != null ? renderTechPrDetailOverlay(state.techPrDetailIndex) : '';
+    },
+    toast: function (state) {
+      if (!state.toast) return '';
+      return '<div class="toast"><span class="toast-dot"></span><span>' + esc(state.toast) + '</span></div>';
     },
   };
 })(window);

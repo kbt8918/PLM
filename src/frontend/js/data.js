@@ -56,9 +56,10 @@
   var FLOW_MTRM_IDS = ['DASH-MTRM', 'SCR-006', 'SCR-007', 'SCR-008', 'SCR-009', 'SCR-010', 'SCR-011', 'SCR-012', 'SCR-013', 'SCR-014'];
 
   // ---- SCR-001 ----
-  // 근거: 00.통합자료실/고객자료/부품공정 자동화 현황 as-is.pdf(항목/데이터),
-  //       부품공정 자동화 현황 to-be 초안.pdf(요약현황·공정별 상세 UI 구조, 자동화율/직접인원 as-is→to-be 델타 표기)
+  // 근거: design_handoff_생기포털/source/부품 공정 자동화 현황.dc.html(최종 확정본) — 필터바는 라벨 없이
+  // 각 셀렉트의 기본 옵션 자체가 "{필터명} 전체" 형태로 노출된다(라벨 텍스트는 접근성 용도로만 별도 보관).
   var scr001Filters = ['제품군', '제품', '지역', '공장', '라인'];
+  var scr001FilterPlaceholders = ['제품군 전체', '제품 전체', '지역 전체', '공장 전체', '라인 전체'];
 
   // 요약현황 컬럼 = 공장/라인 그룹 (Best Practice 라인은 bp:true 로 강조)
   var scr001SummaryCols = [
@@ -102,64 +103,123 @@
     },
   ];
 
-  // 공정별 상세: 현재(상태+인원수, 컬럼 분리) / 개선 / 주요내용 + 확대전개계획(공장/라인별) 매트릭스로 고도화
-  // 근거: Claude Design PNDES Portal Prototype.dc.html scr001Matrix — "현재" 헤더가 colspan=2(상태뱃지+인원수)로
-  // 항상 행마다 별도 렌더링되고, 인원수/개선/주요내용만 동일 그룹(같은 개선내용을 공유하는 공정)에서 rowspan 병합된다.
-  // 확대전개계획 셀 종류: auto(자동 적용완료) / na(미해당) / possible(연도내 적용가능) / agree(협의必, ROI 근거) /
-  //                     agreeUnrecoverable(협의必, 투자비 회수불가) / review(미적용, 협의중)
+  // 공정별 상세: 17개 공정(NO 1~17) x 11개 열(BP 현재/개선/주요내용 + 창원2A/2B/2D/2E/MSK/MMX/MWX1/MWX2).
+  // 근거: design_handoff_생기포털/source/부품 공정 자동화 현황.dc.html(최종 확정본)의 정적 마크업을 셀 단위로
+  // 그대로 파싱해 옮긴 값이며(행/열 임의 재구성 없음), rowspan/colspan 병합은 원본에 없어 매 셀 독립 렌더링한다.
+  // 셀 종류(k): auto(자동/旣자동화, 초록 점) · manual(수동, 회색 아웃라인 pill, n=인원수) · blue(가능/적용 연도, 파란 텍스트) ·
+  //            amber(협의必, 호박색 pill) · orange(미적용/X(기술), 주황 텍스트) · note(사유 설명, 회색 소형 텍스트) ·
+  //            muted(-·미해당, 옅은 회색) · empty(값 없음). video:true인 셀만 클릭 시 자동화 설비 동영상 팝업이 열린다
+  // (원본에서 NO.1 오버몰딩의 일부 셀만 실제로 클릭 가능하며, 다른 행의 자동/旣자동화 셀은 정적 표시).
   var scr001ProcessDetail = [
-    {
-      no: 1, process: '오버몰딩',
-      current: { kind: 'auto', label: '자동' },
-      hasVideo: true, videoLabel: '오버몰딩 자동화 설비 동영상',
-      showCount: true, countText: '', countRowSpan: 1,
-      showImprovement: true, improvement: '자동', note: '-', groupRowSpan: 1,
-      cells: {
-        c2c: { kind: 'auto' }, c2a: { kind: 'auto' }, c2b: { kind: 'auto' }, c2d: { kind: 'na' }, c2e: { kind: 'na' },
-        msk1: { kind: 'auto' }, mmx1: { kind: 'agree', roi: '13년', headcount: 1 },
-        mwx1: { kind: 'auto' }, mwx2: { kind: 'agree', roi: '13년', headcount: 1 },
-      },
-    },
-    {
-      no: 2, process: '파워헤드 버퍼적재',
-      current: { kind: 'manual', label: '수동' },
-      hasVideo: false,
-      showCount: true, countText: '1명', countRowSpan: 1,
-      showImprovement: true, improvement: "가능('27)", note: '6축로봇 + 버퍼교체', groupRowSpan: 1,
-      cells: {
-        c2c: { kind: 'possible', year: '27' }, c2a: { kind: 'possible', year: '27' }, c2b: { kind: 'possible', year: '28' },
-        c2d: { kind: 'na' }, c2e: { kind: 'na' }, msk1: { kind: 'possible', year: '27' }, mmx1: { kind: 'agreeUnrecoverable', headcount: 1 },
-        mwx1: { kind: 'agreeUnrecoverable', headcount: 1 }, mwx2: { kind: 'agreeUnrecoverable', headcount: 1 },
-      },
-    },
-    {
-      no: 3, process: '인풋풀 조립',
-      current: { kind: 'manual', label: '수동' },
-      hasVideo: false,
-      showCount: true, countText: '1명', countRowSpan: 2,
-      showImprovement: true, improvement: "가능('27)", note: '인풋풀 조립 인덱스, 컬럼 로딩/조립로봇 外', groupRowSpan: 2,
-      cells: {
-        c2c: { kind: 'possible', year: '27' }, c2a: { kind: 'possible', year: '27' }, c2b: { kind: 'possible', year: '28' },
-        c2d: { kind: 'review', headcount: 1 }, c2e: { kind: 'possible', year: '29' },
-        msk1: { kind: 'agree', roi: '42년', headcount: 1 }, mmx1: { kind: 'agreeUnrecoverable', headcount: 1 },
-        mwx1: { kind: 'agreeUnrecoverable', headcount: 1 }, mwx2: { kind: 'agreeUnrecoverable', headcount: 1 },
-      },
-    },
-    {
-      // 근거: 확대전개계획 매트릭스(라인별 확대 가능 시점)는 행마다 개별 값을 가지지만,
-      // 인원수/개선/주요내용은 NO.3(인풋풀 조립)과 동일 그룹으로 rowspan 병합되어 NO.4에서는 렌더링하지 않는다.
-      no: 4, process: '컬럼 조립', processNote: '추정',
-      current: { kind: 'manual', label: '수동' },
-      hasVideo: false,
-      showCount: false, countText: '', countRowSpan: 1,
-      showImprovement: false, improvement: '', note: '', groupRowSpan: 1,
-      cells: {
-        c2c: { kind: 'possible', year: '28' }, c2a: { kind: 'possible', year: '28' }, c2b: { kind: 'possible', year: '29' },
-        c2d: { kind: 'review', headcount: 1 }, c2e: { kind: 'possible', year: '30' },
-        msk1: { kind: 'agree', roi: '45년', headcount: 1 }, mmx1: { kind: 'agreeUnrecoverable', headcount: 1 },
-        mwx1: { kind: 'agreeUnrecoverable', headcount: 1 }, mwx2: { kind: 'agreeUnrecoverable', headcount: 1 },
-      },
-    },
+    { no: 1, process: '오버몰딩', cells: [
+      { k: 'auto', t: '자동', video: true }, { k: 'auto', t: '자동', video: true }, { k: 'muted', t: '-' },
+      { k: 'auto', t: '자동' }, { k: 'muted', t: '-' },
+      { k: 'auto', t: '자동', video: true }, { k: 'auto', t: '자동', video: true },
+      { k: 'muted', t: '미해당' }, { k: 'muted', t: '미해당' },
+      { k: 'auto', t: '자동', video: true }, { k: 'amber', t: '협의必(ROI 13년) 1명' },
+    ] },
+    { no: 2, process: '파워헤드 버퍼적재', cells: [
+      { k: 'manual', n: '1명' }, { k: 'blue', t: "가능('27)" }, { k: 'note', t: '6축로봇 + 버퍼교체' },
+      { k: 'blue', t: "가능('27)" }, { k: 'note', t: '6축로봇 + 버퍼교체' },
+      { k: 'blue', t: "가능('27)" }, { k: 'blue', t: "가능('28)" },
+      { k: 'muted', t: '미해당' }, { k: 'muted', t: '미해당' },
+      { k: 'blue', t: "가능('27)" }, { k: 'amber', t: '협의必(회수 불가) 1명' },
+    ] },
+    { no: 3, process: '인풋풀 조립', cells: [
+      { k: 'manual', n: '1명' }, { k: 'blue', t: "가능('27)" }, { k: 'note', t: '인풋풀 조립 인덱스, 컬럼 로딩/조립로봇 外' },
+      { k: 'blue', t: "가능('27)" }, { k: 'note', t: '인풋풀 조립 인덱스, 컬럼 로딩/조립로봇 外' },
+      { k: 'blue', t: "가능('27)" }, { k: 'blue', t: "가능('28)" },
+      { k: 'orange', t: '미적용(협의中) 1명' }, { k: 'blue', t: "가능('29)" },
+      { k: 'amber', t: '협의必(ROI 42년) 1명' }, { k: 'amber', t: '협의必(회수불가) 1명' },
+    ] },
+    { no: 4, process: '컬럼 조립 (추정)', cells: [
+      { k: 'manual' }, { k: 'blue', t: "가능('28)" }, { k: 'blue', t: "가능('29)" },
+      { k: 'blue', t: "가능('28)" }, { k: 'blue', t: "가능('29)" },
+      { k: 'orange', t: '미적용(협의中) 1명' }, { k: 'blue', t: "가능('30)" },
+      { k: 'amber', t: '협의必(ROI 45년) 1명' }, { k: 'amber', t: '협의必(회수불가) 1명' },
+      { k: 'amber', t: '협의必(회수불가) 1명' }, { k: 'amber', t: '협의必(회수불가) 1명' },
+    ] },
+    { no: 5, process: 'ECU S/W 다운', cells: [
+      { k: 'auto', t: '旣자동화' }, { k: 'auto', t: '자동' }, { k: 'auto', t: '자동' },
+      { k: 'auto', t: '자동' }, { k: 'auto', t: '자동' },
+      { k: 'orange', t: '미적용(협의完) 1명' }, { k: 'blue', t: "가능('29)" },
+      { k: 'amber', t: '협의必(ROI 18년) 1명' }, { k: 'amber', t: '협의必(ROI 44년) 1명' },
+      { k: 'amber', t: '협의必(ROI 159년) 1명' }, { k: 'amber', t: '협의必(회수불가) 1명' },
+    ] },
+    { no: 6, process: '파워팩 조립', cells: [
+      { k: 'auto', t: '旣자동화' }, { k: 'auto', t: '자동' }, { k: 'blue', t: "적용('28)" },
+      { k: 'auto', t: '자동' }, { k: 'blue', t: "적용('28)" }, { k: 'auto', t: '자동' },
+      { k: 'empty' }, { k: 'empty' }, { k: 'empty' }, { k: 'empty' }, { k: 'empty' },
+    ] },
+    { no: 7, process: '센서 케이블 조립', cells: [
+      { k: 'orange', t: 'X(기술) 1명' }, { k: 'note', t: '설계사양 변경 & 신기술개발 검토 中' }, { k: 'orange', t: 'X(기술) 1명' },
+      { k: 'orange', t: 'X(기술) 1명' }, { k: 'note', t: '설계사양 변경 & 신기술개발 검토 中' },
+      { k: 'orange', t: 'X(기술) 1명' }, { k: 'orange', t: 'X(기술) 1명' },
+      { k: 'orange', t: 'X(기술) 1명' }, { k: 'orange', t: 'X(기술) 1명' },
+      { k: 'orange', t: 'X(기술) 1명' }, { k: 'orange', t: 'X(기술) 1명' },
+    ] },
+    { no: 8, process: '컬럼 작동 검사', cells: [
+      { k: 'auto', t: '旣자동화' }, { k: 'auto', t: '자동' }, { k: 'auto', t: '자동' },
+      { k: 'auto', t: '자동' }, { k: 'auto', t: '자동' }, { k: 'auto', t: '자동' },
+      { k: 'auto', t: '자동' }, { k: 'auto', t: '자동' }, { k: 'auto', t: '자동' },
+      { k: 'auto', t: '자동' }, { k: 'amber', t: '협의必(ROI 102년) 2명' },
+    ] },
+    { no: 9, process: '다이나믹검사', cells: [
+      { k: 'auto', t: '旣자동화' }, { k: 'auto', t: '자동' }, { k: 'auto', t: '자동' },
+      { k: 'auto', t: '자동' }, { k: 'auto', t: '자동' }, { k: 'auto', t: '자동' },
+      { k: 'auto', t: '자동' }, { k: 'auto', t: '자동' }, { k: 'auto', t: '자동' },
+      { k: 'auto', t: '자동' }, { k: 'amber', t: '협의必(ROI 181년) 2명' },
+    ] },
+    { no: 10, process: '노이즈 검사 (부하)', cells: [
+      { k: 'auto', t: '旣자동화' }, { k: 'auto', t: '자동' }, { k: 'auto', t: '자동' },
+      { k: 'auto', t: '자동' }, { k: 'auto', t: '자동' }, { k: 'auto', t: '자동' },
+      { k: 'auto', t: '자동' }, { k: 'auto', t: '자동' }, { k: 'auto', t: '자동' },
+      { k: 'auto', t: '자동' }, { k: 'auto', t: '자동' },
+    ] },
+    { no: 11, process: '프릭션 검사', cells: [
+      { k: 'auto', t: '旣자동화' }, { k: 'auto', t: '자동' }, { k: 'auto', t: '자동' },
+      { k: 'auto', t: '자동' }, { k: 'auto', t: '자동' }, { k: 'auto', t: '자동' },
+      { k: 'auto', t: '자동' }, { k: 'auto', t: '자동' }, { k: 'auto', t: '자동' },
+      { k: 'auto', t: '자동' }, { k: 'amber', t: '협의必(ROI 181년) 2명' },
+    ] },
+    { no: 12, process: '노이즈 검사 (무부하)', cells: [
+      { k: 'auto', t: '旣자동화' }, { k: 'auto', t: '자동' }, { k: 'auto', t: '자동' },
+      { k: 'auto', t: '자동' }, { k: 'auto', t: '자동' }, { k: 'auto', t: '자동' },
+      { k: 'auto', t: '자동' }, { k: 'auto', t: '자동' }, { k: 'auto', t: '자동' },
+      { k: 'auto', t: '자동' }, { k: 'auto', t: '자동' },
+    ] },
+    { no: 13, process: '작동 소음검사', cells: [
+      { k: 'auto', t: '旣자동화' }, { k: 'auto', t: '자동' }, { k: 'auto', t: '자동' },
+      { k: 'auto', t: '자동' }, { k: 'auto', t: '자동' }, { k: 'auto', t: '자동' },
+      { k: 'auto', t: '자동' }, { k: 'muted', t: '-' }, { k: 'muted', t: '-' },
+      { k: 'muted', t: '-' }, { k: 'muted', t: '-' },
+    ] },
+    { no: 14, process: '유니버설조인트 조립', cells: [
+      { k: 'manual', n: '1명' }, { k: 'blue', t: "가능('27)" }, { k: 'blue', t: "가능('30)" },
+      { k: 'blue', t: "가능('27)" }, { k: 'blue', t: "가능('30)" }, { k: 'blue', t: "가능('26)" },
+      { k: 'orange', t: '미적용(협의完) 1명' }, { k: 'blue', t: "가능('30)" },
+      { k: 'amber', t: '협의必(ROI 28년) 1명' }, { k: 'amber', t: '협의必(ROI 110년) 1명' },
+      { k: 'amber', t: '협의必(회수불가) 1명' },
+    ] },
+    { no: 15, process: '유조인트조립', cells: [
+      { k: 'blue', t: "가능('26)" }, { k: 'note', t: '6축로봇 + 정렬유닛 外' }, { k: 'blue', t: "가능('27)" },
+      { k: 'note', t: '6축로봇 + 정렬유닛 外' }, { k: 'blue', t: "가능('27)" }, { k: 'blue', t: "가능('30)" },
+      { k: 'blue', t: "가능('26)" }, { k: 'orange', t: '미적용(협의完) 1명' }, { k: 'blue', t: "가능('30)" },
+      { k: 'amber', t: '협의必(ROI 28년) 1명' }, { k: 'amber', t: '협의必(ROI 110년) 1명' },
+    ] },
+    { no: 16, process: '라벨링', cells: [
+      { k: 'auto', t: '旣자동화' }, { k: 'auto', t: '자동' }, { k: 'auto', t: '자동' },
+      { k: 'auto', t: '자동' }, { k: 'auto', t: '자동' }, { k: 'auto', t: '자동' },
+      { k: 'auto', t: '자동' }, { k: 'orange', t: '미적용(공간부족) 1명' },
+      { k: 'amber', t: '협의必(ROI 27년) 1명' }, { k: 'amber', t: '협의必(ROI 58년) 1명' },
+      { k: 'amber', t: '협의必(회수불가) 1명' },
+    ] },
+    { no: 17, process: '완제품 업로딩', cells: [
+      { k: 'auto', t: '旣자동화' }, { k: 'auto', t: '자동' }, { k: 'auto', t: '자동' },
+      { k: 'auto', t: '자동' }, { k: 'auto', t: '자동' }, { k: 'auto', t: '자동' },
+      { k: 'auto', t: '자동' }, { k: 'muted', t: '-' }, { k: 'muted', t: '-' },
+      { k: 'muted', t: '-' }, { k: 'muted', t: '-' },
+    ] },
   ];
 
   // ---- SCR-003 ----
@@ -384,15 +444,21 @@
 
   // ---- 등록/수정 모달 필드 정의 ----
   var MODALS = {
-    registerProcess: { title: '공정 등록', confirm: '등록', size: 640, fields: [
+    registerProcess: { title: '공정 등록', confirm: '등록', size: 640, successMessage: '새 공정이 성공적으로 등록되었습니다.', fields: [
       { label: '공정명', required: true, type: 'text' },
-      { label: 'Best Practice 지정', required: false, type: 'select' },
-      { label: '상태', required: true, type: 'select' },
-      { label: '담당자', required: true, type: 'select' },
+      { label: 'Best Practice 지정', required: false, type: 'select', options: ['창원 2C 라인', '창원 2A', '창원 2B'] },
+      { label: '상태', required: true, type: 'select', options: ['자동', '수동', '旣자동화'] },
+      { label: '담당자', required: true, type: 'select', options: ['홍**', '김**'] },
       { label: '첨부', required: false, type: 'file' },
     ] },
-    emailShare: { title: '이메일 공유', confirm: '전송', size: 480, fields: [
-      { label: '수신자', required: true, type: 'text' },
+    // 근거: design_handoff_생기포털/source/부품 공정 자동화 현황.dc.html emailModalOpen — 수신자 입력(Enter/쉼표 안내) +
+    // 첨부 자료 체크박스(요약 현황/공정별 상세, 기본 체크) + 메모로 구성된다.
+    emailShare: { title: '이메일 공유', confirm: '전송', size: 480, successMessage: '이메일 공유가 완료되었습니다.', fields: [
+      { label: '수신자', required: true, type: 'text', hint: 'Enter 또는 쉼표(,)로 여러 명 추가' },
+      { label: '첨부 자료', type: 'checkboxGroup', options: [
+        { label: '요약 현황 (엑셀)', checked: true },
+        { label: '공정별 상세 (엑셀)', checked: true },
+      ] },
       { label: '메모', required: false, type: 'textarea' },
     ] },
     cellDetail: { title: 'Best Practice 상세', confirm: '닫기', size: 640, fields: [
@@ -484,7 +550,8 @@
   global.PNDES.FLOW_MTRM_IDS = FLOW_MTRM_IDS;
   global.PNDES.TECH_PR_TYPE = TECH_PR_TYPE;
   global.PNDES.data = {
-    scr001Filters: scr001Filters, scr001SummaryCols: scr001SummaryCols, scr001SummaryRows: scr001SummaryRows,
+    scr001Filters: scr001Filters, scr001FilterPlaceholders: scr001FilterPlaceholders,
+    scr001SummaryCols: scr001SummaryCols, scr001SummaryRows: scr001SummaryRows,
     scr001ProcessDetail: scr001ProcessDetail,
     scr003Filters: scr003Filters, scr003LineDefs: scr003LineDefs, scr003SummaryCols: scr003SummaryCols,
     scr003SummaryRows: scr003SummaryRows, scr003DetailCols: scr003DetailCols,

@@ -22,13 +22,27 @@
     trendView: 'list',
     trendIndex: 0,
     videoProcess: null, // SCR-001 "현재=자동"/SCR-003 "기술현황=●" 클릭 시 자동화 설비 동영상 모달에 표시할 공정/작업명
+    videoKind: 'part', // 동영상 모달 제목 접두어 구분: 'part'(부품) / 'module'(모듈)
     navSubOpen: { 'SCR-006': true }, // 하위 메뉴(SCR-006 -> SCR-007/008) 펼침 상태
     techPrDetailIndex: null, // SCR-009/MTRM-MAIN Tech PR 카드 클릭 시 표시할 커스텀 상세 오버레이 인덱스
+    toast: null, // 화면 우상단(하단) 토스트 알림 메시지, showToast()로 세팅 후 일정 시간 뒤 자동 소멸
   };
+  var toastTimer = null;
 
   function setState(patch) {
     $.extend(state, patch);
     renderAll();
+  }
+
+  // 근거: design_handoff_생기포털 README "조회 완료 시 화면 우상단 토스트 알림 노출(2~3초 후 자동 소멸)" 공통 동작.
+  function showToast(message) {
+    if (toastTimer) { clearTimeout(toastTimer); }
+    state.toast = message;
+    renderAll();
+    toastTimer = setTimeout(function () {
+      state.toast = null;
+      renderAll();
+    }, 2600);
   }
 
   function renderAll() {
@@ -48,6 +62,8 @@
     var $techPrRoot = $('#techpr-detail-root');
     var techPrHtml = render.techPrDetail ? render.techPrDetail(state) : '';
     if (techPrHtml) { $techPrRoot.html(techPrHtml); } else { $techPrRoot.empty(); }
+
+    $('#toast-root').html(render.toast ? render.toast(state) : '');
   }
 
   function selectScreen(id, roadmapId) {
@@ -73,7 +89,20 @@
           break;
         case 'open-video':
           // SCR-001 "현재=자동" 배지 / SCR-003 "기술현황=●" 배지 클릭 -> 공용 동영상 모달
-          setState({ activeModal: 'autoVideo', videoProcess: $el.data('process') });
+          setState({ activeModal: 'autoVideo', videoProcess: $el.data('process'), videoKind: $el.data('kind') || 'part' });
+          break;
+        case 'confirm-modal':
+          // 등록/전송 등 모달 확인 버튼: 모달을 닫고 성공 토스트를 표시 (MODALS[id].successMessage 기반)
+          setState({ activeModal: null });
+          showToast($el.data('message'));
+          break;
+        case 'scr001-search':
+          // 근거: onSearch — 부품 공정 자동화 현황 조회 버튼 클릭 시 토스트 알림
+          showToast('필터 조건으로 조회가 완료되었습니다.');
+          break;
+        case 'scr001-excel':
+          // 근거: onExcel — 부품 공정 자동화 현황 엑셀 다운로드 버튼 클릭 시 토스트 알림
+          showToast('엑셀 다운로드 기능이 실행되었습니다.');
           break;
         case 'toggle-nav-sub':
           var subId = $el.data('screenId');
