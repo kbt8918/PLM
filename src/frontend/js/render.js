@@ -542,8 +542,9 @@
 
   function renderMTRMMAIN(state) {
     var techPrPreview = D.techPrCards.slice(0, 3).map(function (c, i) { return renderTechPrCard(c, i, false); }).join('');
+    // 근거: openDashTechTrendDetail — SCR-014로 이동하지 않고, 메인 대시보드 안에서 바로 뜨는 전용 상세 팝업.
     var trendPreview = D.trendsData.slice(0, 8).map(function (t, i) {
-      return '<div class="log-row" style="cursor:pointer" data-action="trend-detail" data-index="' + i + '">' +
+      return '<div class="log-row" style="cursor:pointer" data-action="open-dash-trend-detail" data-index="' + i + '">' +
         '<span>' + esc(t.title) + '</span><span style="color:var(--color-text-faint)">' + esc(t.date) + ' &middot; 조회 ' + t.views + '</span>' +
       '</div>';
     }).join('');
@@ -1529,11 +1530,30 @@
     );
   }
 
+  // 근거: openDashTechTrendDetail/dashTechTrendDetailOpen — MTRM-MAIN "최근 기술동향" 목록 항목 클릭 시
+  // 뜨는 전용 상세 팝업(제목/등록일·조회수·부서·담당자/태그/이미지 자리표시/본문). SCR-014 전체 화면 상세와
+  // 달리 대시보드에서 벗어나지 않고 모달로만 열립니다.
+  function renderDashTrendDetailModal(state) {
+    var t = D.trendsData[state.dashTrendDetailIndex] || {};
+    return (
+      '<div class="modal-box" style="width:640px">' +
+        '<div class="modal-header"><div class="modal-title">' + esc(t.title) + '</div><div class="modal-close" data-action="close-modal">&#10005;</div></div>' +
+        '<div class="modal-body">' +
+          '<div style="font-size:12px;color:var(--color-text-faint);margin-bottom:8px">' + esc(t.date) + ' &middot; 조회 ' + t.views + ' &middot; ' + esc(t.dept) + '/' + esc(t.owner) + '</div>' +
+          '<div style="font-size:12px;color:var(--color-primary);font-weight:600;margin-bottom:16px">#' + esc(t.tag) + '</div>' +
+          '<div class="trend-detail-body-preview" style="border-top:none;padding-top:0;aspect-ratio:auto;height:280px">기술동향 이미지</div>' +
+          '<p style="font-size:14px;color:var(--color-text-sub);line-height:22px;margin-top:16px">' + esc(t.content || '등록된 설명이 없습니다.') + '</p>' +
+        '</div>' +
+      '</div>'
+    );
+  }
+
   function renderModal(state) {
     if (!state.activeModal) return '';
     if (state.activeModal === 'autoVideo') return renderAutoVideoModal(state);
     if (state.activeModal === 'chartDetail') return renderChartDetailModal(state);
     if (state.activeModal === 'trendEdit') return renderTrendEditModal(state);
+    if (state.activeModal === 'dashTrendDetail') return renderDashTrendDetailModal(state);
     var modal = MODALS[state.activeModal];
     if (!modal) return '';
     var fields = modal.fields.map(function (f) {

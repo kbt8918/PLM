@@ -25,6 +25,7 @@
     trendIndex: 0,
     trendSelectMode: false, // SCR-014 "수정" 버튼 클릭 시 카드에 선택 라디오 버튼을 노출하는 선택모드
     trendEditIndex: null, // 선택모드에서 라디오(카드) 클릭 시 수정 팝업에 채울 기술동향 인덱스
+    dashTrendDetailIndex: null, // MTRM-MAIN "최근 기술동향" 항목 클릭 시 표시할 상세 팝업 인덱스
     videoProcess: null, // SCR-001 "현재=자동"/SCR-003 "기술현황=●" 클릭 시 자동화 설비 동영상 모달에 표시할 공정/작업명
     videoKind: 'part', // 동영상 모달 제목 접두어 구분: 'part'(부품) / 'module'(모듈)
     navSubOpen: { 'SCR-006': true }, // 하위 메뉴(SCR-006 -> SCR-007/008) 펼침 상태
@@ -180,6 +181,9 @@
           break;
         case 'select-trend-edit':
           setState({ activeModal: 'trendEdit', trendSelectMode: false, trendEditIndex: Number($el.data('index')) });
+          break;
+        case 'open-dash-trend-detail':
+          setState({ activeModal: 'dashTrendDetail', dashTrendDetailIndex: Number($el.data('index')) });
           break;
         case 'trend-back':
           e.preventDefault();
