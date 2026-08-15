@@ -1,0 +1,13 @@
+diff --git a/src/frontend/js/app.js b/src/frontend/js/app.js
+index c172dbc..c71530d 100644
+--- a/src/frontend/js/app.js
++++ b/src/frontend/js/app.js
+@@ -15,7 +15,7 @@
+   }
+ 
+   var state = {
+-    currentScreen: 'DASH-AUTO',
++    currentScreen: 'SCR-001', // 근거: design_handoff_생기포털/source/부품 공정 자동화 현황.dc.html activeView 기본값 'part-auto' — 최초 진입 화면은 통합 대시보드(DASH-AUTO)가 아니라 부품 공정 자동화 현황(SCR-001)
+     activeModal: null,
+     chartMode: 'summary', // SCR-008 통합 로드맵 차트 요약본/전체보기 토글
+     expandedChartRoadmaps: [], // SCR-008에서 아코디언으로 펼쳐진 로드맵명 목록(여러 개 동시 펼침 유지)
