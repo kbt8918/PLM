@@ -144,6 +144,41 @@ graph TD
   - 예: `[W4] 자동화 현황 - 부품 공정 자동화 현황 화면 개발`
 - 브랜치 명명: feature/기능명 (예: feature/automation-status, feature/mtrm-roadmap)
 
+## 온라인 세션 ↔ 로컬 Claude Code 협업 워크플로 (W4 구현 자동화, 2026-08 정착)
+
+> 이 리포지토리는 클라우드(온라인) Claude Code 세션과 로컬 Claude Code 세션이 함께 작업합니다.
+> 온라인 세션은 `kbt8918/PLM`에 대한 git push 권한이 없고(세션 자격증명이 다른 리포지토리로 scope됨),
+> 클라우드 도메인 격리로 CDN(jQuery 등) 접근도 막혀 있습니다. 아래 규칙은 두 세션이 반복적으로
+> 서로 어긋났던 지점들을 정리한 것이며, **다음에 이어서 작업할 때 그대로 따릅니다.**
+
+### 1. 배포 브랜치는 `main`이다 — 작업 브랜치가 아니다
+- `feature/automation-status-part-process`는 커밋 `213b3b9`(Merge branch 'feature/automation-status-part-process')에서 **`main`에 머지되고 그 시점 이후로 더 이상 갱신되지 않는다.** 이 브랜치의 HEAD만 보고 "아직 push 안 됐다"고 판단하면 틀린다(실제로 2026-08 세션에서 이 오판이 3회 연속 발생했다).
+- 머지 이후 로컬 세션은 후속 커밋을 **`main`에 직접** 쌓아왔다(`8f6af46` GitHub Pages 재배포 트리거, `2377bd8`/`e5aae52`/`d65c6a5` 등).
+- GitHub Pages는 `main`에서 배포된다(`bfe420c` 워크플로 추가 커밋 참고).
+- **따라서 새 패치를 만들기 전에는 반드시 `git fetch origin main`으로 `origin/main`의 최신 커밋을 먼저 확인하고, 그 커밋을 patch base로 삼는다.** `feature/automation-status-part-process`는 참고하지 않는다(머지된 시점 이후로는 사실상 폐기된 브랜치).
+
+### 2. 패치 전달 방식 (온라인 세션 → 로컬)
+1. 온라인 세션 로컬 클론에서 구현·검증(아래 3번 참고) 후 커밋
+2. `git fetch origin main`으로 최신 `origin/main` 확인 → 그 커밋 기준으로 `git diff <origin/main 최신 커밋> <내 커밋> > NNNN-설명.patch` 생성
+3. **fresh clone**을 만들어 `origin/main` 위에 `git apply --check` + 실제 `apply`까지 재검증(사후 `node --check`로 문법 확인)
+4. `SendUserFile`로 패치 파일 전달(채팅에 diff를 텍스트로 붙여넣지 않음 — 인코딩 손상 이력 있음), SHA256 체크섬 동봉
+5. 적용 명령은 **`git apply`**이지 `git am`이 아니다(일반 unified diff이며 커밋 메일 포맷이 아님)
+6. 로컬이 적용·커밋·push 완료 후 결과를 알려주면, 온라인 세션은 다시 `origin/main`을 fetch해서 diff 없이 동일한지 재확인한다(신뢰하지 말고 검증)
+
+### 3. 화면 구현 시 디자인 소스 우선순위
+- 권위 있는 단일 소스는 `design_handoff_생기포털/source/부품 공정 자동화 현황.dc.html`이다(SCR-001~014 + MTRM-MAIN 전체 포함).
+- `src/frontend/design-import/PNDES Portal Prototype.dc.html`은 **구버전 프로토타입**이다. 초기 화면 일부(DASH-AUTO/DASH-MTRM 등, 현재 내비게이션에서 숨김 처리됨)가 여기서 이식된 채 남아있을 수 있으니, 두 파일의 내용이 다르면 **항상 `부품 공정 자동화 현황.dc.html`을 우선**한다.
+- 화면 구현 시 디자인 소스의 JS state 생성 로직(반복문·모듈로 연산 등)을 그대로 이식해 데이터를 재현한다(손으로 옮겨 적지 않음 — 행 수/값 불일치 방지).
+
+### 4. 로컬 검증 방법 (온라인 세션, CDN 차단 환경)
+- `/usr/share/javascript/jquery/jquery.min.js`를 `src/frontend/jquery.local.js`로 복사하고, `index.html`의 CDN `<script>` 줄만 치환한 `index.test.html`을 만들어 `python3 -m http.server`로 서빙
+- Playwright는 `NODE_PATH=$(npm root -g) node <script>.js`로 실행(`executablePath: '/opt/pw-browsers/chromium'`)하고, 스크린샷으로 시각 검증
+- **커밋 전 반드시 `jquery.local.js`/`index.test.html`/스크린샷(*.png) 등 테스트 산출물을 삭제**한다(`git status --short`로 확인)
+
+### 5. 그 외 반복됐던 실수
+- jQuery 이벤트 위임(`$(document).on('click', '[data-action]', ...)`)은 버블링 경로상의 **모든** 매칭 조상에서 발동한다. 중첩 요소에 서로 다른 `data-action`을 겹쳐 달면 동시에 두 액션이 발동할 수 있으니, 자식 요소가 별도 액션을 가지면 부모의 액션은 자식을 감싸지 않는 별도 셀(예: `<td>` 라벨 칸)에만 건다.
+- 화면 전체 재구현 시, `data.js`의 데이터 스키마를 바꿨다면 `render.js`의 해당 렌더 함수가 새 필드명을 참조하는지 반드시 다시 읽어서 확인한다(스키마만 바뀌고 렌더러가 안 바뀌어 `undefined`가 렌더링된 사례 있음).
+
 ## NotebookLM 연동 (프로젝트 위키 + 통합자료실)
 - NotebookLM 노트북 URL은 `.AP-key.md`에 기록되어 있습니다
 - **동기화 방식**: Gate-Check 연동 자동. 산출물 완료 시 자동으로 NotebookLM에 소스 등록
