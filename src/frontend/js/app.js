@@ -20,6 +20,7 @@
     chartMode: 'summary', // SCR-008 통합 로드맵 차트 요약본/전체보기 토글
     expandedChartRoadmaps: [], // SCR-008에서 아코디언으로 펼쳐진 로드맵명 목록(여러 개 동시 펼침 유지)
     chartTaskDetail: null, // SCR-008 간트 막대 클릭 시 표시할 과제 상세 정보
+    dashExpandedRoadmaps: [], // MTRM-MAIN 통합 로드맵 미니 간트에서 아코디언으로 펼쳐진 로드맵명 목록(SCR-008과 별개 상태)
     trendView: 'list',
     trendIndex: 0,
     videoProcess: null, // SCR-001 "현재=자동"/SCR-003 "기술현황=●" 클릭 시 자동화 설비 동영상 모달에 표시할 공정/작업명
@@ -145,6 +146,15 @@
             ? state.expandedChartRoadmaps.concat([category])
             : state.expandedChartRoadmaps.filter(function (c) { return c !== category; });
           setState({ expandedChartRoadmaps: next });
+          break;
+        }
+        case 'toggle-dash-roadmap': {
+          var dashCategory = $el.data('category');
+          var dashIdx = state.dashExpandedRoadmaps.indexOf(dashCategory);
+          var dashNext = dashIdx === -1
+            ? state.dashExpandedRoadmaps.concat([dashCategory])
+            : state.dashExpandedRoadmaps.filter(function (c) { return c !== dashCategory; });
+          setState({ dashExpandedRoadmaps: dashNext });
           break;
         }
         case 'open-chart-detail':

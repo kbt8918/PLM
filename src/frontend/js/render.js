@@ -467,33 +467,82 @@
   }
 
   // ---------- MTRM-MAIN 메인 대시보드 ----------
-  // 근거: 중장기 방향성 공유 그룹의 최종 랜딩 화면 — KPI 3개(SCR-006과 동일 데이터) + 통합 로드맵
-  // 미니 간트(행 클릭 시 SCR-008) + 생산기술 Tech PR 미리보기(3개, SCR-009와 동일 유형 배지/썸네일) + 최근 기술동향(3개)
+  // 근거: 중장기 방향성 공유 그룹의 최종 랜딩 화면 — KPI 5개(SCR-006과 동일 데이터) + 통합 로드맵
+  // 미니 간트(dashRoadmaps: scr006Rows의 5개 대표 로드맵을 고정 lead/span 막대로 표시, 행 클릭 시
+  // 아코디언으로 taskRoadmapList 상세과제 펼침 — SCR-008과는 별개 데이터/상태) +
+  // 생산기술 Tech PR 미리보기(3개, SCR-009와 동일 유형 배지/썸네일) + 최근 기술동향(8개)
 
-  function renderMtrmMainGantt() {
-    var quarters = D.ganttQuarters.map(function (q) { return '<div class="mini-gantt-quarter-cell">' + esc(q) + '</div>'; }).join('');
-    var rows = D.ganttRowsFull.filter(function (r) { return r.top; }).map(function (r, i) {
-      return '<div class="mini-gantt-row" style="cursor:pointer;background:' + (i % 2 === 0 ? 'var(--color-surface)' : 'var(--color-zebra-bg)') + '" data-action="select-screen" data-screen-id="SCR-008">' +
-        '<div class="mini-gantt-row-label">' + esc(r.label) + '</div>' +
-        '<div class="mini-gantt-track"><div class="gantt-bar ' + r.barClass + '" style="left:' + r.left + '%;width:' + r.width + '%"></div></div>' +
-      '</div>';
+  // 근거: barMap — 5개 대표 로드맵의 12분기(26.Q1~28.Q4) 그리드 상 고정 위치/색상.
+  var DASH_ROADMAP_BAR_MAP = {
+    '차체 자동화 로드맵': { lead: 0, span: 4, color: 'var(--gantt-top-progress)' },
+    '조립 자동화 로드맵': { lead: 1, span: 5, color: 'var(--gantt-top-pending)' },
+    '도장 자동화 로드맵': { lead: 0, span: 3, color: '#F472B6' },
+    '엔진 자동화 로드맵': { lead: 3, span: 4, color: '#10B981' },
+    '물류/반송 자동화 로드맵': { lead: 4, span: 4, color: 'var(--color-purple)' },
+  };
+
+  function renderMtrmMainGantt(state) {
+    var expanded = state.dashExpandedRoadmaps || [];
+    var quarterHeader = D.chartQuarters.map(function (q) {
+      return '<th class="al-c" style="font-weight:400;font-size:11px;color:var(--color-text-muted)">' + esc(q) + '</th>';
     }).join('');
+
+    var rowsHtml = D.scr006Rows.filter(function (rm) { return DASH_ROADMAP_BAR_MAP[rm.name]; }).map(function (rm) {
+      var conf = DASH_ROADMAP_BAR_MAP[rm.name];
+      var subs = D.taskRoadmapList.filter(function (r) { return r.roadmap === rm.name; });
+      var hasSub = subs.length > 0;
+      var isExpanded = hasSub && expanded.indexOf(rm.name) !== -1;
+      var isLogistics = rm.name === '물류/반송 자동화 로드맵';
+      var expandAttrs = hasSub ? ' style="cursor:pointer" data-action="toggle-dash-roadmap" data-category="' + esc(rm.name) + '"' : '';
+      var expandIcon = hasSub ? '<span style="display:inline-block;transition:transform .15s;transform:rotate(' + (isExpanded ? '90' : '0') + 'deg);margin-right:4px;font-size:10px;color:var(--color-text-faint)">&#9656;</span>' : '<span style="display:inline-block;width:14px"></span>';
+      var barInner = isLogistics
+        ? '<div style="grid-column:' + (conf.lead + 1) + ' / span ' + conf.span + ';background:' + conf.color + ';border-radius:4px;height:24px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden">상세과제 미등록</div>'
+        : '<div style="grid-column:' + (conf.lead + 1) + ' / span ' + conf.span + ';background:' + conf.color + ';border-radius:4px;height:16px"></div>';
+      var row = '<tr>' +
+        '<td class="' + (hasSub ? 'row-clickable' : '') + '" style="font-weight:600"' + expandAttrs + '>' + expandIcon + esc(rm.name) + '</td>' +
+        '<td colspan="12" style="padding:6px 8px">' +
+          '<div style="display:grid;grid-template-columns:repeat(12,1fr);align-items:center;height:' + (isLogistics ? '24px' : '16px') + '">' + barInner + '</div>' +
+        '</td>' +
+      '</tr>';
+
+      var subRows = '';
+      if (isExpanded) {
+        subRows = subs.map(function (r, si) {
+          var span = periodToChartSpan(r.period);
+          return '<tr style="background:' + (si % 2 === 0 ? 'var(--color-zebra-bg)' : 'var(--color-surface)') + '">' +
+            '<td style="padding-left:34px">' +
+              '<div style="font-weight:600;color:var(--color-text-sub)">&#8627; ' + esc(r.name) + '</div>' +
+              '<div style="display:flex;align-items:center;gap:6px;margin-top:4px">' + badge(r.status, CHART_SUBTASK_STATUS_KIND[r.status]) +
+                '<span style="font-size:10px;color:var(--color-text-muted)">' + esc(r.period) + '</span>' +
+              '</div>' +
+            '</td>' +
+            '<td colspan="12" style="padding:6px 8px">' +
+              '<div style="display:grid;grid-template-columns:repeat(12,1fr);height:10px">' +
+                '<div style="grid-column:' + span.colStart + ' / span ' + span.colSpan + ';background:' + conf.color + ';border-radius:5px"></div>' +
+              '</div>' +
+            '</td>' +
+          '</tr>';
+        }).join('');
+      }
+      return row + subRows;
+    }).join('');
+
     return (
       '<div class="panel" style="margin-bottom:var(--sp-xl);padding:0">' +
         '<div style="display:flex;align-items:center;justify-content:space-between;padding:20px 20px 16px">' +
           '<div class="panel-title" style="margin-bottom:0">통합 로드맵</div>' +
-          '<a href="#" data-action="select-screen" data-screen-id="SCR-006">통합 로드맵 보기 &rsaquo;</a>' +
+          '<a href="#" class="panel-link" data-action="select-screen" data-screen-id="SCR-006">통합 로드맵 보기 &rsaquo;</a>' +
         '</div>' +
-        '<div class="mini-gantt-head"><div class="mini-gantt-label-col">로드맵</div><div class="mini-gantt-quarters">' + quarters + '</div></div>' +
-        rows +
-        '<div style="height:16px"></div>' +
+        '<div style="overflow-x:auto;padding:0 20px 20px">' +
+          '<table class="data-table" style="min-width:820px"><thead><tr><th style="min-width:200px">로드맵</th>' + quarterHeader + '</tr></thead><tbody>' + rowsHtml + '</tbody></table>' +
+        '</div>' +
       '</div>'
     );
   }
 
-  function renderMTRMMAIN() {
+  function renderMTRMMAIN(state) {
     var techPrPreview = D.techPrCards.slice(0, 3).map(function (c, i) { return renderTechPrCard(c, i, false); }).join('');
-    var trendPreview = D.trendsData.slice(0, 3).map(function (t, i) {
+    var trendPreview = D.trendsData.slice(0, 8).map(function (t, i) {
       return '<div class="log-row" style="cursor:pointer" data-action="trend-detail" data-index="' + i + '">' +
         '<span>' + esc(t.title) + '</span><span style="color:var(--color-text-faint)">' + esc(t.date) + ' &middot; 조회 ' + t.views + '</span>' +
       '</div>';
@@ -503,7 +552,7 @@
         '<div class="section-title" style="margin-bottom:2px">메인 대시보드</div>' +
         '<div class="screen-subtitle">통합 로드맵·생산기술 Tech PR·기술동향을 한 화면에서 확인</div>' +
         renderRoadmapKpiCards(computeRoadmapKpis()) +
-        renderMtrmMainGantt() +
+        renderMtrmMainGantt(state) +
         '<div class="panel-row">' +
           '<div class="panel" style="flex:1">' +
             '<div class="panel-head-row"><div class="panel-title" style="margin-bottom:0">생산기술 Tech PR</div><a href="#" class="panel-link" data-action="select-screen" data-screen-id="SCR-009">전체보기 &rsaquo;</a></div>' +
