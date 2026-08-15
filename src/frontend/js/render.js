@@ -50,7 +50,7 @@
       return '<th' + cls + '>' + esc(c.label) + '</th>';
     }).join('');
     return (
-      '<table class="data-table"' + (opts.style ? ' style="' + opts.style + '"' : '') + '>' +
+      '<table class="data-table' + (opts.grid ? ' data-table-grid' : '') + (opts.pad12 ? ' data-table-pad12' : '') + '"' + (opts.style ? ' style="' + opts.style + '"' : '') + '>' +
         '<thead><tr>' + thead + '</tr></thead>' +
         '<tbody>' + rowsHtml + '</tbody>' +
       '</table>'
@@ -512,7 +512,8 @@
           return '<tr style="background:' + (si % 2 === 0 ? 'var(--color-zebra-bg)' : 'var(--color-surface)') + '">' +
             '<td style="padding-left:34px">' +
               '<div style="font-weight:600;color:var(--color-text-sub)">&#8627; ' + esc(r.name) + '</div>' +
-              '<div style="display:flex;align-items:center;gap:6px;margin-top:4px">' + badge(r.status, CHART_SUBTASK_STATUS_KIND[r.status]) +
+              '<div style="display:flex;align-items:center;gap:6px;margin-top:4px">' +
+                '<span class="badge badge-' + CHART_SUBTASK_STATUS_KIND[r.status] + '" style="font-size:10px">' + esc(r.status) + '</span>' +
                 '<span style="font-size:10px;color:var(--color-text-muted)">' + esc(r.period) + '</span>' +
               '</div>' +
             '</td>' +
@@ -534,7 +535,7 @@
           '<a href="#" class="panel-link" data-action="select-screen" data-screen-id="SCR-006">통합 로드맵 보기 &rsaquo;</a>' +
         '</div>' +
         '<div style="overflow-x:auto;padding:0 20px 20px">' +
-          '<table class="data-table" style="min-width:820px"><thead><tr><th style="min-width:200px">로드맵</th>' + quarterHeader + '</tr></thead><tbody>' + rowsHtml + '</tbody></table>' +
+          '<table class="data-table gantt-table gantt-table-1row" style="min-width:820px"><thead><tr><th style="min-width:200px">로드맵</th>' + quarterHeader + '</tr></thead><tbody>' + rowsHtml + '</tbody></table>' +
         '</div>' +
       '</div>'
     );
@@ -601,7 +602,7 @@
       }).join('');
       return '<tr><td><strong>' + esc(row.label) + '</strong></td>' + cells + '</tr>';
     }).join('');
-    return '<table class="data-table"><thead><tr>' + head + '</tr></thead><tbody>' + rows + '</tbody></table>';
+    return '<table class="data-table data-table-grid"><thead><tr>' + head + '</tr></thead><tbody>' + rows + '</tbody></table>';
   }
 
   // 근거: design_handoff_생기포털/source/부품 공정 자동화 현황.dc.html scr001ProcessDetail 셀 종류(k)별 렌더링.
@@ -620,7 +621,7 @@
       case 'blue':
         return '<td class="al-c" style="color:var(--color-primary);font-weight:600;white-space:nowrap">' + esc(cell.t) + '</td>';
       case 'amber':
-        return '<td class="al-c">' + badge(cell.t, 'warning') + '</td>';
+        return '<td class="al-c" style="background:var(--badge-warning-bg);color:var(--badge-warning-text);font-weight:600">' + esc(cell.t) + '</td>';
       case 'orange':
         return '<td class="al-c" style="color:var(--color-caution-text);font-weight:600">' + esc(cell.t) + '</td>';
       case 'note':
@@ -652,7 +653,7 @@
       return '<tr>' + td(row.no, 'center') + td('<strong>' + esc(row.process) + '</strong>') + cellsHtml + '</tr>';
     }).join('');
 
-    return '<table class="data-table sticky-head"><thead>' + head + '</thead><tbody>' + rowsHtml + '</tbody></table>';
+    return '<table class="data-table data-table-grid sticky-head"><thead>' + head + '</thead><tbody>' + rowsHtml + '</tbody></table>';
   }
 
   function renderSCR001() {
@@ -685,16 +686,15 @@
   // scr003SummaryRows.cells(동일 순서 7개 값)를 그대로 인덱스 매핑합니다.
   function renderScr003SummaryTable() {
     var head = '<th>구분</th>' + D.scr003SummaryCols.map(function (c) {
-      var style = c.bp ? ' style="background:var(--badge-warning-bg)"' : '';
-      return '<th class="al-c"' + style + '>' + esc(c.label) + '</th>';
+      return '<th class="al-c">' + esc(c.label) + '</th>';
     }).join('');
 
     var rows = D.scr003SummaryRows.map(function (row) {
       var cells = row.cells.map(function (v) { return '<td class="al-c">' + scr003Value(v) + '</td>'; }).join('');
-      return '<tr><td><strong>' + esc(row.label) + '</strong></td>' + cells + '</tr>';
+      return '<tr><td style="background:var(--color-bg)"><strong>' + esc(row.label) + '</strong></td>' + cells + '</tr>';
     }).join('');
 
-    return '<table class="data-table"><thead><tr>' + head + '</tr></thead><tbody>' + rows + '</tbody></table>';
+    return '<table class="data-table data-table-grid"><thead><tr>' + head + '</tr></thead><tbody>' + rows + '</tbody></table>';
   }
 
   // 근거: design_handoff_생기포털/source/부품 공정 자동화 현황.dc.html scr003ProcessDetail.cells(5열: 조지아/
@@ -719,11 +719,11 @@
     var head =
       '<tr>' +
         '<th rowspan="2" style="min-width:50px">NO</th><th rowspan="2" style="min-width:200px">작업내용</th>' +
-        '<th class="al-c" colspan="2" style="background:var(--badge-info-bg)">Best Practice</th>' +
+        '<th class="al-c" colspan="2">Best Practice</th>' +
         D.scr003DetailCols.map(function (c) { return '<th rowspan="2" class="al-c" style="min-width:110px">' + esc(c) + '</th>'; }).join('') +
       '</tr>' +
       '<tr>' +
-        '<th class="al-c" style="min-width:80px;background:var(--badge-info-bg)">기술현황</th><th style="min-width:220px;background:var(--badge-info-bg)">상세계획</th>' +
+        '<th class="al-c" style="min-width:80px">기술현황</th><th style="min-width:220px">상세계획</th>' +
       '</tr>';
 
     var rowsHtml = D.scr003ProcessDetail.map(function (row) {
@@ -731,14 +731,14 @@
       var expansionCells = row.cells.map(function (kind) { return renderScr003ExpansionCell(kind, row); }).join('');
       return '<tr>' +
         td(row.no, 'center') +
-        td('<strong>' + esc(row.task) + '</strong>') +
+        '<td style="background:var(--color-bg)"><strong>' + esc(row.task) + '</strong></td>' +
         '<td class="al-c" style="font-weight:600">' + techSymbol + '</td>' +
         '<td class="muted" style="text-align:left">' + esc(row.plan) + '</td>' +
         expansionCells +
       '</tr>';
     }).join('');
 
-    return '<table class="data-table sticky-head"><thead>' + head + '</thead><tbody>' + rowsHtml + '</tbody></table>';
+    return '<table class="data-table data-table-grid sticky-head"><thead>' + head + '</thead><tbody>' + rowsHtml + '</tbody></table>';
   }
 
   function renderSCR003() {
@@ -746,7 +746,7 @@
       '<div data-screen-label="SCR-003 모듈 공정 자동화 현황">' +
         renderTabs('module') +
         renderFilterBar(D.scr003Filters) +
-        '<div class="filter-sync-badge" style="margin-bottom:var(--sp-md);display:inline-block">최종 동기화: ' + esc(D.scr003LastSync) + '</div>' +
+        '<div style="margin-bottom:var(--sp-md);display:inline-block;font-size:11px;color:var(--color-text-faint)">최종 동기화: ' + esc(D.scr003LastSync) + '</div>' +
         (D.scr003Warning ? '<div class="warning-banner"><span>&#9888;</span><span>정합성 검증 실패 항목이 있습니다. 관리자 확인이 필요합니다.</span></div>' : '') +
         '<div class="section-title">요약 현황 <span style="font-size:12px;color:var(--color-text-faint);font-weight:400">(공장/차종별 자동화율·인원 및 성인화 실적/계획)</span></div>' +
         renderScr003SummaryTable() +
@@ -779,7 +779,7 @@
       var no = filtered.length - ((page - 1) * pageSize + i);
       var descCell = r.desc ? '<td style="color:var(--color-primary);font-weight:600">' + esc(r.desc) + '</td>' : td('-', null, 'muted');
       return '<tr>' + td(no, null, 'muted') + td(esc(r.factory)) + td(esc(r.line)) +
-        '<td style="font-weight:600">' + esc(r.name) + '</td>' +
+        '<td style="font-weight:600;background:var(--color-bg)">' + esc(r.name) + '</td>' +
         td(r.seq, 'right') + descCell +
         td('<button type="button" class="btn-link" data-action="open-modal" data-modal-id="stdProcessRegister">수정</button>' +
            '<button type="button" class="btn-link-danger" style="margin-left:8px" data-action="open-modal" data-modal-id="deleteConfirm">삭제</button>', 'center') +
@@ -798,10 +798,12 @@
           '<button type="button" class="btn btn-secondary" data-action="run-search">엑셀 다운로드</button>' +
           '<button type="button" class="btn btn-secondary" data-action="open-modal" data-modal-id="stdProcessRegister">+ 표준공정 등록</button>' +
         '</div>' +
+        '<div class="panel" style="padding:0">' +
         renderTable([
           { label: 'NO' }, { label: '공장' }, { label: '라인' }, { label: '표준공정명' }, { label: '순서', align: 'right' }, { label: '비고' }, { label: '관리', align: 'center' },
-        ], rows) +
+        ], rows, { grid: true }) +
         renderPagination(filtered.length, page, pageSize, 'masterPage') +
+        '</div>' +
       '</div>'
     );
   }
@@ -828,7 +830,7 @@
     }).join('');
     return (
       '<div class="admin-screen" data-screen-label="SCR-004 모듈 표준 작업명 관리">' +
-        '<div style="display:flex;align-items:center;gap:var(--sp-sm);margin-bottom:var(--sp-lg);flex-wrap:wrap">' +
+        '<div class="filter-bar">' +
           '<select style="height:32px;min-width:130px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>전체 공정유형</option><option>조립</option><option>배선</option><option>검사</option></select>' +
           '<input placeholder="표준 작업명 검색" style="height:32px;min-width:160px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 10px" />' +
           '<input placeholder="사용현황(연동모듈수)" style="height:32px;min-width:150px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 10px" />' +
@@ -837,10 +839,12 @@
           '<div class="filter-spacer"></div>' +
           '<button type="button" class="btn btn-primary" data-action="open-modal" data-modal-id="stdTaskRegister">+ 표준 작업명 등록</button>' +
         '</div>' +
+        '<div class="panel" style="padding:0">' +
         renderTable([
           { label: 'NO' }, { label: '표준 작업명' }, { label: '공정유형' }, { label: '사용현황(연동모듈수)', align: 'right' }, { label: '등록일' }, { label: '관리', align: 'center' },
-        ], rows) +
+        ], rows, { pad12: true }) +
         renderPagination(filtered.length, page, pageSize, 'taskPage') +
+        '</div>' +
       '</div>'
     );
   }
@@ -867,7 +871,7 @@
     }).join('');
     return (
       '<div class="admin-screen" data-screen-label="SCR-005 I/F 실행결과 관리">' +
-        '<div style="display:flex;align-items:center;gap:var(--sp-sm);margin-bottom:var(--sp-lg)">' +
+        '<div class="filter-bar">' +
           '<input type="date" style="height:32px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px" />' +
           '<span>~</span>' +
           '<input type="date" style="height:32px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px" />' +
@@ -875,10 +879,12 @@
           '<select style="height:32px;min-width:100px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>전체 결과</option><option>성공</option><option>실패</option></select>' +
           '<button type="button" class="btn btn-primary" data-action="run-search">조회</button>' +
         '</div>' +
+        '<div class="panel" style="padding:0">' +
         renderTable([
           { label: 'NO' }, { label: '실행시각' }, { label: 'I/F-ID' }, { label: '유형' }, { label: '처리건수', align: 'right' }, { label: '결과', align: 'center' }, { label: '실패 원인' },
-        ], rows) +
+        ], rows, { pad12: true }) +
         renderPagination(filtered.length, page, pageSize, 'ifPage') +
+        '</div>' +
       '</div>'
     );
   }
@@ -948,7 +954,7 @@
         '</div>' +
         renderTable([
           { label: 'NO' }, { label: '분과' }, { label: '로드맵명' }, { label: '기간' }, { label: '대표과제' }, { label: '상태', align: 'center' }, { label: '개정이력', align: 'center' },
-        ], rows) +
+        ], rows, { pad12: true }) +
         renderPagination(filtered.length, page, pageSize, 'roadmapPage') +
       '</div>'
     );
@@ -990,7 +996,7 @@
         '</div>' +
         renderTable([
           { label: 'NO' }, { label: '과제명' }, { label: '담당자' }, { label: '기간' }, { label: '진행상태', align: 'center' }, { label: '관리', align: 'center' },
-        ], body) +
+        ], body, { pad12: true }) +
         renderPagination(filtered.length, page, pageSize, 'taskRoadmapPage') +
       '</div>'
     );
@@ -1064,7 +1070,8 @@
             return '<tr style="background:' + (si % 2 === 0 ? 'var(--color-zebra-bg)' : 'var(--color-surface)') + '">' +
               '<td style="padding-left:34px">' +
                 '<div style="font-weight:600;color:var(--color-text-sub)">&#8627; ' + esc(r.name) + '</div>' +
-                '<div style="display:flex;align-items:center;gap:6px;margin-top:4px">' + badge(r.status, CHART_SUBTASK_STATUS_KIND[r.status]) +
+                '<div style="display:flex;align-items:center;gap:6px;margin-top:4px">' +
+                  '<span class="badge badge-' + CHART_SUBTASK_STATUS_KIND[r.status] + '" style="font-size:10px">' + esc(r.status) + '</span>' +
                   '<span style="font-size:10px;color:var(--color-text-muted)">' + esc(r.period) + '</span>' +
                 '</div>' +
               '</td>' +
@@ -1098,7 +1105,7 @@
           '</div>' +
         '</div>' +
         '<div style="overflow-x:auto" class="gantt-container">' +
-          '<table class="data-table" style="min-width:900px"><thead><tr>' + yearHeader + '</tr><tr>' + quarterHeader + '</tr></thead><tbody>' + rowsHtml + '</tbody></table>' +
+          '<table class="data-table gantt-table gantt-table-2row" style="min-width:900px"><thead><tr>' + yearHeader + '</tr><tr>' + quarterHeader + '</tr></thead><tbody>' + rowsHtml + '</tbody></table>' +
         '</div>' +
       '</div>'
     );
@@ -1112,21 +1119,22 @@
   function techPrThumb(c, big) {
     var playSize = big ? '44px' : '34px';
     var iconSize = big ? '34' : '26';
+    // 근거: 디자인 원본은 자료 유형(동영상/파일/텍스트/복합자료) 모두 aspect-square(1:1)
     if (c.type === 'video') {
-      return '<div class="media-thumb"><div class="play-btn" style="width:' + playSize + ';height:' + playSize + '">&#9658;</div></div>';
+      return '<div class="media-thumb" style="aspect-ratio:1/1"><div class="play-btn" style="width:' + playSize + ';height:' + playSize + '">&#9658;</div></div>';
     }
     if (c.type === 'file') {
-      return '<div class="media-thumb media-thumb-file">' +
+      return '<div class="media-thumb media-thumb-file" style="aspect-ratio:1/1">' +
         '<svg width="' + iconSize + '" height="' + iconSize + '" viewBox="0 0 24 24" fill="none" stroke="#B45309" stroke-width="1.6"><path d="M6 3h9l5 5v13a1 1 0 01-1 1H6a1 1 0 01-1-1V4a1 1 0 011-1z"></path><path d="M15 3v5h5"></path></svg>' +
         (big ? '<span class="media-thumb-filename">' + esc(c.fileName) + '</span>' : '') +
       '</div>';
     }
     if (c.type === 'text') {
-      return '<div class="media-thumb media-thumb-text"><div class="media-thumb-text-body">' + esc(c.body) + '</div></div>';
+      return '<div class="media-thumb media-thumb-text" style="aspect-ratio:1/1"><div class="media-thumb-text-body">' + esc(c.body) + '</div></div>';
     }
     // multi
     var count = c.items ? c.items.length : 0;
-    return '<div class="media-thumb media-thumb-multi">' +
+    return '<div class="media-thumb media-thumb-multi" style="aspect-ratio:1/1">' +
       '<div class="multi-icon-row">' +
         '<span class="multi-icon multi-icon-video">&#9658;</span>' +
         '<span class="multi-icon multi-icon-file">&#128196;</span>' +
@@ -1159,7 +1167,7 @@
     var cards = pageCards.map(function (c) { return renderTechPrCard(c, D.techPrCards.indexOf(c), true); }).join('');
     return (
       '<div data-screen-label="SCR-009 생산기술 Tech PR">' +
-        '<div style="display:flex;align-items:center;justify-content:space-between;gap:var(--sp-sm);margin-bottom:var(--sp-lg)">' +
+        '<div class="filter-bar" style="justify-content:space-between">' +
           '<div style="display:flex;align-items:center;gap:var(--sp-sm)">' +
             '<select style="height:32px;min-width:90px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>제목</option><option>과제명</option></select>' +
             '<input placeholder="제목 검색" style="height:32px;min-width:200px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 10px" />' +
@@ -1238,7 +1246,7 @@
     }).join('');
     return (
       '<div class="admin-screen" data-screen-label="SCR-010 Tech PR 관리자">' +
-        '<div style="display:flex;align-items:center;gap:var(--sp-sm);margin-bottom:var(--sp-lg);flex-wrap:wrap">' +
+        '<div class="filter-bar">' +
           '<input placeholder="제목 검색" style="height:32px;min-width:160px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 10px" />' +
           '<select style="height:32px;min-width:130px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>전체 과제</option><option>용접 자동화</option><option>검사 자동화</option></select>' +
           '<input placeholder="담당자 검색" style="height:32px;min-width:120px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 10px" />' +
@@ -1248,10 +1256,12 @@
           '<div class="filter-spacer"></div>' +
           '<button type="button" class="btn btn-primary" data-action="open-modal" data-modal-id="materialRegister">+ 자료 등록</button>' +
         '</div>' +
+        '<div class="panel" style="padding:0">' +
         renderTable([
           { label: 'NO' }, { label: '제목' }, { label: '과제' }, { label: '담당자' }, { label: '첨부(문서/동영상)' }, { label: '등록일' }, { label: '관리', align: 'center' },
-        ], rows) +
+        ], rows, { pad12: true }) +
         renderPagination(filtered.length, page, pageSize, 'techPrAdminPage') +
+        '</div>' +
       '</div>'
     );
   }
@@ -1275,7 +1285,7 @@
     }).join('');
     return (
       '<div class="admin-screen" data-screen-label="SCR-011 mTRM 협의체 관리">' +
-        '<div style="display:flex;align-items:center;gap:var(--sp-sm);margin-bottom:var(--sp-lg);flex-wrap:wrap">' +
+        '<div class="filter-bar">' +
           '<input placeholder="협의체명 검색" style="height:32px;min-width:150px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 10px" />' +
           '<select style="height:32px;min-width:100px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>전체 분과</option><option>차체</option><option>조립</option></select>' +
           '<input placeholder="의제 검색" style="height:32px;min-width:130px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 10px" />' +
@@ -1286,10 +1296,12 @@
           '<div class="filter-spacer"></div>' +
           '<button type="button" class="btn btn-primary" data-action="open-modal" data-modal-id="councilRegister">+ 협의체 등록</button>' +
         '</div>' +
+        '<div class="panel" style="padding:0">' +
         renderTable([
           { label: 'NO' }, { label: '협의체명' }, { label: '분과' }, { label: '의제' }, { label: '대상 분과장' }, { label: '일정' }, { label: '메일상태', align: 'center' },
-        ], rows) +
+        ], rows, { pad12: true }) +
         renderPagination(filtered.length, page, pageSize, 'mtrmPage') +
+        '</div>' +
       '</div>'
     );
   }
@@ -1314,7 +1326,7 @@
     }).join('');
     return (
       '<div class="admin-screen" data-screen-label="SCR-012 mTRM 관리">' +
-        '<div style="display:flex;align-items:center;gap:var(--sp-sm);margin-bottom:var(--sp-md);flex-wrap:wrap">' +
+        '<div class="filter-bar" style="margin-bottom:var(--sp-md)">' +
           '<input placeholder="mTRM명 검색" style="height:32px;min-width:180px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 10px" />' +
           '<select style="height:32px;min-width:100px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>전체 분과</option><option>차체</option><option>조립</option></select>' +
           '<select style="height:32px;min-width:100px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>전체 상태</option><option>활성</option><option>비활성</option></select>' +
@@ -1323,10 +1335,12 @@
           '<div class="filter-spacer"></div>' +
           '<button type="button" class="btn btn-primary" data-action="open-modal" data-modal-id="mtrmRegister">+ mTRM 등록</button>' +
         '</div>' +
+        '<div class="panel" style="padding:0">' +
         renderTable([
           { label: 'NO' }, { label: 'mTRM명' }, { label: '분과' }, { label: '상태', align: 'center' }, { label: '등록일' }, { label: '관리', align: 'center' },
-        ], rows) +
+        ], rows, { pad12: true }) +
         renderPagination(filtered.length, page, pageSize, 'mtrmMgmtPage') +
+        '</div>' +
       '</div>'
     );
   }
@@ -1353,7 +1367,9 @@
               '<select data-role="task-plan-roadmap"><option value="">선택</option>' + options + '</select>' +
             '</div>' +
             '<div style="font-size:12px;color:var(--color-text-muted);margin-bottom:8px">자동 매핑 결과</div>' +
+            '<div style="border:1px solid var(--color-border);border-radius:6px;overflow:hidden">' +
             renderTable([{ label: '매핑 로드맵명' }, { label: '매핑 상세과제' }, { label: '매핑상태', align: 'center' }], mappingBody) +
+            '</div>' +
           '</div>' +
           '<div class="form-actions">' +
             '<button type="button" class="btn btn-secondary" style="height:36px">취소</button>' +
@@ -1425,7 +1441,7 @@
     }).join('');
     return (
       '<div data-screen-label="SCR-014 기술동향">' +
-        '<div style="display:flex;align-items:center;gap:var(--sp-sm);margin-bottom:var(--sp-lg)">' +
+        '<div class="filter-bar">' +
           '<select style="height:32px;min-width:90px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>제목</option><option>태그</option><option>담당자</option></select>' +
           '<input placeholder="제목 검색" style="height:32px;min-width:180px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 10px" />' +
           '<button type="button" class="btn btn-primary" data-action="run-search">조회</button>' +
