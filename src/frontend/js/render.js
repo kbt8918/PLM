@@ -662,7 +662,7 @@
         renderTabs('part') +
         renderFilterBar(D.scr001Filters, { placeholders: D.scr001FilterPlaceholders, hideLabels: true, noReset: true, searchAction: 'scr001-search' }) +
         '<div class="section-title">요약 현황 <span style="font-size:12px;color:var(--color-text-faint);font-weight:400">(공장/라인별 자동화율·직접인원 현재&rarr;개선 및 중장기 완료일정)</span></div>' +
-        renderScr001SummaryTable() +
+        '<div class="panel" style="padding:0;margin-bottom:var(--sp-xl)">' + renderScr001SummaryTable() + '</div>' +
         '<div class="actions-row" style="margin-top:var(--sp-lg)">' +
           '<div class="section-title" style="margin-bottom:0">공정별 상세 <span style="font-size:12px;color:var(--color-text-faint);font-weight:400">(현재/개선/주요내용 · 공장/라인별 확대전개계획, 현재=자동 선택 시 동영상 팝업)</span></div>' +
           '<div class="actions-group">' +
@@ -671,7 +671,7 @@
             '<button type="button" class="btn btn-secondary" data-action="open-modal" data-modal-id="emailShare">이메일 공유</button>' +
           '</div>' +
         '</div>' +
-        '<div class="scroll-panel" style="max-height:520px">' + renderScr001ProcessDetailTable() + '</div>' +
+        '<div class="panel scroll-panel" style="max-height:520px;padding:0">' + renderScr001ProcessDetailTable() + '</div>' +
       '</div>'
     );
   }
@@ -749,7 +749,7 @@
         '<div style="margin-bottom:var(--sp-md);display:inline-block;font-size:11px;color:var(--color-text-faint)">최종 동기화: ' + esc(D.scr003LastSync) + '</div>' +
         (D.scr003Warning ? '<div class="warning-banner"><span>&#9888;</span><span>정합성 검증 실패 항목이 있습니다. 관리자 확인이 필요합니다.</span></div>' : '') +
         '<div class="section-title">요약 현황 <span style="font-size:12px;color:var(--color-text-faint);font-weight:400">(공장/차종별 자동화율·인원 및 성인화 실적/계획)</span></div>' +
-        renderScr003SummaryTable() +
+        '<div class="panel" style="padding:0;margin-bottom:var(--sp-xl)">' + renderScr003SummaryTable() + '</div>' +
         '<div class="actions-row" style="margin-top:var(--sp-lg)">' +
           '<div class="section-title" style="margin-bottom:0">작업내용별 상세 (NO 1~15) <span style="font-size:12px;color:var(--color-text-faint);font-weight:400">(Best Practice 기술현황/상세계획 · 차종별 확대전개계획, 자동 선택 시 상세 팝업)</span></div>' +
           '<div class="actions-group">' +
@@ -758,7 +758,7 @@
             '<button type="button" class="btn btn-secondary" data-action="open-modal" data-modal-id="emailShare">이메일 공유</button>' +
           '</div>' +
         '</div>' +
-        '<div class="scroll-panel" style="max-height:520px">' + renderScr003ProcessDetailTable() + '</div>' +
+        '<div class="panel scroll-panel" style="max-height:520px;padding:0">' + renderScr003ProcessDetailTable() + '</div>' +
       '</div>'
     );
   }
@@ -952,10 +952,12 @@
           '<a href="#" data-action="go-to-gantt" style="font-size:13px;font-weight:600;margin-right:8px">간트차트로 보기 &rsaquo;</a>' +
           '<button type="button" class="btn btn-primary" data-action="open-modal" data-modal-id="roadmapRegister">+ 로드맵 등록</button>' +
         '</div>' +
+        '<div class="panel" style="padding:0">' +
         renderTable([
           { label: 'NO' }, { label: '분과' }, { label: '로드맵명' }, { label: '기간' }, { label: '대표과제' }, { label: '상태', align: 'center' }, { label: '개정이력', align: 'center' },
         ], rows, { pad12: true }) +
         renderPagination(filtered.length, page, pageSize, 'roadmapPage') +
+        '</div>' +
       '</div>'
     );
   }
@@ -994,10 +996,12 @@
           '<select style="height:32px;min-width:130px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>진행상태: 전체</option></select>' +
           '<button type="button" class="btn btn-primary" data-action="run-search">조회</button>' +
         '</div>' +
+        '<div class="panel" style="padding:0">' +
         renderTable([
           { label: 'NO' }, { label: '과제명' }, { label: '담당자' }, { label: '기간' }, { label: '진행상태', align: 'center' }, { label: '관리', align: 'center' },
         ], body, { pad12: true }) +
         renderPagination(filtered.length, page, pageSize, 'taskRoadmapPage') +
+        '</div>' +
       '</div>'
     );
   }
