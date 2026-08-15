@@ -1399,9 +1399,17 @@
     var totalPages = Math.max(1, Math.ceil(D.trendsData.length / pageSize));
     page = Math.min(page, totalPages);
     var pageItems = D.trendsData.slice((page - 1) * pageSize, page * pageSize);
+    // 근거: onTechTrendEdit/techTrendSelectMode — "수정" 버튼 클릭 시 카드에 선택 라디오 버튼이 노출되는
+    // 선택모드로 전환되고, 카드(또는 라디오) 클릭 즉시 해당 항목의 값이 채워진 수정 팝업이 열립니다.
+    var selectMode = !!state.trendSelectMode;
     var cards = pageItems.map(function (c) {
       var i = D.trendsData.indexOf(c);
-      return '<div class="media-card" data-action="trend-detail" data-index="' + i + '">' +
+      var cardAction = selectMode ? 'select-trend-edit' : 'trend-detail';
+      var radioOverlay = selectMode
+        ? '<label class="trend-select-radio" data-action="select-trend-edit" data-index="' + i + '"><input type="radio" name="trendPick" /></label>'
+        : '';
+      return '<div class="media-card" style="position:relative" data-action="' + cardAction + '" data-index="' + i + '">' +
+        radioOverlay +
         '<div class="media-thumb" style="aspect-ratio:1/1;position:relative">' +
           '<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none">' +
             '<span class="play-btn" style="width:44px;height:44px">&#9658;</span>' +
@@ -1421,9 +1429,10 @@
           '<input placeholder="제목 검색" style="height:32px;min-width:180px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 10px" />' +
           '<button type="button" class="btn btn-primary" data-action="run-search">조회</button>' +
           '<div class="filter-spacer"></div>' +
-          '<button type="button" class="btn btn-secondary" data-action="run-search">수정</button>' +
+          '<button type="button" class="btn btn-secondary" data-action="toggle-trend-select-mode">수정</button>' +
           '<button type="button" class="btn btn-primary" data-action="open-modal" data-modal-id="trendRegister">+ 등록</button>' +
         '</div>' +
+        (selectMode ? '<div class="field-hint" style="margin:-8px 0 var(--sp-md)">수정할 항목의 라디오 버튼을 선택하세요.</div>' : '') +
         '<div class="card-grid card-grid-5">' + cards + '</div>' +
         renderPagination(D.trendsData.length, page, pageSize, 'techTrendPage') +
       '</div>'
@@ -1496,10 +1505,35 @@
     );
   }
 
+  // 근거: design_handoff_생기포털/source/부품 공정 자동화 현황.dc.html selectCard() — SCR-014 카드 선택모드에서
+  // 라디오 버튼(또는 카드) 클릭 시 해당 항목(title/owner/dept/tag/content)이 채워진 상태로 열리는 수정 팝업.
+  // MODALS 공용 레지스트리는 필드 기본값을 지원하지 않아 chartDetail/autoVideo와 동일하게 전용 렌더러로 분리합니다.
+  function renderTrendEditModal(state) {
+    var t = D.trendsData[state.trendEditIndex] || {};
+    return (
+      '<div class="modal-box" style="width:640px">' +
+        '<div class="modal-header"><div class="modal-title">기술동향 수정</div><div class="modal-close" data-action="close-modal">&#10005;</div></div>' +
+        '<div class="modal-body">' +
+          '<div class="modal-field"><label>제목<span class="required">*</span></label><div class="modal-field-control"><input type="text" value="' + esc(t.title) + '" /></div></div>' +
+          '<div class="modal-field"><label>담당자 이름<span class="required">*</span></label><div class="modal-field-control"><input type="text" value="' + esc(t.owner) + '" /></div></div>' +
+          '<div class="modal-field"><label>부서명<span class="required">*</span></label><div class="modal-field-control"><input type="text" value="' + esc(t.dept) + '" /></div></div>' +
+          '<div class="modal-field"><label>태그</label><div class="modal-field-control"><input type="text" value="' + esc(t.tag) + '" /></div></div>' +
+          '<div class="modal-field"><label>내용<span class="required">*</span></label><div class="modal-field-control"><textarea>' + esc(t.content || '') + '</textarea></div></div>' +
+          '<div class="modal-field"><label>첨부파일</label><div class="modal-field-control">' + fieldControl({ type: 'file' }) + '</div></div>' +
+        '</div>' +
+        '<div class="modal-footer">' +
+          '<button type="button" class="btn btn-secondary" style="height:36px" data-action="close-modal">취소</button>' +
+          '<button type="button" class="btn btn-primary" style="height:36px" data-action="confirm-modal" data-message="기술동향이 수정되었습니다.">수정</button>' +
+        '</div>' +
+      '</div>'
+    );
+  }
+
   function renderModal(state) {
     if (!state.activeModal) return '';
     if (state.activeModal === 'autoVideo') return renderAutoVideoModal(state);
     if (state.activeModal === 'chartDetail') return renderChartDetailModal(state);
+    if (state.activeModal === 'trendEdit') return renderTrendEditModal(state);
     var modal = MODALS[state.activeModal];
     if (!modal) return '';
     var fields = modal.fields.map(function (f) {

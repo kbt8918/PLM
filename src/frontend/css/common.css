@@ -315,6 +315,10 @@ table.data-table.sticky-head thead tr:nth-child(2) th { position: sticky; top: 3
 .media-meta { font-size: 12px; color: var(--color-text-faint); }
 .media-meta + .media-meta { margin-top: 6px; }
 
+/* 근거: SCR-014 카드 선택모드 — "수정" 클릭 시 카드 좌상단에 노출되는 선택 라디오 버튼 */
+.trend-select-radio { position: absolute; top: 8px; left: 8px; z-index: 2; width: 26px; height: 26px; border-radius: 50%; background: rgba(255,255,255,0.9); border: 1px solid var(--color-border); box-shadow: 0 1px 3px rgba(0,0,0,0.15); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.trend-select-radio input { width: 15px; height: 15px; accent-color: var(--color-primary); pointer-events: none; }
+
 /* ---------- Tech PR 유형별 썸네일 (SCR-009/MTRM-MAIN, design_handoff README 참고) ---------- */
 .media-thumb-file, .media-thumb-text, .media-thumb-multi { background: var(--color-bg); flex-direction: column; gap: 6px; }
 .media-thumb-filename { font-size: 11px; color: var(--color-text-faint); }
