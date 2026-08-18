@@ -291,6 +291,45 @@ def field_row(label, required, placeholder, kind="text"):
     return f'<div><div style="font-size:12px; color:#555; margin-bottom:6px;">{label}{star}</div>{box}</div>'
 
 
+def scroll_table_wrap(table_html, max_height=520, direction="vertical", sticky_header=True):
+    """스크롤 가능한 테이블 영역을 감싸는 wrapper(2026-08-15 도입, 가이드 1절 Step 4-1 참고).
+
+    실 구현(render.js)의 .scroll-panel/sticky-head 등으로 세로 스크롤이 있거나 컬럼이 많아
+    가로 스크롤이 생기는 표는 와이어프레임에도 "스크롤된다"는 사실이 드러나야 한다. 정적
+    캡처(PDF/PPT)에서는 실제 스크롤 동작을 재현할 수 없으므로, wrapper 안쪽에 작은 배지
+    텍스트로 스크롤 가능함을 표시한다.
+
+    table_html: 이미 완성된 <table>...</table> 또는 simple_table() 반환값(자체 wrapper 포함).
+    direction: "vertical"(세로, sticky 헤더) / "horizontal"(가로) / "both"(양방향).
+    max_height: 세로 스크롤 시 wrapper의 max-height(px). 실제 구현 값을 실측해서 넣을 것
+        (감으로 정하지 않는다 — 가이드 Step 4 원칙과 동일).
+    """
+    badges = []
+    if direction in ("vertical", "both"):
+        badges.append('<div style="position:absolute; top:6px; right:10px; font-size:10px; color:#999; background:rgba(255,255,255,0.9); padding:2px 6px; border:1px solid #ccc; z-index:5;">&#9660; 스크롤</div>')
+    if direction in ("horizontal", "both"):
+        badges.append('<div style="position:absolute; bottom:6px; right:10px; font-size:10px; color:#999; background:rgba(255,255,255,0.9); padding:2px 6px; border:1px solid #ccc; z-index:5;">&#9664; 좌우 스크롤 &#9654;</div>')
+    badge_html = "".join(badges)
+
+    overflow_css = {
+        "vertical": f"overflow-y:auto; overflow-x:hidden; max-height:{max_height}px;",
+        "horizontal": "overflow-x:auto; overflow-y:hidden;",
+        "both": f"overflow:auto; max-height:{max_height}px;",
+    }[direction]
+
+    sticky_css = ""
+    if sticky_header and direction in ("vertical", "both"):
+        sticky_css = "<style>.scroll-wrap-sticky thead th { position:sticky; top:0; z-index:3; }</style>"
+
+    return (
+        f'{sticky_css}'
+        f'<div style="position:relative; border:1px solid #ccc;">'
+        f'<div class="scroll-wrap-sticky" style="{overflow_css}">{table_html}</div>'
+        f'{badge_html}'
+        f'</div>'
+    )
+
+
 def modal_preview(title, fields):
     """fields: [(label, required_bool, placeholder), ...] — 화면 안에 직접 박아넣는 팝업 미리보기 박스(선택 사용)."""
     rows = []
