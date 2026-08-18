@@ -145,6 +145,7 @@
   <button class="tab-btn" onclick="showScreen('scr-001',this)" style="padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer; margin-right:2px;">SCR-001 부품 공정 자동화 현황</button>
   <button class="tab-btn" onclick="showScreen('scr-001-cont-1',this)" style="padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer; margin-right:2px;">SCR-001 (Description 계속)</button>
   <button class="tab-btn" onclick="showScreen('scr-001-cont-2',this)" style="padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer; margin-right:2px;">SCR-001 (Description 계속 2)</button>
+  <button class="tab-btn" onclick="showScreen('scr-001-cont-3',this)" style="padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer; margin-right:2px;">SCR-001 (Description 계속 3)</button>
   <button class="tab-btn" onclick="showScreen('scr-001-popup-7-1',this)" style="padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer; margin-right:2px;">SCR-001 (팝업) 공정 등록</button>
   <button class="tab-btn" onclick="showScreen('scr-001-popup-7-2',this)" style="padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer; margin-right:2px;">SCR-001 (팝업) 이메일 공유</button>
   <button class="tab-btn" onclick="showScreen('scr-001-popup-7-3',this)" style="padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer; margin-right:2px;">SCR-001 (팝업) 자동화 설비 동영상</button>
@@ -703,12 +704,6 @@
             <b>영역명: 상세 영역</b><br>ㄴ 공정 단위로 현재/개선 상태와 라인별 확대(전개/계획) 현황을 표시하는 상세 매트릭스 표이다. NO/공정/[BP]창원2C 라인(현재/개선/주요내용)/창원2A~2E/MSK~MWX 조립 등 총 11개 컬럼으로 구성된다.<br><br><b>요소: 공정별 상세 표</b><br><span class="cond-label">노출조건:</span> 필터 조회 시 공정 목록과 라인 컬럼이 함께 갱신.<br><span class="cond-label">출력조건:</span> 셀 값은 "&#9679;자동/수동" 표기, "가능(&#39;연도)", "협의필(ROI·회수불가 사유) N명", "미적용(사유)" 등 상태별 표기 규칙을 따른다.<br><span class="cond-label">인터랙션:</span> 표 영역 내 세로 스크롤 가능(최대 높이 520px 초과 시, 헤더 행 상단 고정 sticky). 컬럼 수가 많아(11열) 가로로도 넘칠 수 있으나, 표 자체가 아니라 화면 전체(사이드바 포함 레이아웃)가 함께 가로 스크롤되는 구조이며 고정(freeze) 열은 없음(NO/공정 열도 가로 스크롤 시 함께 밀림). "현재=자동" 배지 클릭 시 동영상 팝업 오픈(NO=7 참고).<br><span class="cond-label">관리자 화면 연동:</span> 신규 공정 등록 시 표준공정 마스터 관리 목록에 반영.<br><span class="cond-label">BE 연동:</span> GET /api/automation/parts/process-detail
           </td>
         </tr>
-        <tr>
-          <td class="num">5</td>
-          <td>
-            <b>영역명: CTA 영역</b><br>ㄴ 공정별 상세 표에 대한 데이터 등록·내보내기·공유 액션 버튼 3종으로 구성된 영역이다.<br><br><b>요소: 5-1 + 공정 등록 버튼</b><br><span class="cond-label">노출조건:</span> 공정별 상세 표 상단 우측에 항상 표시.<br><span class="cond-label">입력조건:</span> 클릭 시 공정 등록 팝업 오픈.<br><span class="cond-label">예외 Case:</span> 필수값 누락 &rarr; alert: "필수 항목을 입력해주세요."<br><span class="cond-label">BE 연동:</span> POST /api/automation/parts/process<br><br><b>요소: 5-2 엑셀 버튼</b><br><span class="cond-label">노출조건:</span> 공정별 상세 표 상단 우측에 항상 표시.<br><span class="cond-label">입력조건:</span> 클릭 시 현재 조회 결과를 xlsx로 다운로드.<br><span class="cond-label">예외 Case:</span> 다운로드 대상 데이터 없음 &rarr; alert: "다운로드할 데이터가 없습니다."<br><span class="cond-label">BE 연동:</span> GET /api/automation/parts/export
-          </td>
-        </tr>
       </tbody>
     </table>
     <div class="desc-continue">다음 화면에 계속 ▼</div>
@@ -954,10 +949,10 @@
     <table class="desc-table">
       <thead><tr><th class="num">NO</th><th>상세설명</th></tr></thead>
       <tbody>
-        <tr class="cont-row">
+        <tr>
           <td class="num">5</td>
           <td>
-            <b>요소: 5-3 이메일 공유 버튼</b><br><span class="cond-label">노출조건:</span> 공정별 상세 표 상단 우측에 항상 표시.<br><span class="cond-label">입력조건:</span> 클릭 시 이메일 공유 팝업 오픈(수신자 입력 후 전송).<br><span class="cond-label">예외 Case:</span> 수신자 미입력 &rarr; alert: "받는 사람을 입력해주세요."<br><span class="cond-label">BE 연동:</span> POST /api/automation/parts/share
+            <b>영역명: CTA 영역</b><br>ㄴ 공정별 상세 표에 대한 데이터 등록·내보내기·공유 액션 버튼 3종으로 구성된 영역이다.<br><br><b>요소: 5-1 + 공정 등록 버튼</b><br><span class="cond-label">노출조건:</span> 공정별 상세 표 상단 우측에 항상 표시.<br><span class="cond-label">입력조건:</span> 클릭 시 공정 등록 팝업 오픈.<br><span class="cond-label">예외 Case:</span> 필수값 누락 &rarr; alert: "필수 항목을 입력해주세요."<br><span class="cond-label">BE 연동:</span> POST /api/automation/parts/process<br><br><b>요소: 5-2 엑셀 버튼</b><br><span class="cond-label">노출조건:</span> 공정별 상세 표 상단 우측에 항상 표시.<br><span class="cond-label">입력조건:</span> 클릭 시 현재 조회 결과를 xlsx로 다운로드.<br><span class="cond-label">예외 Case:</span> 다운로드 대상 데이터 없음 &rarr; alert: "다운로드할 데이터가 없습니다."<br><span class="cond-label">BE 연동:</span> GET /api/automation/parts/export<br><br><b>요소: 5-3 이메일 공유 버튼</b><br><span class="cond-label">노출조건:</span> 공정별 상세 표 상단 우측에 항상 표시.<br><span class="cond-label">입력조건:</span> 클릭 시 이메일 공유 팝업 오픈(수신자 입력 후 전송).<br><span class="cond-label">예외 Case:</span> 수신자 미입력 &rarr; alert: "받는 사람을 입력해주세요."<br><span class="cond-label">BE 연동:</span> POST /api/automation/parts/share
           </td>
         </tr>
         <tr>
@@ -966,7 +961,255 @@
             <b>영역명: 유틸 영역</b><br>ㄴ 상단 우측 유틸리티 메뉴 3종(가이드/사용자명/로그아웃)으로 구성된 영역이다.<br><br><b>요소: 6-1 업무프로세스 가이드</b><br><span class="cond-label">노출조건:</span> 로그인 상태에서 항상 표시.<br><span class="cond-label">입력조건:</span> 클릭 시 업무프로세스 가이드 문서/팝업 오픈.<br><br><b>요소: 6-2 사용자명 (홍길동 님)</b><br><span class="cond-label">노출조건:</span> 로그인 상태에서 항상 표시.<br><span class="cond-label">출력조건:</span> SSO(MPASS) 로그인 사용자명으로 치환되어 표시.<br><br><b>요소: 6-3 로그아웃</b><br><span class="cond-label">노출조건:</span> 로그인 상태에서 항상 표시.<br><span class="cond-label">입력조건:</span> 클릭 시 세션 종료 후 PNDES 로그인 화면으로 이동.
           </td>
         </tr>
-        <tr>
+      </tbody>
+    </table>
+    <div class="desc-continue">다음 화면에 계속 ▼</div>
+  </div>
+</div>
+
+
+<!-- ==================== SCR-001 (팝업) 7-1 공정 등록 ==================== -->
+<!-- ==================== SCR-001 부품 공정 자동화 현황 (Description 계속 3) ====================
+     Description이 세 번째 이어붙임 페이지까지 넘칠 때, 상단 타이틀·좌측 화면·인디케이터를
+     동일하게 반복하고 우측 Description만 이어서 표시한다. -->
+<div id="scr-001-cont-3" class="screen-section">
+  <div class="meta-box" style="margin:8px 24px 0 24px;">
+    <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+      <span class="screen-id-badge">SCR-001</span>
+      <div><span class="meta-label">Screen</span><div class="meta-value" style="font-weight:600; font-size:15px;">부품 공정 자동화 현황</div></div>
+      <div style="margin-left:24px;"><span class="meta-label">URL</span><div class="meta-value">/portal/automation/parts</div></div>
+      <div style="margin-left:24px;"><span class="meta-label">Status</span><div class="meta-value">와이어프레임 (샘플, 보정 예정)</div></div>
+    </div>
+  </div>
+
+  <div class="wireframe-wrap ind-container" style="margin:8px 0 8px 0; border-radius:0; overflow:visible; border:1px solid #ccc; min-height:800px; min-width:0; background:#f2f2f2; font-family:Helvetica,Arial,sans-serif; color:#333;">
+
+    <!-- TOP BAR (이전 페이지와 동일 반복) -->
+    <div style="display:flex; align-items:center; justify-content:space-between; height:52px; padding:0 44px 0 20px; background:#fff; border-bottom:2px solid #333;">
+      <div style="display:flex; align-items:center; gap:16px;">
+        <div style="font-size:15px; font-weight:700; color:#333; white-space:nowrap;">PNDES</div>
+        <div style="display:flex; align-items:center; gap:8px; font-size:12px; color:#888; white-space:nowrap;">
+          <span>생기포털</span><span>&gt;</span><span>공정 자동화 현황</span><span>&gt;</span><span style="color:#333; font-weight:600;">부품 공정 자동화 현황</span>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px; font-size:12px; color:#666; white-space:nowrap;">
+        <span style="position:relative; display:inline-block;">홍길동 님<div class="indicator-el" style="bottom:-13px; right:-6px;"><span>6-2</span></div></span><span>|</span><span style="position:relative; display:inline-block;">로그아웃<div class="indicator-el" style="bottom:-13px; right:-6px;"><span>6-3</span></div></span>
+      </div>
+    </div>
+
+    <div style="display:flex;">
+      <!-- LEFT SIDEBAR (이전 페이지와 동일 반복) -->
+      <div style="width:190px; background:#fff; border-right:1px solid #ccc; padding:12px 0; flex-shrink:0;">
+        <div style="padding:8px 14px 6px; font-size:11px; color:#999; white-space:nowrap;">공정 자동화 현황</div>
+        <div style="padding:8px 14px; background:#333; color:#fff; font-weight:700; font-size:12px; white-space:nowrap;">부품 공정 자동화 현황</div>
+        <div style="padding:8px 14px; font-size:12px; color:#444; display:flex; justify-content:space-between; align-items:center;"><span style="white-space:nowrap;">표준공정 마스터 관리</span><span style="width:12px; height:12px; border:1px solid #999; text-align:center; font-size:8px; color:#999; line-height:11px; flex-shrink:0;">&rsaquo;</span></div>
+        <div style="padding:8px 14px; font-size:12px; color:#444; white-space:nowrap;">모듈 공정 자동화 현황</div>
+        <div style="padding:8px 14px; font-size:12px; color:#444; display:flex; justify-content:space-between; align-items:center;"><span style="white-space:nowrap;">모듈 표준 작업명 관리</span><span style="width:12px; height:12px; border:1px solid #999; text-align:center; font-size:8px; color:#999; line-height:11px; flex-shrink:0;">&rsaquo;</span></div>
+        <div style="padding:8px 14px; font-size:12px; color:#444; display:flex; justify-content:space-between; align-items:center;"><span style="white-space:nowrap;">I/F 실행결과 관리</span><span style="width:12px; height:12px; border:1px solid #999; text-align:center; font-size:8px; color:#999; line-height:11px; flex-shrink:0;">&rsaquo;</span></div>
+        <div style="padding:12px 14px 6px; font-size:11px; color:#999; white-space:nowrap;">중장기 방향성 공유</div>
+        <div style="padding:8px 14px; font-size:12px; color:#444; white-space:nowrap;">메인 대시보드</div>
+        <div style="padding:8px 14px; font-size:12px; color:#444; display:flex; justify-content:space-between; align-items:center;"><span style="white-space:nowrap;">통합 로드맵</span><span style="width:12px; height:12px; border:1px solid #999; text-align:center; font-size:8px; color:#999; line-height:11px; flex-shrink:0; transform:rotate(90deg);">&rsaquo;</span></div>
+        <div style="padding:6px 14px 6px 28px; font-size:11px; color:#777; white-space:nowrap;">상세과제 로드맵 관리</div>
+        <div style="padding:6px 14px 6px 28px; font-size:11px; color:#777; white-space:nowrap;">통합 로드맵 차트</div>
+        <div style="padding:8px 14px; font-size:12px; color:#444; display:flex; justify-content:space-between; align-items:center;"><span style="white-space:nowrap;">생산기술 Tech PR</span><span style="width:12px; height:12px; border:1px solid #999; text-align:center; font-size:8px; color:#999; line-height:11px; flex-shrink:0;">&rsaquo;</span></div>
+        <div style="padding:8px 14px; font-size:12px; color:#444; display:flex; justify-content:space-between; align-items:center;"><span style="white-space:nowrap;">생산기술 Tech PR 관리자</span><span style="width:12px; height:12px; border:1px solid #999; text-align:center; font-size:8px; color:#999; line-height:11px; flex-shrink:0;">&rsaquo;</span></div>
+        <div style="padding:8px 14px; font-size:12px; color:#444; display:flex; justify-content:space-between; align-items:center;"><span style="white-space:nowrap;">mTRM 협의체</span><span style="width:12px; height:12px; border:1px solid #999; text-align:center; font-size:8px; color:#999; line-height:11px; flex-shrink:0;">&rsaquo;</span></div>
+        <div style="padding:8px 14px; font-size:12px; color:#444; display:flex; justify-content:space-between; align-items:center;"><span style="white-space:nowrap;">mTRM 관리</span><span style="width:12px; height:12px; border:1px solid #999; text-align:center; font-size:8px; color:#999; line-height:11px; flex-shrink:0;">&rsaquo;</span></div>
+        <div style="padding:8px 14px; font-size:12px; color:#444; white-space:nowrap;">기술과제 관리</div>
+        <div style="padding:8px 14px; font-size:12px; color:#444; white-space:nowrap;">기술동향</div>
+      </div>
+
+      <!-- MAIN CONTENT (이전 페이지와 동일 반복) -->
+      <div style="flex:1; min-width:0; padding:16px;">
+
+        <!-- tabs: 부품공정 / 모듈공정 -->
+        <div style="display:flex; gap:8px; margin-bottom:18px;">
+          <div style="padding:9px 20px; font-size:13px; font-weight:700; background:#333; color:#fff; border-radius:5px; white-space:nowrap;">부품 공정</div>
+          <div style="padding:9px 20px; font-size:13px; color:#777; white-space:nowrap;">모듈 공정</div>
+        </div>
+
+        <!-- filter bar -->
+        <div style="display:flex; align-items:flex-end; gap:10px; margin-bottom:20px; flex-wrap:wrap;">
+          <div><div style="font-size:11px; color:#888; margin-bottom:6px; white-space:nowrap;">제품군</div><div style="width:92px; height:32px; border:1px solid #999; background:#fff; display:flex; align-items:center; justify-content:space-between; padding:0 8px; font-size:12px; color:#555; white-space:nowrap;"><span>전체</span><span>&#9662;</span></div></div>
+          <div><div style="font-size:11px; color:#888; margin-bottom:6px; white-space:nowrap;">제품</div><div style="width:92px; height:32px; border:1px solid #999; background:#fff; display:flex; align-items:center; justify-content:space-between; padding:0 8px; font-size:12px; color:#555; white-space:nowrap;"><span>전체</span><span>&#9662;</span></div></div>
+          <div><div style="font-size:11px; color:#888; margin-bottom:6px; white-space:nowrap;">지역</div><div style="width:92px; height:32px; border:1px solid #999; background:#fff; display:flex; align-items:center; justify-content:space-between; padding:0 8px; font-size:12px; color:#555; white-space:nowrap;"><span>전체</span><span>&#9662;</span></div></div>
+          <div><div style="font-size:11px; color:#888; margin-bottom:6px; white-space:nowrap;">공정</div><div style="width:92px; height:32px; border:1px solid #999; background:#fff; display:flex; align-items:center; justify-content:space-between; padding:0 8px; font-size:12px; color:#555; white-space:nowrap;"><span>전체</span><span>&#9662;</span></div></div>
+          <div><div style="font-size:11px; color:#888; margin-bottom:6px; white-space:nowrap;">라인</div><div style="width:92px; height:32px; border:1px solid #999; background:#fff; display:flex; align-items:center; justify-content:space-between; padding:0 8px; font-size:12px; color:#555; white-space:nowrap;"><span>전체</span><span>&#9662;</span></div></div>
+          <div style="flex:1;"></div>
+          <div style="width:72px; height:32px; background:#333; color:#fff; display:flex; align-items:center; justify-content:center; font-size:12px; white-space:nowrap;">조회</div>
+        </div>
+
+        <!-- 요약 현황 -->
+        <div style="font-size:15px; font-weight:700; color:#333; margin-bottom:2px;">요약 현황 <span style="font-size:11px; color:#999; font-weight:400;">(공장/라인별 자동화율&middot;직접인원 현재&rarr;개선 및 중장기 완료일정)</span></div>
+        <div style="overflow-x:auto; margin-bottom:24px; border:1px solid #ccc;">
+          <table style="border-collapse:collapse; table-layout:fixed; width:100%;">
+            <colgroup>
+              <col style="width:8.6%"><col style="width:12.3%"><col style="width:11.3%"><col style="width:11.3%"><col style="width:11.3%"><col style="width:11.3%"><col style="width:11.3%"><col style="width:11.3%"><col style="width:11.3%">
+            </colgroup>
+            <thead>
+              <tr>
+                <th style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; background:#eee; padding:8px; font-size:12px; text-align:left; font-weight:600; color:#333;">구분</th>
+                <th style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; background:#dde4ec; padding:8px; font-size:12px; text-align:center; font-weight:700; color:#333;">[B/P] 창원2C 라인</th>
+                <th style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; background:#eee; padding:8px; font-size:12px; text-align:center; font-weight:600; color:#333;">창원 2A</th>
+                <th style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; background:#eee; padding:8px; font-size:12px; text-align:center; font-weight:600; color:#333;">창원 2B</th>
+                <th style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; background:#eee; padding:8px; font-size:12px; text-align:center; font-weight:600; color:#333;">창원 2D</th>
+                <th style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; background:#eee; padding:8px; font-size:12px; text-align:center; font-weight:600; color:#333;">창원 2E</th>
+                <th style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; background:#eee; padding:8px; font-size:12px; text-align:center; font-weight:600; color:#333;">MSK 조립1</th>
+                <th style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; background:#eee; padding:8px; font-size:12px; text-align:center; font-weight:600; color:#333;">MMX 조립1</th>
+                <th style="border-bottom:1px solid #ccc; background:#eee; padding:8px; font-size:12px; text-align:center; font-weight:600; color:#333;">MWX 조립1</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; background:#f8f8f8; padding:8px; font-size:12px; font-weight:600;">자동화율</td>
+                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; background:#eef2f7; padding:8px; font-size:12px; text-align:center; font-weight:700;">72% &rarr; 94% (22%&#9650;)</td>
+                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">71% &rarr; 94% (23%&#9650;)</td>
+                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">67% &rarr; 94% (27%&#9650;)</td>
+                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">63%</td>
+                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">63% &rarr; 94% (31%&#9650;)</td>
+                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">47% &rarr; 93% (46%&#9650;)</td>
+                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">40% &rarr; 93% (53%&#9650;)</td>
+                <td style="border-bottom:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">47% &rarr; 93% (46%&#9650;)</td>
+              </tr>
+              <tr>
+                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; background:#f8f8f8; padding:8px; font-size:12px; font-weight:600;">직접인원</td>
+                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; background:#eef2f7; padding:8px; font-size:12px; text-align:center; font-weight:700;">4명 &rarr; 1명 (3명&#9660;)</td>
+                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">4명 &rarr; 1명 (3명&#9660;)</td>
+                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">5명 &rarr; 1명 (4명&#9660;)</td>
+                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">4명</td>
+                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">4명 &rarr; 1명 (3명&#9660;)</td>
+                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">5명 &rarr; 1명 (4명&#9660;)</td>
+                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">6명 &rarr; 1명 (5명&#9660;)</td>
+                <td style="border-bottom:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">5명 &rarr; 1명 (4명&#9660;)</td>
+              </tr>
+              <tr>
+                <td style="border-right:1px solid #ccc; background:#f8f8f8; padding:8px; font-size:12px; font-weight:600;">완료일정</td>
+                <td style="border-right:1px solid #ccc; background:#eef2f7; padding:8px; font-size:12px; text-align:center; font-weight:700;">'27년</td>
+                <td style="border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">'27년</td>
+                <td style="border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">'30년</td>
+                <td style="border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">-</td>
+                <td style="border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">'30년</td>
+                <td style="border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">'30년</td>
+                <td style="border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">'30년</td>
+                <td style="padding:8px; font-size:12px; text-align:center;">'30년</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 공정별 상세 -->
+        <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:2px;">
+          <div style="font-size:15px; font-weight:700; color:#333;">공정별 상세 <span style="font-size:11px; color:#999; font-weight:400;">(현재/개선/주요내용 &middot; 공정/라인별 확대전개계획, 현재&rarr;자동 선택 시 동영상 팝업)</span></div>
+          <div style="display:flex; gap:8px;">
+            <div style="position:relative; width:88px; height:30px; background:#333; color:#fff; display:flex; align-items:center; justify-content:center; font-size:12px;">+ 공정 등록<div class="indicator-el" style="bottom:-9px; right:-6px;"><span>5-1</span></div></div>
+            <div style="position:relative; width:56px; height:30px; border:1px solid #999; display:flex; align-items:center; justify-content:center; font-size:12px;">엑셀<div class="indicator-el" style="bottom:-9px; right:-6px;"><span>5-2</span></div></div>
+            <div style="position:relative; width:88px; height:30px; border:1px solid #999; display:flex; align-items:center; justify-content:center; font-size:12px;">이메일 공유<div class="indicator-el" style="bottom:-9px; right:-6px;"><span>5-3</span></div></div>
+          </div>
+        </div>
+        <style>.scroll-wrap-detail thead th { position:sticky; top:0; z-index:3; }</style>
+        <div style="position:relative; border:1px solid #ccc;">
+        <div class="scroll-wrap-detail" style="overflow:auto; max-height:520px;">
+          <table style="border-collapse:collapse; table-layout:fixed; width:100%;">
+            <colgroup>
+              <col style="width:2.9%"><col style="width:11.5%"><col style="width:7.3%"><col style="width:16.7%"><col style="width:8.8%"><col style="width:8.8%"><col style="width:8.8%"><col style="width:8.8%"><col style="width:8.8%"><col style="width:8.8%"><col style="width:8.9%">
+            </colgroup>
+            <thead>
+              <tr>
+                <th rowspan="2" style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; background:#eee; padding:8px; font-size:12px;">NO</th>
+                <th rowspan="2" style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; background:#eee; padding:8px; font-size:12px;">공정</th>
+                <th colspan="2" style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; background:#dde4ec; padding:8px; font-size:12px; font-weight:700;">[B/P] 창원2C 라인</th>
+                <th rowspan="2" style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; background:#eee; padding:8px; font-size:12px;">창원 2A</th>
+                <th rowspan="2" style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; background:#eee; padding:8px; font-size:12px;">창원 2B</th>
+                <th rowspan="2" style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; background:#eee; padding:8px; font-size:12px;">창원 2D</th>
+                <th rowspan="2" style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; background:#eee; padding:8px; font-size:12px;">창원 2E</th>
+                <th rowspan="2" style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; background:#eee; padding:8px; font-size:12px;">MSK 조립1</th>
+                <th rowspan="2" style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; background:#eee; padding:8px; font-size:12px;">MMX 조립1</th>
+                <th rowspan="2" style="border-bottom:1px solid #ccc; background:#eee; padding:8px; font-size:12px;">MWX 조립1</th>
+              </tr>
+              <tr>
+                <th style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; background:#dde4ec; padding:6px; font-size:11px; color:#555;">개선</th>
+                <th style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; background:#dde4ec; padding:6px; font-size:11px; color:#555;">주요내용</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">1</td>
+                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; font-weight:600;">오버몰딩</td>
+                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px;">&#9679; 자동</td>
+                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; color:#555;">-</td>
+                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">&#9679; 자동</td>
+                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">&#9679; 자동</td>
+                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center; color:#888;">미해당</td>
+                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center; color:#888;">미해당</td>
+                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">&#9679; 자동</td>
+                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;"><span style="border:1px solid #999; padding:3px 8px; display:inline-block; word-break:keep-all;">협의필(ROI 13년)</span></td>
+                <td style="border-bottom:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">&#9679; 자동</td>
+              </tr>
+              <tr>
+                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">2</td>
+                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; font-weight:600;">파워헤드 버퍼적재</td>
+                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px;">가능('27)</td>
+                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; color:#555;">6축로봇 + 버퍼교체</td>
+                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">가능('27)</td>
+                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">가능('28)</td>
+                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center; color:#888;">미해당</td>
+                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center; color:#888;">미해당</td>
+                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">가능('27)</td>
+                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;"><span style="border:1px solid #999; padding:3px 8px; display:inline-block; word-break:keep-all;">협의필(회수 불가) 1명</span></td>
+                <td style="border-bottom:1px solid #ccc; padding:8px; font-size:12px; text-align:center;"><span style="border:1px solid #999; padding:3px 8px; display:inline-block; word-break:keep-all;">협의필(회수 불가)</span></td>
+              </tr>
+              <tr>
+                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">3</td>
+                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; font-weight:600;">인풋풀 조립</td>
+                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px;">가능('27)</td>
+                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; color:#555;">인풋풀 조립 인덱스, 콤프 로딩/조립 로봇 외</td>
+                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">가능('27)</td>
+                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">가능('28)</td>
+                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;"><span style="border:1px solid #999; padding:3px 8px; display:inline-block; word-break:keep-all;">미적용(협의중)</span></td>
+                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">가능('29)</td>
+                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;"><span style="border:1px solid #999; padding:3px 8px; display:inline-block; word-break:keep-all;">협의필(ROI 42년)</span></td>
+                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;"><span style="border:1px solid #999; padding:3px 8px; display:inline-block; word-break:keep-all;">협의필(회수불가) 1명</span></td>
+                <td style="border-bottom:1px solid #ccc; padding:8px; font-size:12px; text-align:center;"><span style="border:1px solid #999; padding:3px 8px; display:inline-block; word-break:keep-all;">협의필(회수불가) 1명</span></td>
+              </tr>
+              <tr>
+                <td style="border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">4</td>
+                <td style="border-right:1px solid #ccc; padding:8px; font-size:12px; font-weight:600;">컬럼 조립 (추정)</td>
+                <td style="border-right:1px solid #ccc; padding:8px; font-size:12px;">가능('27)</td>
+                <td style="border-right:1px solid #ccc; padding:8px; font-size:12px; color:#555;">-</td>
+                <td style="border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">가능('28)</td>
+                <td style="border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">가능('29)</td>
+                <td style="border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;"><span style="border:1px solid #999; padding:3px 8px; display:inline-block; word-break:keep-all;">미적용(협의중)</span></td>
+                <td style="border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">가능('30)</td>
+                <td style="border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;"><span style="border:1px solid #999; padding:3px 8px; display:inline-block; word-break:keep-all;">협의필(ROI 45년)</span></td>
+                <td style="border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;"><span style="border:1px solid #999; padding:3px 8px; display:inline-block; word-break:keep-all;">협의필(회수불가) 1명</span></td>
+                <td style="padding:8px; font-size:12px; text-align:center;"><span style="border:1px solid #999; padding:3px 8px; display:inline-block; word-break:keep-all;">협의필(회수불가) 1명</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="position:absolute; top:6px; right:10px; font-size:10px; color:#999; background:rgba(255,255,255,0.9); padding:2px 6px; border:1px solid #ccc; z-index:5;">&#9660; 스크롤</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- indicators (이전 페이지와 동일 반복) -->
+    <div class="indicator" style="top:60px; left:190px;">1</div>
+    <div class="indicator" style="top:128px; left:202px;">2</div>
+    <div class="indicator" style="top:170px; left:202px;">3</div>
+    <div class="indicator" style="top:339px; left:202px;">4</div>
+    <div class="indicator" style="top:339px; right:17px; left:auto;">5</div>
+    <div class="indicator" style="top:2px; right:10px; left:auto;">6</div>
+      <div class="indicator-el" style="top:90px; left:283px;"><span>1-1</span></div>
+    <div class="indicator-el" style="top:90px; left:379px;"><span>1-2</span></div>
+  </div>
+
+  
+  <div class="desc-wrap" style="margin:0 24px 24px 24px;">
+    <h3 style="font-size:16px; font-weight:700; color:#212529; margin:0 0 12px 0;">Description (계속 3)</h3>
+    <table class="desc-table">
+      <thead><tr><th class="num">NO</th><th>상세설명</th></tr></thead>
+      <tbody>
+        <tr class="cont-row">
           <td class="num">7</td>
           <td>
             <b>영역명: 팝업 영역</b><br>ㄴ 이 화면에서 트리거되는 팝업/모달로 구성된 영역이다.<br><br><b>요소: 7-1 공정 등록 팝업</b><br><span class="cond-label">입력조건:</span> "+ 공정 등록" 클릭 시 오픈. 공정명*/BP지정/상태*/담당자*/첨부 입력(모듈 공정 자동화 현황(SCR-003)의 "+ 작업내용 등록"과 동일 모달 재사용).<br><br><b>요소: 7-2 이메일 공유 팝업</b><br><span class="cond-label">입력조건:</span> "이메일공유" 클릭 시 오픈. 수신자*/메모 입력.<br><br><b>요소: 7-3 자동화 설비 동영상 팝업</b><br><span class="cond-label">입력조건:</span> 공정별 상세 표에서 "현재=자동" 배지 클릭 시 오픈. 공정명 + 16:9 동영상 미리보기.
@@ -977,8 +1220,6 @@
   </div>
 </div>
 
-
-<!-- ==================== SCR-001 (팝업) 7-1 공정 등록 ==================== -->
 <div id="scr-001-popup-7-1" class="screen-section">
   <div class="meta-box" style="margin:8px 24px 0 24px;">
     <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
