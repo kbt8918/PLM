@@ -5960,6 +5960,13 @@ function sbpptxRenderElement(pptx, slide, el, baseX, baseY, scale, offsetX, offs
       const richRuns = sbpptxRichRuns(el, bold);
       const textPayload = (richRuns.length > 0) ? richRuns : text;
 
+      // PPT 텍스트박스는 line_spacing을 지정하지 않으면 PowerPoint 기본 줄간격(HTML의
+      // line-height:1.5보다 좁음)이 적용되어, 셀 배경 도형 높이(HTML 실측값 그대로)보다
+      // 텍스트 블록이 짧게 렌더링되고 그 차이만큼 셀 하단에 빈 공간이 남는다(2026-08-18
+      // 실측 확인: SCR-002 9p NO=1/NO=2 셀 텍스트 하단 여백). HTML의 line-height를 그대로
+      // pt로 환산해 명시적으로 전달해 PPT 줄간격을 HTML과 일치시킨다.
+      const lineSpacingPt = Math.max(4, lineHeightPx * scale * 72);
+
       try {
         slide.addText(textPayload, {
           x: tx, y: ty, w: tw, h: th,
@@ -5972,6 +5979,7 @@ function sbpptxRenderElement(pptx, slide, el, baseX, baseY, scale, offsetX, offs
           valign: valign,
           margin: 0,
           wrap: !isSingleLine,
+          lineSpacing: isSingleLine ? undefined : lineSpacingPt,
           shrinkText: true,
           autoFit: false,
           isTextBox: true,
