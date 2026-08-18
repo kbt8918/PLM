@@ -58,7 +58,10 @@
   .desc-table tr.cont-row td { border-top: 1px dashed #adb5bd; }
   .desc-continue { margin-top: 10px; padding: 8px 10px; text-align: center; font-size: 12px; font-weight: 600; color: #6c757d; border: 1px dashed #ced4da; border-radius: 6px; }
 
-  .screen-section:not(#cover-page) { display: grid; grid-template-columns: 1fr 380px; grid-template-rows: auto 1fr; }
+  /* 근거: 화면설계서_템플릿.md 1-5절 — 16:9(960x540pt) 슬라이드 기준 헤더 0~8%/캔버스 0~76%/
+     설명 76~100% 고정 비율. 화면마다 재배치하지 않고 모든 SCR-XXX에 동일 적용한다(퍼센트 그대로
+     유지 — PDF~1240px/PPT 1680px 등 렌더 폭이 달라져도 비율 자체는 고정되어야 템플릿 준수). */
+  .screen-section:not(#cover-page) { display: grid; grid-template-columns: 76% 24%; grid-template-rows: auto 1fr; }
   .screen-section:not(#cover-page) .meta-box { grid-column: 1 / -1; }
   .screen-section:not(#cover-page) .wireframe-wrap { grid-column: 1; grid-row: 2; }
   .screen-section:not(#cover-page) .desc-wrap { grid-column: 2; grid-row: 2; position: static; margin: 0 !important; padding: 16px; border-left: 2px solid #dee2e6; background: #fff; align-self: start; }
@@ -73,7 +76,7 @@
     .no-print, .download-btns { display: none !important; }
     body { background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .screen-section { page-break-before: always; position: static !important; z-index: auto !important; scroll-margin-top: 0 !important; }
-    .screen-section:not(#cover-page) { display: grid !important; grid-template-columns: 1fr 380px !important; page-break-inside: avoid; }
+    .screen-section:not(#cover-page) { display: grid !important; grid-template-columns: 76% 24% !important; page-break-inside: avoid; }
     .desc-wrap { position: static !important; max-height: none !important; overflow: visible !important; }
     .wireframe-wrap { overflow: hidden !important; }
     .meta-box { margin: 0 24px !important; }
