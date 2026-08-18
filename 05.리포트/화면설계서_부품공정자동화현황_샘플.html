@@ -704,6 +704,12 @@
             <b>영역명: 상세 영역</b><br>ㄴ 공정 단위로 현재/개선 상태와 라인별 확대(전개/계획) 현황을 표시하는 상세 매트릭스 표이다. NO/공정/[BP]창원2C 라인(현재/개선/주요내용)/창원2A~2E/MSK~MWX 조립 등 총 11개 컬럼으로 구성된다.<br><br><b>요소: 공정별 상세 표</b><br><span class="cond-label">노출조건:</span> 필터 조회 시 공정 목록과 라인 컬럼이 함께 갱신.<br><span class="cond-label">출력조건:</span> 셀 값은 "&#9679;자동/수동" 표기, "가능(&#39;연도)", "협의필(ROI·회수불가 사유) N명", "미적용(사유)" 등 상태별 표기 규칙을 따른다.<br><span class="cond-label">인터랙션:</span> 표 영역 내 세로 스크롤 가능(최대 높이 520px 초과 시, 헤더 행 상단 고정 sticky). 컬럼 수가 많아(11열) 가로로도 넘칠 수 있으나, 표 자체가 아니라 화면 전체(사이드바 포함 레이아웃)가 함께 가로 스크롤되는 구조이며 고정(freeze) 열은 없음(NO/공정 열도 가로 스크롤 시 함께 밀림). "현재=자동" 배지 클릭 시 동영상 팝업 오픈(NO=7 참고).<br><span class="cond-label">관리자 화면 연동:</span> 신규 공정 등록 시 표준공정 마스터 관리 목록에 반영.<br><span class="cond-label">BE 연동:</span> GET /api/automation/parts/process-detail
           </td>
         </tr>
+        <tr>
+          <td class="num">5</td>
+          <td>
+            <b>영역명: CTA 영역</b><br>ㄴ 공정별 상세 표에 대한 데이터 등록·내보내기·공유 액션 버튼 3종으로 구성된 영역이다.<br><br><b>요소: 5-1 + 공정 등록 버튼</b><br><span class="cond-label">노출조건:</span> 공정별 상세 표 상단 우측에 항상 표시.<br><span class="cond-label">입력조건:</span> 클릭 시 공정 등록 팝업 오픈.<br><span class="cond-label">예외 Case:</span> 필수값 누락 &rarr; alert: "필수 항목을 입력해주세요."<br><span class="cond-label">BE 연동:</span> POST /api/automation/parts/process
+          </td>
+        </tr>
       </tbody>
     </table>
     <div class="desc-continue">다음 화면에 계속 ▼</div>
@@ -949,10 +955,10 @@
     <table class="desc-table">
       <thead><tr><th class="num">NO</th><th>상세설명</th></tr></thead>
       <tbody>
-        <tr>
+        <tr class="cont-row">
           <td class="num">5</td>
           <td>
-            <b>영역명: CTA 영역</b><br>ㄴ 공정별 상세 표에 대한 데이터 등록·내보내기·공유 액션 버튼 3종으로 구성된 영역이다.<br><br><b>요소: 5-1 + 공정 등록 버튼</b><br><span class="cond-label">노출조건:</span> 공정별 상세 표 상단 우측에 항상 표시.<br><span class="cond-label">입력조건:</span> 클릭 시 공정 등록 팝업 오픈.<br><span class="cond-label">예외 Case:</span> 필수값 누락 &rarr; alert: "필수 항목을 입력해주세요."<br><span class="cond-label">BE 연동:</span> POST /api/automation/parts/process<br><br><b>요소: 5-2 엑셀 버튼</b><br><span class="cond-label">노출조건:</span> 공정별 상세 표 상단 우측에 항상 표시.<br><span class="cond-label">입력조건:</span> 클릭 시 현재 조회 결과를 xlsx로 다운로드.<br><span class="cond-label">예외 Case:</span> 다운로드 대상 데이터 없음 &rarr; alert: "다운로드할 데이터가 없습니다."<br><span class="cond-label">BE 연동:</span> GET /api/automation/parts/export<br><br><b>요소: 5-3 이메일 공유 버튼</b><br><span class="cond-label">노출조건:</span> 공정별 상세 표 상단 우측에 항상 표시.<br><span class="cond-label">입력조건:</span> 클릭 시 이메일 공유 팝업 오픈(수신자 입력 후 전송).<br><span class="cond-label">예외 Case:</span> 수신자 미입력 &rarr; alert: "받는 사람을 입력해주세요."<br><span class="cond-label">BE 연동:</span> POST /api/automation/parts/share
+            <b>요소: 5-2 엑셀 버튼</b><br><span class="cond-label">노출조건:</span> 공정별 상세 표 상단 우측에 항상 표시.<br><span class="cond-label">입력조건:</span> 클릭 시 현재 조회 결과를 xlsx로 다운로드.<br><span class="cond-label">예외 Case:</span> 다운로드 대상 데이터 없음 &rarr; alert: "다운로드할 데이터가 없습니다."<br><span class="cond-label">BE 연동:</span> GET /api/automation/parts/export<br><br><b>요소: 5-3 이메일 공유 버튼</b><br><span class="cond-label">노출조건:</span> 공정별 상세 표 상단 우측에 항상 표시.<br><span class="cond-label">입력조건:</span> 클릭 시 이메일 공유 팝업 오픈(수신자 입력 후 전송).<br><span class="cond-label">예외 Case:</span> 수신자 미입력 &rarr; alert: "받는 사람을 입력해주세요."<br><span class="cond-label">BE 연동:</span> POST /api/automation/parts/share
           </td>
         </tr>
         <tr>
