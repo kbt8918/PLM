@@ -847,6 +847,46 @@ def check_no_number_ambiguity(page):
     """)
 
 
+def check_filter_bar_label_stack_style(html_path):
+    """R16(2026-08-19 도입): 관리자 화면(data-area="1" 필터 영역)에 "라벨 위/입력 아래" 세로형
+    필터 레이아웃이 남아있는지 검사한다.
+
+    사고 배경: 실제 구현(src/frontend/js/render.js)의 filter-bar는 라벨 없이 select/input을
+    한 줄로 나열하고 `<div class="filter-spacer">`로 조회 버튼을 우측 정렬하는 스타일로
+    통일되어 있다(SCR-001/003/006이 원조, 이후 SCR-002/007도 이 스타일로 맞춤). 그런데
+    화면설계서 와이어프레임은 화면별로 개별 제작되다 보니 일부(SCR-002, SCR-004가 실제
+    발견된 사례)가 각 필터 위에 `font-size:11px; color:#888` 라벨 div를 얹은 구버전
+    세로형 레이아웃으로 남아 있었다 — SCR-002는 2026-08-19 "조회 필터바 UI 정합화" 커밋으로,
+    SCR-004는 이 R16을 추가한 시점에 함께 고쳐졌다. 이 함수는 그 회귀가 다른 관리자 화면
+    (SCR-005 등)이나 향후 재작업에서 재발하는지 기계적으로 감시한다.
+
+    판별 대상: `<div id="scr-XXX" ...>` 본문(및 -cont-N, -popup-* 등 동일 그룹 섹션)의
+    `data-area="1"` 블록 안에서, `font-size:11px; color:#888` 스타일의 라벨 div 바로 뒤에
+    입력/셀렉트 박스가 오는 세로형 패턴이 2회 이상 반복되면 구버전 스타일 잔존으로 본다
+    (1회는 우연한 스타일 일치일 수 있어 오탐을 줄이려 임계값을 2로 둔다).
+
+    이 검사는 "필터바는 전부 라벨 없는 한 줄 스타일이어야 한다"는 현재 정책을 코드화한
+    것이므로, 만약 특정 화면이 의도적으로 라벨형 필터를 쓰기로 결정되면(요구사항 변경 등)
+    이 함수의 판별 조건이나 예외 목록을 그 결정에 맞게 조정할 것 — 무조건 통과시키지 말고
+    조정 근거를 이 docstring에 남길 것."""
+    html_path = pathlib.Path(html_path)
+    content = html_path.read_text(encoding="utf-8")
+    label_stack_pattern = _re.compile(
+        r'font-size:11px;\s*color:#888[^"]*">[^<]{1,20}</div>\s*<div style="width:\d+px; height:32px; border:1px solid #999'
+    )
+    bad = []
+    for m in _re.finditer(r'<div id="([a-zA-Z0-9_-]+)" class="screen-section[^"]*">(.*?)(?=<div id="[a-zA-Z0-9_-]+" class="screen-section|\Z)', content, _re.S):
+        sec_id, body = m.group(1), m.group(2)
+        area1_m = _re.search(r'<div data-area="1">(.*?)</div></div><div data-area="2">', body, _re.S)
+        if not area1_m:
+            continue
+        hits = label_stack_pattern.findall(area1_m.group(1))
+        if len(hits) >= 2:
+            line_no = content.count("\n", 0, m.start()) + 1
+            bad.append({"section_id": sec_id, "near_line": line_no, "label_count": len(hits)})
+    return {"ok": len(bad) == 0, "bad_sections": bad}
+
+
 def check_all_regressions(html_path, page):
     """R1~R8, R13(+ 정보성 R12)을 한 번에 실행하고 통합 결과를 반환한다. page는 이미
     html_path를 goto()해서 로드가 끝난 Playwright Page 객체여야 한다(check_dom_order 등과
@@ -867,9 +907,10 @@ def check_all_regressions(html_path, page):
     r14a = check_screen_only_page_hidden_in_print(page)
     r14b = check_screen_only_page_pptx_skip(html_path)
     r15 = check_no_number_ambiguity(page)
+    r16 = check_filter_bar_label_stack_style(html_path)
     ok = (r1["ok"] and (len(r2) == 0) and r3["ok"] and (len(r4) == 0) and r5["ok"]
           and (len(r6) == 0) and (len(r7) == 0) and r8["ok"] and (len(r13) == 0)
-          and r14a["ok"] and r14b["ok"])
+          and r14a["ok"] and r14b["ok"] and r16["ok"])
     return {
         "ok": ok,
         "R1_colgroup_widths": r1,
@@ -885,6 +926,7 @@ def check_all_regressions(html_path, page):
         "R14a_screen_only_page_hidden_in_print": r14a,
         "R14b_screen_only_page_pptx_skip": r14b,
         "R15_no_number_ambiguity": r15,
+        "R16_filter_bar_label_stack_style": r16,
     }
 
 
@@ -954,6 +996,11 @@ def print_regression_report(result):
     for key, items in r15.items():
         for item in items:
             lines.append(f"    - {key} NO={item['no']}: {item['section_ids']} (영역명 서로 다름: {item['area_names']}) — docstring 절차대로 안내문 쪽 NO를 '-'로, 대응 캔버스 배지도 함께 정리할 것")
+
+    r16 = result.get("R16_filter_bar_label_stack_style", {"ok": True, "bad_sections": []})
+    lines.append(f"  R16 필터바 구버전 라벨 세로형 잔존: bad={len(r16['bad_sections'])} ok={r16['ok']}")
+    for b in r16["bad_sections"]:
+        lines.append(f"    - {b['section_id']} (line~{b['near_line']}, 라벨 {b['label_count']}개)")
 
     lines.append(f"  => 전체 ok={result['ok']}")
     report = "\n".join(lines)
