@@ -23,8 +23,8 @@
         browser.close()
 
     pdf_path = render_pdf_via_print(TARGET_HTML, OUT_PDF)
-    check_pdf_page_count(OUT_PDF, expected_sections=result["count"])
-    check_pptx_integrity(OUT_PPTX)
+    check_pdf_page_count(OUT_PDF, expected_sections=result["pdf_expected_count"])
+    check_pptx_integrity(OUT_PPTX, expected_slides=result["pdf_expected_count"])
 """
 import pathlib
 import zipfile
@@ -34,12 +34,30 @@ import xml.dom.minidom as minidom
 def check_dom_order(page):
     """섹션 개수/순서/JS 에러를 확인한다. 이어붙임(-cont-N) 섹션이 각자의 원본 화면 바로 뒤에
     붙어 있는지 눈으로 한 번 더 확인할 것 — 이 함수는 순서 나열만 해줄 뿐 "올바른 순서인지"는
-    판단하지 않는다(과거 이어붙임 페이지가 문서 맨 끝에 잘못 삽입된 사고가 있었음)."""
+    판단하지 않는다(과거 이어붙임 페이지가 문서 맨 끝에 잘못 삽입된 사고가 있었음).
+
+    pdf_expected_count(2026-08-19 R14 대응 추가): `.screen-only-page`(예: scr-001-scroll —
+    HTML 전용, `@media print`에서 display:none)는 `.screen-section` 전체 개수(count)에는
+    포함되지만 PDF/PPTX에는 나타나지 않는다. `check_pdf_page_count`/`check_pptx_integrity`에
+    `expected_sections=dom["count"]`를 그대로 넘기면 R14 도입 이전 가정(모든 섹션이 PDF에도
+    그대로 나온다)이 깨져 있어 상시 1장 차이 오탐이 난다 — 실측: dom.count=51인데
+    `.screen-only-page`가 1개(scr-001-scroll) 있어 PDF 실제 페이지는 50. `.pdf-only-page`
+    (예: scr-001-table/table-2)는 반대로 HTML에서 숨겨질 뿐 `.screen-section`이자 PDF에도
+    나오므로 count에서 뺄 필요가 없다 — 헷갈리지 말 것. 이후 PDF/PPTX 검증 시
+    `expected_sections=dom["pdf_expected_count"]`를 사용한다."""
     errors = []
     page.on("pageerror", lambda e: errors.append(str(e)))
     ids = page.evaluate("Array.from(document.querySelectorAll('.screen-section')).map(s => s.id)")
     indicator_count = page.evaluate("document.querySelectorAll('.indicator').length")
-    return {"errors": errors, "count": len(ids), "ids": ids, "indicator_count": indicator_count}
+    screen_only_count = page.evaluate("document.querySelectorAll('.screen-section.screen-only-page').length")
+    return {
+        "errors": errors,
+        "count": len(ids),
+        "ids": ids,
+        "indicator_count": indicator_count,
+        "screen_only_count": screen_only_count,
+        "pdf_expected_count": len(ids) - screen_only_count,
+    }
 
 
 def render_pdf_via_print(html_path, out_pdf_path):

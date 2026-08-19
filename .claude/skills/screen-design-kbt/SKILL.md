@@ -128,8 +128,8 @@ with sync_playwright() as p:
     browser.close()
 
 pdf_path = verify.render_pdf_via_print(html_path, OUT_PDF)
-pdf = verify.check_pdf_page_count(pdf_path, expected_sections=dom["count"])   # PDF 페이지 수 == 섹션 수
-pptx = verify.check_pptx_integrity(OUT_PPTX, expected_slides=dom["count"])    # downloadPPTX() 실제 클릭해 받은 파일, XML 정상 + spAutoFit 0건
+pdf = verify.check_pdf_page_count(pdf_path, expected_sections=dom["pdf_expected_count"])   # .screen-only-page 제외한 PDF 기대 페이지 수(R14 참고)
+pptx = verify.check_pptx_integrity(OUT_PPTX, expected_slides=dom["pdf_expected_count"])    # downloadPPTX() 실제 클릭해 받은 파일, XML 정상 + spAutoFit 0건
 verify.print_report(dom, pdf, pptx)
 
 assert regressions["ok"], "R1~R8/R13~R15 회귀 체크 실패 — 완료 보고 전 반드시 원인 해결"
