@@ -224,7 +224,6 @@
   <button class="tab-btn" onclick="showScreen('scr-012-popup-delete',this)" style="padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer; margin-right:2px;">SCR-012 (팝업) 삭제 확인</button>
   <button class="tab-btn" onclick="showScreen('scr-013',this)" style="padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer; margin-right:2px;">SCR-013 기술과제 관리</button>
   <button class="tab-btn" onclick="showScreen('scr-014',this)" style="padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer; margin-right:2px;">SCR-014 기술동향</button>
-  <button class="tab-btn" onclick="showScreen('scr-014-cont-1',this)" style="padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer; margin-right:2px;">SCR-014 (Description 계속)</button>
   <button class="tab-btn" onclick="showScreen('scr-014-selectmode',this)" style="padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer; margin-right:2px;">SCR-014 (선택모드) 수정 대상 선택</button>
   <button class="tab-btn" onclick="showScreen('scr-014-popup-trendedit',this)" style="padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer; margin-right:2px;">SCR-014 (팝업) 기술동향 수정</button>
   <button class="tab-btn" onclick="showScreen('scr-014-detail',this)" style="padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer; margin-right:2px;">SCR-014 (상세뷰)</button>
@@ -6080,6 +6079,9 @@
 
   <div class="desc-wrap" style="margin:0 24px 24px 24px;">
 <h3 style="font-size:16px; font-weight:700; color:#212529; margin:0 0 12px 0;">Description</h3>
+    <!-- 2026-08-20: SCR-014는 Description NO=1~3이 이 첫 화면(scr-014) 한 페이지에 모두 들어간다(이어붙임 cont 페이지 없음, scr-014-cont-1은 NO=3/4 텍스트 중복이라 삭제됨).
+         이 화면 재작업 시 NO=3(페이지네이션)을 다른 페이지로 옮기거나 새 cont 페이지를 만들지 말 것 — 캔버스 data-area="3"(페이지네이션, .indicator 3번)과 짝을 이루는 설명이 이 표에 있어야 한다.
+         상세뷰(카드 클릭 시 전환)에 대한 설명은 scr-014-detail 페이지 자체 Description(NO=4)에서 자기완결적으로 다루므로 여기에는 요약 행을 만들지 않는다(Step 4-2 규칙, 중복 방지). -->
     <table class="desc-table">
       <thead><tr><th class="num">NO</th><th>상세설명</th></tr></thead>
       <tbody>
@@ -6095,9 +6097,14 @@
             <b>영역명: 기술동향 카드 그리드(목록뷰)</b><br>ㄴ 최신 기술동향 15건을 카드로 표시하는 목록 화면이다(페이지당 10건, 2페이지). 선택모드에서는 카드마다 라디오 버튼이 오버레이된다.<br><br><b>요소: 2-1 카드(일반 모드)</b><br><span class="cond-label">입력조건:</span> 선택모드가 아닐 때 카드 클릭 시 상세뷰로 전환(trend-detail).<br><span class="cond-label">BE 연동:</span> GET /api/mtrm/trend (list)<br><br><b>요소: 2-2 카드+라디오(선택모드)</b><br><span class="cond-label">노출조건:</span> "수정" 버튼으로 선택모드 진입 시에만 표시.<br><span class="cond-label">인터랙션:</span> 카드 또는 라디오 클릭 시 해당 기술동향 값이 프리필된 "기술동향 수정"(trendEdit) 팝업이 오픈되고 선택모드는 자동 해제됨.
           </td>
         </tr>
+        <tr>
+          <td class="num">3</td>
+          <td>
+            <b>영역명: 페이지네이션</b><br>ㄴ 카드 그리드 하단 페이지 이동 영역이다(2페이지, 페이지당 10건).<br><br><span class="cond-label">노출조건:</span> 목록뷰에서만 표시.<br><span class="cond-label">인터랙션:</span> 페이지 번호 클릭 시 해당 페이지 카드로 갱신.
+          </td>
+        </tr>
       </tbody>
     </table>
-    <div class="desc-continue">다음 화면에 계속 ▼</div>
   </div>
 </div>
 
@@ -6262,83 +6269,6 @@
 
 
 
-<!-- ==================== SCR-014 기술동향 (Description 계속) ==================== -->
-<div id="scr-014-cont-1" class="screen-section">
-  <div class="meta-box" style="margin:8px 24px 0 24px;">
-    <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
-      <span class="screen-id-badge">SCR-014</span>
-      <div><span class="meta-label">Screen</span><div class="meta-value" style="font-weight:600; font-size:15px;">기술동향</div></div>
-      <div style="margin-left:24px;"><span class="meta-label">URL</span><div class="meta-value">/portal/mtrm/trend</div></div>
-      <div style="margin-left:24px;"><span class="meta-label">Status</span><div class="meta-value">와이어프레임 (샘플, 보정 예정)</div></div>
-    </div>
-  </div>
-
-  <div class="wireframe-wrap ind-container" style="margin:8px 0 8px 0; border-radius:0; overflow:visible; border:1px solid #ccc; min-height:800px; min-width:0; background:#f2f2f2; font-family:Helvetica,Arial,sans-serif; color:#333;">
-<div style="display:flex; align-items:center; justify-content:space-between; height:52px; padding:0 44px 0 20px; background:#fff; border-bottom:2px solid #333;">
-      <div style="display:flex; align-items:center; gap:16px;">
-        <div style="font-size:15px; font-weight:700; color:#333; white-space:nowrap;">PNDES</div>
-        <div style="display:flex; align-items:center; gap:8px; font-size:12px; color:#888; white-space:nowrap;">
-          <span>생기포털</span><span>&gt;</span><span>중장기 방향성 공유</span><span>&gt;</span><span style="color:#333; font-weight:600;">기술동향</span>
-        </div>
-      </div>
-      <div style="display:flex; align-items:center; gap:10px; font-size:12px; color:#666; white-space:nowrap;">
-        <span>홍길동 님</span><span>|</span><span>로그아웃</span>
-      </div>
-    </div>
-    <div style="display:flex;">
-      <!-- LEFT SIDEBAR -->
-      <div style="width:190px; background:#fff; border-right:1px solid #ccc; padding:12px 0; flex-shrink:0;">
-        <div style="padding:8px 14px 6px; font-size:11px; color:#999; white-space:nowrap;">공정 자동화 현황</div>
-        <div style="padding:8px 14px; font-size:12px; color:#444; display:flex; justify-content:space-between; align-items:center;"><span style="white-space:nowrap;">부품 공정 자동화 현황</span><span style="display:flex; align-items:center;"></span></div>
-        <div style="padding:8px 14px; font-size:12px; color:#444; display:flex; justify-content:space-between; align-items:center;"><span style="white-space:nowrap;">표준공정 마스터 관리</span><span style="display:flex; align-items:center;"><span style="width:12px; height:12px; border:1px solid #999; text-align:center; font-size:8px; color:#999; line-height:11px; flex-shrink:0;">&rsaquo;</span></span></div>
-        <div style="padding:8px 14px; font-size:12px; color:#444; display:flex; justify-content:space-between; align-items:center;"><span style="white-space:nowrap;">모듈 공정 자동화 현황</span><span style="display:flex; align-items:center;"><span style="width:12px; height:12px; border:1px solid #999; text-align:center; font-size:8px; color:#999; line-height:11px; flex-shrink:0;">&rsaquo;</span></span></div>
-        <div style="padding:8px 14px; font-size:12px; color:#444; display:flex; justify-content:space-between; align-items:center;"><span style="white-space:nowrap;">모듈 표준 작업명 관리</span><span style="display:flex; align-items:center;"><span style="width:12px; height:12px; border:1px solid #999; text-align:center; font-size:8px; color:#999; line-height:11px; flex-shrink:0;">&rsaquo;</span></span></div>
-        <div style="padding:8px 14px; font-size:12px; color:#444; display:flex; justify-content:space-between; align-items:center;"><span style="white-space:nowrap;">I/F 실행결과 관리</span><span style="display:flex; align-items:center;"><span style="width:12px; height:12px; border:1px solid #999; text-align:center; font-size:8px; color:#999; line-height:11px; flex-shrink:0;">&rsaquo;</span></span></div>
-        <div style="padding:8px 14px 6px; font-size:11px; color:#999; white-space:nowrap;">중장기 방향성 공유</div>
-        <div style="padding:8px 14px; font-size:12px; color:#444; display:flex; justify-content:space-between; align-items:center;"><span style="white-space:nowrap;">메인 대시보드</span><span style="display:flex; align-items:center;"></span></div>
-        <div style="padding:8px 14px; font-size:12px; color:#444; display:flex; justify-content:space-between; align-items:center;"><span style="white-space:nowrap;">통합 로드맵</span><span style="display:flex; align-items:center;"><span style="width:12px; height:12px; border:1px solid #999; text-align:center; font-size:8px; color:#999; line-height:11px; flex-shrink:0;">&rsaquo;</span></span></div>
-        <div style="padding:6px 14px 6px 28px; font-size:11px; color:#777; white-space:nowrap;">상세과제 로드맵 관리</div>
-        <div style="padding:6px 14px 6px 28px; font-size:11px; color:#777; white-space:nowrap;">통합 로드맵 차트</div>
-        <div style="padding:8px 14px; font-size:12px; color:#444; display:flex; justify-content:space-between; align-items:center;"><span style="white-space:nowrap;">생산기술 Tech PR</span><span style="display:flex; align-items:center;"><span style="width:12px; height:12px; border:1px solid #999; text-align:center; font-size:8px; color:#999; line-height:11px; flex-shrink:0;">&rsaquo;</span></span></div>
-        <div style="padding:8px 14px; font-size:12px; color:#444; display:flex; justify-content:space-between; align-items:center;"><span style="white-space:nowrap;">생산기술 Tech PR 관리자</span><span style="display:flex; align-items:center;"><span style="width:12px; height:12px; border:1px solid #999; text-align:center; font-size:8px; color:#999; line-height:11px; flex-shrink:0;">&rsaquo;</span></span></div>
-        <div style="padding:8px 14px; font-size:12px; color:#444; display:flex; justify-content:space-between; align-items:center;"><span style="white-space:nowrap;">mTRM 협의체</span><span style="display:flex; align-items:center;"><span style="width:12px; height:12px; border:1px solid #999; text-align:center; font-size:8px; color:#999; line-height:11px; flex-shrink:0;">&rsaquo;</span></span></div>
-        <div style="padding:8px 14px; font-size:12px; color:#444; display:flex; justify-content:space-between; align-items:center;"><span style="white-space:nowrap;">mTRM 관리</span><span style="display:flex; align-items:center;"><span style="width:12px; height:12px; border:1px solid #999; text-align:center; font-size:8px; color:#999; line-height:11px; flex-shrink:0;">&rsaquo;</span></span></div>
-        <div style="padding:8px 14px; font-size:12px; color:#444; display:flex; justify-content:space-between; align-items:center;"><span style="white-space:nowrap;">기술과제 관리</span><span style="display:flex; align-items:center;"><span style="width:12px; height:12px; border:1px solid #999; text-align:center; font-size:8px; color:#999; line-height:11px; flex-shrink:0;">&rsaquo;</span></span></div>
-        <div style="padding:8px 14px; background:#333; color:#fff; font-weight:700; font-size:12px; white-space:nowrap; display:flex; align-items:center;"><span>기술동향</span></div>
-      </div>
-      <!-- MAIN CONTENT -->
-      <div style="flex:1; min-width:0; padding:16px;">
-<div data-area="1"><div style="display:flex; align-items:center; gap:10px; margin-bottom:20px;"><div style="width:90px; height:32px; border:1px solid #999; background:#fff; display:flex; align-items:center; justify-content:space-between; padding:0 8px; font-size:12px; color:#999;"><span>제목</span><span>&#9662;</span></div><div style="width:150px; height:32px; border:1px solid #999; background:#fff; display:flex; align-items:center; padding:0 8px; font-size:12px; color:#999;">제목 검색</div><div style="position:relative; width:64px; height:32px; background:#333; color:#fff; display:flex; align-items:center; justify-content:center; font-size:12px;">조회<div class="indicator-el" style="bottom:-9px; right:-6px;"><span>1-1</span></div></div><div style="flex:1;"></div><div style="position:relative; width:56px; height:32px; border:1px solid #999; display:flex; align-items:center; justify-content:center; font-size:12px; ">수정<div class="indicator-el" style="bottom:-9px; right:-6px;"><span>1-2</span></div></div><div style="position:relative; width:64px; height:32px; background:#333; color:#fff; display:flex; align-items:center; justify-content:center; font-size:12px;">+ 등록<div class="indicator-el" style="bottom:-9px; right:-6px;"><span>1-3</span></div></div></div></div><div data-area="2"><div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:16px;"><div style="border:1px solid #ccc; background:#fff;"><div style="aspect-ratio:1/1; position:relative;"><span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center;"><span style="width:30px; height:30px; border-radius:50%; background:#888; color:#fff; display:flex; align-items:center; justify-content:center; font-size:13px;">&#9654;</span></span></div><div style="padding:8px; font-size:12px; font-weight:600; color:#333;">글로벌 자동화 트렌드 A</div><div style="padding:0 8px; font-size:11px; color:#888;">조회 121</div><div style="padding:0 8px 8px; font-size:11px; color:#888;">2026-07-01 &middot; 기획팀 &middot; 박** &middot; #자동화</div></div><div style="border:1px solid #ccc; background:#fff;"><div style="aspect-ratio:1/1; position:relative;"><span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center;"><span style="width:30px; height:30px; border-radius:50%; background:#888; color:#fff; display:flex; align-items:center; justify-content:center; font-size:13px;">&#9654;</span></span></div><div style="padding:8px; font-size:12px; font-weight:600; color:#333;">신기술 소재 자료 B</div><div style="padding:0 8px; font-size:11px; color:#888;">조회 85</div><div style="padding:0 8px 8px; font-size:11px; color:#888;">2026-07-05 &middot; 기획팀 &middot; 이** &middot; #신소재</div></div><div style="border:1px solid #ccc; background:#fff;"><div style="aspect-ratio:1/1; position:relative;"><span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center;"><span style="width:30px; height:30px; border-radius:50%; background:#888; color:#fff; display:flex; align-items:center; justify-content:center; font-size:13px;">&#9654;</span></span></div><div style="padding:8px; font-size:12px; font-weight:600; color:#333;">기술개발 제안 C</div><div style="padding:0 8px; font-size:11px; color:#888;">조회 42</div><div style="padding:0 8px 8px; font-size:11px; color:#888;">2026-07-10 &middot; 기획팀 &middot; 최** &middot; #제안</div></div><div style="border:1px solid #ccc; background:#fff;"><div style="aspect-ratio:1/1; position:relative;"><span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center;"><span style="width:30px; height:30px; border-radius:50%; background:#888; color:#fff; display:flex; align-items:center; justify-content:center; font-size:13px;">&#9654;</span></span></div><div style="padding:8px; font-size:12px; font-weight:600; color:#333;">글로벌 자동화 트렌드 D</div><div style="padding:0 8px; font-size:11px; color:#888;">조회 200</div><div style="padding:0 8px 8px; font-size:11px; color:#888;">2026-07-14 &middot; 기획팀 &middot; 정** &middot; #자동화</div></div><div style="border:1px solid #ccc; background:#fff;"><div style="aspect-ratio:1/1; position:relative;"><span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center;"><span style="width:30px; height:30px; border-radius:50%; background:#888; color:#fff; display:flex; align-items:center; justify-content:center; font-size:13px;">&#9654;</span></span></div><div style="padding:8px; font-size:12px; font-weight:600; color:#333;">로봇 기술동향 E</div><div style="padding:0 8px; font-size:11px; color:#888;">조회 74</div><div style="padding:0 8px 8px; font-size:11px; color:#888;">2026-07-19 &middot; 기획팀 &middot; 한** &middot; #로봇</div></div><div style="border:1px solid #ccc; background:#fff;"><div style="aspect-ratio:1/1; position:relative;"><span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center;"><span style="width:30px; height:30px; border-radius:50%; background:#888; color:#fff; display:flex; align-items:center; justify-content:center; font-size:13px;">&#9654;</span></span></div><div style="padding:8px; font-size:12px; font-weight:600; color:#333;">설계 기술동향 F</div><div style="padding:0 8px; font-size:11px; color:#888;">조회 85</div><div style="padding:0 8px 8px; font-size:11px; color:#888;">2026-07-20 &middot; 기획팀 &middot; 조** &middot; #설계</div></div><div style="border:1px solid #ccc; background:#fff;"><div style="aspect-ratio:1/1; position:relative;"><span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center;"><span style="width:30px; height:30px; border-radius:50%; background:#888; color:#fff; display:flex; align-items:center; justify-content:center; font-size:13px;">&#9654;</span></span></div><div style="padding:8px; font-size:12px; font-weight:600; color:#333;">품질 기술동향 G</div><div style="padding:0 8px; font-size:11px; color:#888;">조회 96</div><div style="padding:0 8px 8px; font-size:11px; color:#888;">2026-07-21 &middot; 기획팀 &middot; 임** &middot; #품질</div></div><div style="border:1px solid #ccc; background:#fff;"><div style="aspect-ratio:1/1; position:relative;"><span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center;"><span style="width:30px; height:30px; border-radius:50%; background:#888; color:#fff; display:flex; align-items:center; justify-content:center; font-size:13px;">&#9654;</span></span></div><div style="padding:8px; font-size:12px; font-weight:600; color:#333;">안전 기술동향 H</div><div style="padding:0 8px; font-size:11px; color:#888;">조회 107</div><div style="padding:0 8px 8px; font-size:11px; color:#888;">2026-07-22 &middot; 기획팀 &middot; 홍** &middot; #안전</div></div><div style="border:1px solid #ccc; background:#fff;"><div style="aspect-ratio:1/1; position:relative;"><span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center;"><span style="width:30px; height:30px; border-radius:50%; background:#888; color:#fff; display:flex; align-items:center; justify-content:center; font-size:13px;">&#9654;</span></span></div><div style="padding:8px; font-size:12px; font-weight:600; color:#333;">원가 기술동향 I</div><div style="padding:0 8px; font-size:11px; color:#888;">조회 118</div><div style="padding:0 8px 8px; font-size:11px; color:#888;">2026-07-23 &middot; 기획팀 &middot; 김** &middot; #원가</div></div><div style="border:1px solid #ccc; background:#fff;"><div style="aspect-ratio:1/1; position:relative;"><span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center;"><span style="width:30px; height:30px; border-radius:50%; background:#888; color:#fff; display:flex; align-items:center; justify-content:center; font-size:13px;">&#9654;</span></span></div><div style="padding:8px; font-size:12px; font-weight:600; color:#333;">물류 기술동향 J</div><div style="padding:0 8px; font-size:11px; color:#888;">조회 129</div><div style="padding:0 8px 8px; font-size:11px; color:#888;">2026-07-24 &middot; 기획팀 &middot; 이** &middot; #물류</div></div></div></div><div data-area="3"><div style="display:flex; justify-content:center; gap:6px; margin-top:16px;"><div style="width:28px; height:28px; border:1px solid #ccc; display:flex; align-items:center; justify-content:center; font-size:12px; color:#999;">&lsaquo;</div><div style="width:28px; height:28px; background:#333; color:#fff; display:flex; align-items:center; justify-content:center; font-size:12px;">1</div><div style="width:28px; height:28px; border:1px solid #ccc; display:flex; align-items:center; justify-content:center; font-size:12px;">2</div><div style="width:28px; height:28px; border:1px solid #ccc; display:flex; align-items:center; justify-content:center; font-size:12px; color:#999;">&rsaquo;</div></div></div>
-      </div>
-    </div>
-
-    <div class="indicator" style="top:60px; left:185px;">1</div>
-    <div class="indicator" style="top:131px; left:185px;">2</div>
-    <div class="indicator" style="top:513px; left:185px;">3</div>
-  </div>
-
-  <div class="desc-wrap" style="margin:0 24px 24px 24px;">
-    <h3 style="font-size:16px; font-weight:700; color:#212529; margin:0 0 12px 0;">Description (계속)</h3>
-    <table class="desc-table">
-      <thead><tr><th class="num">NO</th><th>상세설명</th></tr></thead>
-      <tbody>
-        <tr>
-          <td class="num">3</td>
-          <td>
-            <b>영역명: 페이지네이션</b><br>ㄴ 카드 그리드 하단 페이지 이동 영역이다(2페이지, 페이지당 10건).<br><br><span class="cond-label">노출조건:</span> 목록뷰에서만 표시.<br><span class="cond-label">인터랙션:</span> 페이지 번호 클릭 시 해당 페이지 카드로 갱신.
-          </td>
-        </tr>
-        <tr>
-          <td class="num">4</td>
-          <td>
-            <b>영역명: 상세뷰(목록 → 상세 전환)</b><br>ㄴ 카드 클릭 시 전환되는 상세 화면 영역이다. 목록으로 돌아가기 및 이전/다음 탐색을 제공한다.<br><br><b>요소: 4-1 목록으로</b><br><span class="cond-label">인터랙션:</span> 클릭 시 목록뷰(2)로 복귀.<br><br><b>요소: 4-2 본문</b><br><span class="cond-label">출력조건:</span> 제목/조회수/등록일/부서/담당자/태그/이미지 자리표시/본문 내용을 표시.<br><span class="cond-label">BE 연동:</span> GET /api/mtrm/trend/{id}<br><br><b>요소: 4-3 이전/다음</b><br><span class="cond-label">노출조건:</span> 항상 표시.<br><span class="cond-label">입력조건:</span> 첫 항목에서 "이전", 마지막 항목에서 "다음" 비활성화.<br><span class="cond-label">인터랙션:</span> 클릭 시 인접 기술동향 상세로 이동.
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-</div>
-
 <!-- ==================== SCR-014 기술동향 (상세뷰) ==================== -->
 
 
@@ -6395,7 +6325,9 @@
   </div>
 
   <!-- SCR-014 상세뷰(scr-014-detail) NO=4: 실제 프론트(render.js renderTrendDetail, .trend-detail-head/.trend-detail-title-row/.trend-detail-body-preview) 기준 2026-08-20 재작성 완료.
-       이 화면/영역 재작업 시 새 NO를 추가하지 말고 아래 기존 NO=4 행(4-1/4-2/4-3)을 갱신할 것 — 중복 서술 금지. -->
+       이 화면/영역 재작업 시 새 NO를 추가하지 말고 아래 기존 NO=4 행(4-1/4-2/4-3)을 갱신할 것 — 중복 서술 금지.
+       2026-08-20 추가: 과거 scr-014-cont-1 페이지에 이 NO=4와 완전히 동일한 텍스트가 요약 행으로 중복 존재해 삭제함(scr-014-cont-1 섹션 자체를 삭제, tab-nav 버튼도 제거).
+       상위 목록 화면(scr-014) Description에는 이 상세뷰를 요약하는 NO 행을 다시 만들지 말 것 — 이 페이지가 자기완결적 상세이므로 상위 요약은 순수 중복이 된다(작성가이드 Step 4-2 "주의" 문단 참고). -->
   <div class="desc-wrap" style="margin:0 24px 24px 24px;">
 <h3 style="font-size:16px; font-weight:700; color:#212529; margin:0 0 12px 0;">Description</h3>
     <table class="desc-table">
