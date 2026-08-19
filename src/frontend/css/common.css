@@ -286,10 +286,14 @@ table.data-table.sticky-head thead tr:nth-child(2) th { position: sticky; top: 3
 .link-card-desc { font-size: 12px; color: var(--color-text-faint); }
 
 /* ---------- Gantt 간트차트 (design-style-guide.md 5.8) ---------- */
-.gantt-toolbar { display: flex; align-items: center; gap: var(--sp-md); margin-bottom: var(--sp-lg); flex-wrap: wrap; }
+.gantt-toolbar {
+  background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 8px;
+  box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);
+  padding: 12px var(--sp-md); display: flex; align-items: center; gap: var(--sp-md); margin-bottom: var(--sp-lg); flex-wrap: wrap;
+}
 .gantt-legend { display: flex; align-items: center; gap: 14px; font-size: 11px; color: var(--color-text-muted); }
 .gantt-legend-item { display: flex; align-items: center; gap: 5px; }
-.gantt-container { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); overflow: hidden; }
+.gantt-container { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 8px; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); overflow: hidden; }
 .gantt-label-col { width: 240px; flex-shrink: 0; padding: 8px 12px; font-size: 12px; color: var(--color-text-muted); font-weight: 600; }
 .gantt-quarters { flex: 1; display: flex; }
 .gantt-quarter-cell { flex: 1; text-align: center; padding: 8px 2px; font-size: 11px; color: var(--color-text-muted); border-left: 1px solid var(--color-border); }
