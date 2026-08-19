@@ -934,7 +934,7 @@
         '<div class="section-title" style="margin-bottom:2px">통합 로드맵</div>' +
         '<div class="screen-subtitle">분과별 중장기 자동화 로드맵 등록/조회 · 로드맵명 선택 시 상세 이동</div>' +
         renderRoadmapKpiCards(computeRoadmapKpis()) +
-        '<div style="display:flex;align-items:center;gap:var(--sp-sm);margin-bottom:var(--sp-lg);flex-wrap:wrap">' +
+        '<div class="filter-bar" style="align-items:center">' +
           '<select style="height:32px;min-width:110px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>전체 분과</option></select>' +
           '<input placeholder="로드맵명 검색" style="height:32px;min-width:140px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 10px" />' +
           '<select style="height:32px;min-width:100px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>전체 기간</option></select>' +
