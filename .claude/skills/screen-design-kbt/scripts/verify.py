@@ -999,6 +999,30 @@ def check_card_thumb_aspect_ratio(html_path, css_path=None):
     return {"ok": len(suspicious) == 0, "suspicious_cards": suspicious}
 
 
+def check_unclosed_tag_attr(html_path):
+    """R19(2026-08-20 도입): `data-area="N"` 등 속성값 뒤에 닫는 `>`가 빠진 채 바로 다음
+    태그가 이어 붙은 경우를 잡는다(`<div data-area="3"<div style="...">`처럼).
+
+    사고 배경: SCR-007 본문 및 그 "상세과제 등록" 팝업 페이지 두 곳에서 `<div data-area="3">`의
+    닫는 `>`가 누락된 채 `<div data-area="3"<div style="position:relative; ...">`로 이어져
+    있었다. 브라우저가 이를 파싱 복구하면서 `data-area="3"<div style="..."` 전체가 속성값
+    문자열로 흡수되고 실제 `<div>` 하나가 통째로 누락된 채 DOM 트리가 밀려, `.screen-section`
+    grid(76%/24%)의 `.wireframe-wrap`/`.desc-wrap` 자식 배치가 그 여파로 어긋나면서 Description
+    노출 영역이 깨져 보였다. HTML을 눈으로 훑어서는 속성값 안에 파묻힌 `<div`를 알아채기
+    어려우므로(줄이 매우 길다) 정규식 스캔으로 기계적으로 잡는다.
+
+    판별 대상: `data-area`/`class`/`id`/`style` 속성의 닫는 따옴표 바로 뒤에 `>` 없이 `<`가
+    오는 모든 위치. 정상형은 `data-area="3"><div style=...`처럼 속성값 뒤 `>`가 있어야 한다."""
+    html_path = pathlib.Path(html_path)
+    content = html_path.read_text(encoding="utf-8")
+    pattern = _re.compile(r'(data-area|class|id|style)="[^"]*"<[a-zA-Z]')
+    bad = []
+    for m in pattern.finditer(content):
+        line_no = content.count("\n", 0, m.start()) + 1
+        bad.append({"attr": m.group(1), "near_line": line_no, "snippet": content[max(0, m.start() - 30):m.start() + 30]})
+    return {"ok": len(bad) == 0, "bad_matches": bad}
+
+
 def check_all_regressions(html_path, page):
     """R1~R8, R13(+ 정보성 R12)을 한 번에 실행하고 통합 결과를 반환한다. page는 이미
     html_path를 goto()해서 로드가 끝난 Playwright Page 객체여야 한다(check_dom_order 등과
@@ -1022,9 +1046,10 @@ def check_all_regressions(html_path, page):
     r16 = check_filter_bar_label_stack_style(html_path)
     r17 = check_fixed_width_card_grid(html_path)
     r18 = check_card_thumb_aspect_ratio(html_path)
+    r19 = check_unclosed_tag_attr(html_path)
     ok = (r1["ok"] and (len(r2) == 0) and r3["ok"] and (len(r4) == 0) and r5["ok"]
           and (len(r6) == 0) and (len(r7) == 0) and r8["ok"] and (len(r13) == 0)
-          and r14a["ok"] and r14b["ok"] and r16["ok"])
+          and r14a["ok"] and r14b["ok"] and r16["ok"] and r19["ok"])
     return {
         "ok": ok,
         "R1_colgroup_widths": r1,
@@ -1043,6 +1068,7 @@ def check_all_regressions(html_path, page):
         "R16_filter_bar_label_stack_style": r16,
         "R17_fixed_width_card_grid": r17,
         "R18_card_thumb_aspect_ratio": r18,
+        "R19_unclosed_tag_attr": r19,
     }
 
 
@@ -1127,6 +1153,11 @@ def print_regression_report(result):
     lines.append(f"  R18(정보성, ok 판정 미포함) 카드 썸네일 고정높이 의심: suspicious={len(r18['suspicious_cards'])} — 실제 common.css의 aspect-ratio 정의와 대조해 사람이 판단할 것")
     for s in r18["suspicious_cards"]:
         lines.append(f"    - {s['section_id']} (line~{s['near_line']}): 카드 {s['card_count']}개, height:{s['height_px']}px 고정")
+
+    r19 = result.get("R19_unclosed_tag_attr", {"ok": True, "bad_matches": []})
+    lines.append(f"  R19 속성값 뒤 닫는 '>' 누락(다음 태그가 속성값에 흡수됨): bad={len(r19['bad_matches'])} ok={r19['ok']}")
+    for b in r19["bad_matches"]:
+        lines.append(f"    - {b['attr']} (line~{b['near_line']}): ...{b['snippet']}...")
 
     lines.append(f"  => 전체 ok={result['ok']}")
     report = "\n".join(lines)
