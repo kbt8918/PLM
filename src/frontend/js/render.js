@@ -987,6 +987,7 @@
           '<select style="height:32px;min-width:110px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>담당자: 전체</option></select>' +
           '<select style="height:32px;min-width:100px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>기간: 전체</option></select>' +
           '<select style="height:32px;min-width:130px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>진행상태: 전체</option></select>' +
+          '<div class="filter-spacer"></div>' +
           '<button type="button" class="btn btn-primary" data-action="run-search">조회</button>' +
         '</div>' +
         '<div class="panel" style="padding:0">' +
