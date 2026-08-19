@@ -964,6 +964,41 @@ def check_fixed_width_card_grid(html_path, min_repeat=2):
     return {"ok": len(suspicious) == 0, "suspicious_cards": suspicious}
 
 
+def check_card_thumb_aspect_ratio(html_path, css_path=None):
+    """R18(2026-08-19 도입, 정보성): 미디어 카드(썸네일+텍스트, 예: SCR-014 기술동향)의
+    썸네일이 실제 `common.css`의 `.media-thumb`/카드 썸네일 정의(`aspect-ratio:1/1` 등 컨테이너
+    폭에 비례하는 정사각형)를 쓰는데, 와이어프레임에서는 고정 `height:NNpx` 픽셀값으로 그려져
+    카드 전체 종횡비가 실제 화면과 달라지는 케이스를 잡는다.
+
+    사고 배경: SCR-014 "기술동향 - 수정 선택모드" 카드 그리드가 일반 목록뷰(scr-014)와 동일한
+    데이터(카드 10개, `grid-template-columns:repeat(5,1fr)`)를 쓰면서도, 썸네일만
+    `height:110px` 고정값으로 그려져 있었다(일반 목록뷰는 이미 `aspect-ratio:1/1`로 정확히
+    구현돼 있었음 — 같은 화면 안에서도 상태(선택모드)별로 구현 방식이 갈릴 수 있다는 뜻이므로,
+    화면 하나를 확인했다고 그 화면의 다른 상태 페이지까지 안전하다고 가정하지 않는다). R17이
+    잡는 "그리드 자체가 flex 고정폭으로 틀어진" 패턴과는 다른 하위 사고 유형 — 그리드 배치
+    방식(비율분할)은 맞았지만 카드 내부 썸네일 종횡비가 실제 CSS와 어긋난 경우다.
+
+    판별 대상: `display:grid`류 카드 컨테이너 안에서 `height:\\d+px`로 고정된 카드 썸네일 블록이
+    반복되면 의심 케이스로 본다. 이 검사도 R17처럼 정보성이다 — 실제 구현이 정말 고정 높이
+    썸네일(16:9 비디오 프리뷰 등)이라면 오탐이므로 `ok` 판정에는 포함하지 않고, 발견 시
+    `src/frontend/css/common.css`의 해당 카드/썸네일 클래스 정의(`aspect-ratio` vs 고정
+    `height`)를 직접 대조해 사람이 판단해야 한다."""
+    html_path = pathlib.Path(html_path)
+    content = html_path.read_text(encoding="utf-8")
+    grid_container_pattern = _re.compile(r'display:grid;\s*grid-template-columns:repeat\(\d+,\s*1fr\)')
+    fixed_height_thumb_pattern = _re.compile(r'<div style="height:(\d+)px; background:repeating-linear-gradient')
+    suspicious = []
+    for m in _re.finditer(r'<div id="([a-zA-Z0-9_-]+)" class="screen-section[^"]*">(.*?)(?=<div id="[a-zA-Z0-9_-]+" class="screen-section|\Z)', content, _re.S):
+        sec_id, body = m.group(1), m.group(2)
+        for grid_m in grid_container_pattern.finditer(body):
+            window = body[grid_m.end():grid_m.end() + 6000]
+            hits = fixed_height_thumb_pattern.findall(window)
+            if len(hits) >= 2:
+                line_no = content.count("\n", 0, m.start()) + 1
+                suspicious.append({"section_id": sec_id, "near_line": line_no, "card_count": len(hits), "height_px": hits[0]})
+    return {"ok": len(suspicious) == 0, "suspicious_cards": suspicious}
+
+
 def check_all_regressions(html_path, page):
     """R1~R8, R13(+ 정보성 R12)을 한 번에 실행하고 통합 결과를 반환한다. page는 이미
     html_path를 goto()해서 로드가 끝난 Playwright Page 객체여야 한다(check_dom_order 등과
@@ -986,6 +1021,7 @@ def check_all_regressions(html_path, page):
     r15 = check_no_number_ambiguity(page)
     r16 = check_filter_bar_label_stack_style(html_path)
     r17 = check_fixed_width_card_grid(html_path)
+    r18 = check_card_thumb_aspect_ratio(html_path)
     ok = (r1["ok"] and (len(r2) == 0) and r3["ok"] and (len(r4) == 0) and r5["ok"]
           and (len(r6) == 0) and (len(r7) == 0) and r8["ok"] and (len(r13) == 0)
           and r14a["ok"] and r14b["ok"] and r16["ok"])
@@ -1006,6 +1042,7 @@ def check_all_regressions(html_path, page):
         "R15_no_number_ambiguity": r15,
         "R16_filter_bar_label_stack_style": r16,
         "R17_fixed_width_card_grid": r17,
+        "R18_card_thumb_aspect_ratio": r18,
     }
 
 
@@ -1085,6 +1122,11 @@ def print_regression_report(result):
     lines.append(f"  R17(정보성, ok 판정 미포함) 카드 그리드 고정폭 의심: suspicious={len(r17['suspicious_cards'])} — 실제 common.css의 grid-template-columns 정의와 대조해 사람이 판단할 것")
     for s in r17["suspicious_cards"]:
         lines.append(f"    - {s['section_id']} (line~{s['near_line']}): 카드 {s['card_count']}개, width:{s['width_px']}px 고정")
+
+    r18 = result.get("R18_card_thumb_aspect_ratio", {"ok": True, "suspicious_cards": []})
+    lines.append(f"  R18(정보성, ok 판정 미포함) 카드 썸네일 고정높이 의심: suspicious={len(r18['suspicious_cards'])} — 실제 common.css의 aspect-ratio 정의와 대조해 사람이 판단할 것")
+    for s in r18["suspicious_cards"]:
+        lines.append(f"    - {s['section_id']} (line~{s['near_line']}): 카드 {s['card_count']}개, height:{s['height_px']}px 고정")
 
     lines.append(f"  => 전체 ok={result['ok']}")
     report = "\n".join(lines)
