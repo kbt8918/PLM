@@ -39,20 +39,34 @@ ADMIN_SCREENS = {sid for _, _, sid, is_admin in SIDEBAR_ITEMS if is_admin}
 
 
 def render_sidebar(active_label):
-    """active_label: 현재 활성화된 항목의 라벨 문자열(SIDEBAR_ITEMS의 label과 정확히 일치해야 함)."""
+    """active_label: 현재 활성화된 항목의 라벨 문자열(SIDEBAR_ITEMS의 label과 정확히 일치해야 함).
+
+    2026-08-20: 좌측 LNB의 "관리자 메뉴 아이콘"(A 배지)/"드롭다운 아이콘"(chevron) 노출 오류
+    수정 — 실제 구현(src/frontend/js/render.js의 renderGnbSide, 약 119~155행) 규칙과 대조해
+    맞춘다:
+      - 관리자 배지("A"): meta.admin(=is_admin)이 true인 항목에만 표시. scr-001을 제외한
+        구버전 와이어프레임은 이 배지를 아예 그리지 않았거나(SCR-002 이후 다수 화면),
+        회색 텍스트로만 그려 데스크 배지 형태와 달랐다(SCR-001).
+      - 드롭다운 chevron(▼): NAV_CHILDREN에 하위 메뉴를 가진 항목("통합 로드맵" 1건)에만
+        표시한다. 이전 코드는 "scr-001, mtrm-main이 아니면 무조건 chevron"이었는데, 이는
+        관리자 전용 화면(표준공정 마스터 관리 등 하위 메뉴가 없는 항목)에도 화살표를
+        붙이는 오류였다. 실제로는 삼각형 화살표(▼, gnb-chevron)이지 우측을 가리키는
+        `›`가 아니다.
+    """
     parts = []
     for kind, label, scr, is_admin in SIDEBAR_ITEMS:
         if kind == "label":
             parts.append(f'<div style="padding:8px 14px 6px; font-size:11px; color:#999; white-space:nowrap;">{label}</div>')
         elif kind == "item":
             is_active = (label == active_label)
-            # 2026-08-14: 사이드바 보라색 "A" 관리자 배지는 폐지됨 — is_admin은 더 이상 색상에
-            # 반영하지 않는다(ADMIN_SCREENS 판별 용도로만 남겨둠).
-            chevron = '<span style="width:12px; height:12px; border:1px solid #999; text-align:center; font-size:8px; color:#999; line-height:11px; flex-shrink:0;">&rsaquo;</span>' if scr not in ("scr-001", "mtrm-main") else ''
+            has_children = (scr == "scr-006")  # NAV_CHILDREN: scr-006 -> [scr-007, scr-008]
+            admin_badge = '<span style="font-size:10px; color:#9CA3AF; flex-shrink:0;">A</span>' if is_admin else ''
+            chevron = '<span style="font-size:10px; color:#9CA3AF; flex-shrink:0;">&#9662;</span>' if has_children else ''
+            right = f'<span style="display:flex; align-items:center; gap:4px;">{admin_badge}{chevron}</span>'
             if is_active:
-                parts.append(f'<div style="padding:8px 14px; background:#333; color:#fff; font-weight:700; font-size:12px; white-space:nowrap; display:flex; align-items:center;"><span>{label}</span></div>')
+                parts.append(f'<div style="padding:8px 14px; background:#333; color:#fff; font-weight:700; font-size:12px; white-space:nowrap; display:flex; justify-content:space-between; align-items:center;"><span>{label}</span>{right}</div>')
             else:
-                parts.append(f'<div style="padding:8px 14px; font-size:12px; color:#444; display:flex; justify-content:space-between; align-items:center;"><span style="white-space:nowrap;">{label}</span><span style="display:flex; align-items:center;">{chevron}</span></div>')
+                parts.append(f'<div style="padding:8px 14px; font-size:12px; color:#444; display:flex; justify-content:space-between; align-items:center;"><span style="white-space:nowrap;">{label}</span>{right}</div>')
         elif kind == "sub":
             is_active = (label == active_label)
             style = "color:#333; font-weight:700;" if is_active else "color:#777;"
