@@ -982,7 +982,7 @@
           '<div class="screen-subtitle" style="margin-bottom:0">통합 로드맵에 속한 세부 과제의 담당자·기간·진행상태 관리</div></div>' +
           '<button type="button" class="btn btn-primary" data-action="open-modal" data-modal-id="detailTaskRegister">+ 상세과제 등록</button>' +
         '</div>' +
-        '<div style="display:flex;align-items:center;gap:var(--sp-sm);margin-bottom:var(--sp-lg);flex-wrap:wrap">' +
+        '<div class="filter-bar" style="align-items:center">' +
           '<select style="height:32px;min-width:170px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>통합 로드맵: 전체</option>' + roadmapFilterOptions + '</select>' +
           '<select style="height:32px;min-width:110px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>담당자: 전체</option></select>' +
           '<select style="height:32px;min-width:100px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>기간: 전체</option></select>' +
