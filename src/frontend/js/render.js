@@ -745,19 +745,12 @@
     return (
       '<div data-screen-label="SCR-003 모듈 공정 자동화 현황">' +
         renderTabs('module') +
-        renderFilterBar(D.scr003Filters) +
+        renderFilterBar(D.scr003Filters, { placeholders: D.scr003FilterPlaceholders, hideLabels: true }) +
         '<div style="margin-bottom:var(--sp-md);display:inline-block;font-size:11px;color:var(--color-text-faint)">최종 동기화: ' + esc(D.scr003LastSync) + '</div>' +
         (D.scr003Warning ? '<div class="warning-banner"><span>&#9888;</span><span>정합성 검증 실패 항목이 있습니다. 관리자 확인이 필요합니다.</span></div>' : '') +
         '<div class="section-title">요약 현황 <span style="font-size:12px;color:var(--color-text-faint);font-weight:400">(공장/차종별 자동화율·인원 및 성인화 실적/계획)</span></div>' +
         '<div class="panel" style="padding:0;margin-bottom:var(--sp-xl)">' + renderScr003SummaryTable() + '</div>' +
-        '<div class="actions-row" style="margin-top:var(--sp-lg)">' +
-          '<div class="section-title" style="margin-bottom:0">작업내용별 상세 (NO 1~15) <span style="font-size:12px;color:var(--color-text-faint);font-weight:400">(Best Practice 기술현황/상세계획 · 차종별 확대전개계획, 자동 선택 시 상세 팝업)</span></div>' +
-          '<div class="actions-group">' +
-            '<button type="button" class="btn btn-primary" data-action="open-modal" data-modal-id="registerProcess">+ 작업내용 등록</button>' +
-            '<button type="button" class="btn btn-secondary" data-action="run-search">엑셀</button>' +
-            '<button type="button" class="btn btn-secondary" data-action="open-modal" data-modal-id="emailShare">이메일 공유</button>' +
-          '</div>' +
-        '</div>' +
+        '<div class="section-title" style="margin-top:var(--sp-lg)">작업내용별 상세 (NO 1~15) <span style="font-size:12px;color:var(--color-text-faint);font-weight:400">(Best Practice 기술현황/상세계획 · 차종별 확대전개계획, 자동 선택 시 상세 팝업)</span></div>' +
         '<div class="panel scroll-panel" style="max-height:520px;padding:0">' + renderScr003ProcessDetailTable() + '</div>' +
       '</div>'
     );

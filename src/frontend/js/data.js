@@ -227,6 +227,7 @@
   // 요약현황(7열: Best Practice/국내외종합(계)/조지아 대표차종/울산 차종명/차종명x3)과
   // 작업내용별 상세 매트릭스(5개 일반열: 조지아/울산/차종명x3)는 서로 다른 열 구성을 그대로 유지합니다.
   var scr003Filters = ['제품군', '제품', '권역', '공장', '엔진타입'];
+  var scr003FilterPlaceholders = ['제품군 전체', '제품 전체', '권역 전체', '공장 전체', '엔진타입 전체'];
 
   // 자동화율/조립인원 등 대시보드 파생값 계산에 사용하는 라인별 원본 정의(디자인 원본 lineDefs)
   var scr003LineDefs = [
@@ -743,7 +744,7 @@
     scr001Filters: scr001Filters, scr001FilterPlaceholders: scr001FilterPlaceholders,
     scr001SummaryCols: scr001SummaryCols, scr001SummaryRows: scr001SummaryRows,
     scr001ProcessDetail: scr001ProcessDetail,
-    scr003Filters: scr003Filters, scr003LineDefs: scr003LineDefs, scr003SummaryCols: scr003SummaryCols,
+    scr003Filters: scr003Filters, scr003FilterPlaceholders: scr003FilterPlaceholders, scr003LineDefs: scr003LineDefs, scr003SummaryCols: scr003SummaryCols,
     scr003SummaryRows: scr003SummaryRows, scr003DetailCols: scr003DetailCols,
     scr003ProcessDetail: scr003ProcessDetail, scr003Warning: scr003Warning, scr003LastSync: scr003LastSync,
     scr002Rows: scr002Rows,
