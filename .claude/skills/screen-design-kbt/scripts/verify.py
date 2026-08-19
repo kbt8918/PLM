@@ -908,6 +908,47 @@ def check_filter_bar_label_stack_style(html_path):
     return {"ok": len(bad) == 0, "bad_sections": bad}
 
 
+def check_fixed_width_card_grid(html_path, min_repeat=2):
+    """R17(2026-08-19 도입, 정보성): 카드형 요소가 실제 CSS에서는 컨테이너 폭에 비례해 꽉
+    채우는 grid(`display:grid; grid-template-columns:repeat(N,1fr)`)인데, 와이어프레임에서는
+    `flex-wrap:wrap` 컨테이너 안에 카드마다 동일한 고정 `width:NNpx`를 줘서 카드가 작게 좌측에
+    몰리고 우측에 큰 여백이 남는 구버전 패턴으로 그려졌는지 의심 케이스를 잡는다.
+
+    사고 배경: MTRM-MAIN "생산기술 Tech PR" 카드가 실제로는 `.card-grid-3`
+    (`grid-template-columns:repeat(3,1fr)`, `src/frontend/css/common.css`)로 패널 폭을 정확히
+    3등분해 꽉 채우는데, 와이어프레임은 `display:flex; gap:14px; flex-wrap:wrap`에 카드마다
+    `width:120px`(처음엔 160px) 고정값을 줘서 그려져 있었다. 종횡비(16:9→1:1)만 먼저 고치고
+    이 배치 방식 차이는 사용자가 두 차례 지적한 뒤에야 발견됐다 — "저충실도 손그림 스타일"은
+    색상·질감을 단순화하라는 것이지 레이아웃 배치 방식(고정폭 vs 비율분할)까지 바꿔도 된다는
+    뜻이 아니라는 원칙을 코드화했다(가이드 Step 9-(e) 참고).
+
+    판별 대상: 같은 `flex-wrap:wrap` 컨테이너 직계 자식으로 동일한 `width:NNpx` 고정값을 가진
+    카드형 div(뒤에 `border:1px solid #ccc`가 붙는 카드 껍데기)가 min_repeat(기본 2)회 이상
+    반복되면 의심 케이스로 본다. 이 검사는 "고정폭 카드가 항상 틀렸다"를 단정하지 않는다 —
+    실제 구현이 정말 고정폭 카드(예: 개수가 가변적이라 폭이 고정이어야 자연스러운 목록)라면
+    오탐이므로 `ok` 판정(전체 통과 여부)에는 포함하지 않고, 발견 시 반드시 해당 컴포넌트의
+    실제 `common.css` 클래스 정의를 확인해 grid 비율분할이 맞는지 사람이 판단해야 한다."""
+    html_path = pathlib.Path(html_path)
+    content = html_path.read_text(encoding="utf-8")
+    # flex-wrap 컨테이너 시작 지점 뒤 800자 이내(카드 3~5개 분량 여유)에서 동일 폭 카드가
+    # 반복되는지 본다 — 균형 괄호 파싱 없이 "컨테이너 시작 직후 구간에 동일 width가 N회
+    # 이상 나타나는가"만 보는 근사 검사이므로, 너무 먼 거리의 우연한 동일 폭은 잡지 않는다.
+    flex_wrap_pattern = _re.compile(r'<div style="display:flex; gap:\d+px; flex-wrap:wrap;">')
+    fixed_width_card_pattern = _re.compile(
+        r'<div style="width:(\d+)px; border:1px solid #ccc; background:#fff;">'
+    )
+    suspicious = []
+    for m in _re.finditer(r'<div id="([a-zA-Z0-9_-]+)" class="screen-section[^"]*">(.*?)(?=<div id="[a-zA-Z0-9_-]+" class="screen-section|\Z)', content, _re.S):
+        sec_id, body = m.group(1), m.group(2)
+        for flex_m in flex_wrap_pattern.finditer(body):
+            window = body[flex_m.end():flex_m.end() + 800]
+            hits = fixed_width_card_pattern.findall(window)
+            if len(hits) >= min_repeat and len(set(hits)) == 1:
+                line_no = content.count("\n", 0, m.start()) + 1
+                suspicious.append({"section_id": sec_id, "near_line": line_no, "card_count": len(hits), "width_px": hits[0]})
+    return {"ok": len(suspicious) == 0, "suspicious_cards": suspicious}
+
+
 def check_all_regressions(html_path, page):
     """R1~R8, R13(+ 정보성 R12)을 한 번에 실행하고 통합 결과를 반환한다. page는 이미
     html_path를 goto()해서 로드가 끝난 Playwright Page 객체여야 한다(check_dom_order 등과
@@ -929,6 +970,7 @@ def check_all_regressions(html_path, page):
     r14b = check_screen_only_page_pptx_skip(html_path)
     r15 = check_no_number_ambiguity(page)
     r16 = check_filter_bar_label_stack_style(html_path)
+    r17 = check_fixed_width_card_grid(html_path)
     ok = (r1["ok"] and (len(r2) == 0) and r3["ok"] and (len(r4) == 0) and r5["ok"]
           and (len(r6) == 0) and (len(r7) == 0) and r8["ok"] and (len(r13) == 0)
           and r14a["ok"] and r14b["ok"] and r16["ok"])
@@ -948,6 +990,7 @@ def check_all_regressions(html_path, page):
         "R14b_screen_only_page_pptx_skip": r14b,
         "R15_no_number_ambiguity": r15,
         "R16_filter_bar_label_stack_style": r16,
+        "R17_fixed_width_card_grid": r17,
     }
 
 
@@ -1022,6 +1065,11 @@ def print_regression_report(result):
     lines.append(f"  R16 필터바 구버전 라벨 세로형 잔존: bad={len(r16['bad_sections'])} ok={r16['ok']}")
     for b in r16["bad_sections"]:
         lines.append(f"    - {b['section_id']} (line~{b['near_line']}, 라벨 {b['label_count']}개)")
+
+    r17 = result.get("R17_fixed_width_card_grid", {"ok": True, "suspicious_cards": []})
+    lines.append(f"  R17(정보성, ok 판정 미포함) 카드 그리드 고정폭 의심: suspicious={len(r17['suspicious_cards'])} — 실제 common.css의 grid-template-columns 정의와 대조해 사람이 판단할 것")
+    for s in r17["suspicious_cards"]:
+        lines.append(f"    - {s['section_id']} (line~{s['near_line']}): 카드 {s['card_count']}개, width:{s['width_px']}px 고정")
 
     lines.append(f"  => 전체 ok={result['ok']}")
     report = "\n".join(lines)
