@@ -243,7 +243,7 @@ def popup_page(section_id, screen_id_badge, screen_name, trigger_text, backdrop_
   </div>
 
   <div class="wireframe-wrap ind-container" style="margin:8px 0 8px 0; border-radius:0; overflow:visible; border:1px solid #ccc; min-height:800px; min-width:0; background:#f2f2f2; font-family:Helvetica,Arial,sans-serif; color:#333;">
-    <div style="opacity:0.32; filter:grayscale(35%); pointer-events:none;">
+    <div class="popup-backdrop" style="opacity:0.32; filter:grayscale(35%); pointer-events:none;">
 {backdrop_html}
     </div>
     <div style="position:absolute; inset:0; background:rgba(20,20,20,0.45); display:flex; align-items:center; justify-content:center; z-index:10;">
@@ -350,3 +350,71 @@ def modal_preview(title, fields):
         '<div style="height:30px; padding:0 16px; background:#333; color:#fff; display:flex; align-items:center; justify-content:center; font-size:12px;">등록</div>'
         '</div></div></div>'
     )
+
+
+# ---------------------------------------------------------------------------
+# 매체별 조건부 렌더링 (2026-08-18 도입, SCR-001 요구사항 1/2에서 처음 사용)
+#
+# 이 문서는 HTML 화면/PDF(@media print)/PPTX(라이브 DOM, @media를 안 거침) 세 가지 렌더
+# 매체를 갖는다. "HTML 화면에서는 숨기고 PDF/PPT에서만 보인다"(또는 그 반대) 패턴이 필요할 때
+# 아래 두 CSS 클래스 컨벤션 + downloadPPTX()의 강제 노출 로직을 재사용한다. 새로 발명하지 말 것.
+#
+#   .scroll-badge-vertical  — 세로 스크롤 배지처럼 "HTML에서는 실제 스크롤이 되니 불필요,
+#                             정적 캡처에서만 필요"한 장식 요소에 붙인다.
+#   .pdf-only-page          — 정적 분할용으로 새로 만든 .screen-section 자체를 HTML 화면
+#                             스크롤 목록에서 숨길 때(그 화면의 PDF/PPT 전용 버전) 붙인다.
+#
+# 두 클래스 모두 이 문서의 <style> 안에 이미 다음 규칙이 있다(신규 클래스를 추가할 때마다
+# 아래와 같은 형태로 <style> 블록에 규칙을 더 추가하면 된다 — 이 함수들은 규칙 자체를
+# 만들어주지 않으므로 <style> 편집은 여전히 수동):
+#   @media screen { .클래스명 { display: none !important; } }
+#
+# **주의**: downloadPPTX()에서 이 클래스들을 강제로 다시 보이게 할 때 절대
+# `el.style.display = 'block'`을 쓰지 않는다 — 위 CSS 규칙이 `!important`이므로 일반
+# 인라인 style은 이긴다. 반드시 `el.style.setProperty('display', 'block', 'important')`를
+# 쓴다(2026-08-18 SCR-001 요구사항 1/2 작업 중 처음엔 이 실수로 PPTX에서 3페이지가
+# 통째로 빠지는 사고가 있었다 — showEls 강제 노출 로직 참고).
+# ---------------------------------------------------------------------------
+
+
+def paginate_table_rows(row_heights, page_budget, header_height=0):
+    """표 행(tr)들을 "정적 캡처(PDF/PPT) 1페이지에 들어갈 분량"씩 그리디하게 나눈다.
+    Description 텍스트 청크 분할(paginate.py의 pack_pages())과 같은 문제를, 표의 실제
+    렌더 행 높이 기준으로 푸는 버전이다 — 감으로 "대충 7행씩" 나누지 않고, 반드시
+    Playwright로 각 행의 getBoundingClientRect().height를 실측해서 이 함수에 넘긴다
+    (SCR-001 "공정별 상세" 표 6/7/4행 분할이 이 방식으로 결정됨, 근거는
+    화면설계서_와이어프레임_작성가이드.md 참고).
+
+    row_heights: 각 tbody 행의 실측 높이(px) 리스트, 순서 유지.
+    page_budget: 표 영역에 쓸 수 있는 페이지당 최대 높이(px). 헤더를 제외한 값이 아니라
+        헤더까지 포함한 표 전체 예산을 넘긴다 — header_height를 이 함수가 각 페이지에서
+        빼고 계산한다(모든 페이지가 헤더를 반복하므로).
+    header_height: thead 반복 높이(px, rowspan 포함 전체 헤더 행 높이 합).
+
+    반환: [[row_index, ...], ...] — 페이지별 원본 인덱스 리스트. 청크(행) 유실 없이
+    합집합이 원본 전체와 정확히 일치함을 assert로 보장한다(paginate.py의 원칙과 동일).
+    """
+    remaining_budget = page_budget - header_height
+    if remaining_budget <= 0:
+        raise ValueError("page_budget이 header_height보다 작거나 같습니다 — 헤더조차 한 페이지에 안 들어갑니다.")
+
+    pages = []
+    current = []
+    current_h = 0
+    for idx, h in enumerate(row_heights):
+        if current and current_h + h > remaining_budget:
+            pages.append(current)
+            current = []
+            current_h = 0
+        if not current and h > remaining_budget:
+            # 행 하나가 예산을 넘는 예외 케이스 — 그래도 유실 없이 자기 페이지를 차지하게 한다.
+            pages.append([idx])
+            continue
+        current.append(idx)
+        current_h += h
+    if current:
+        pages.append(current)
+
+    flat = [i for pg in pages for i in pg]
+    assert flat == list(range(len(row_heights))), "행 유실/순서 오류 — paginate.py 원칙(입력 청크 수 == 출력 청크 수) 위반"
+    return pages
