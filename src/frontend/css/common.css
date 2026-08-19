@@ -369,8 +369,8 @@ table.data-table.sticky-head thead tr:nth-child(2) th { position: sticky; top: 3
 .techpr-multi-item { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--color-table-row-border); }
 .techpr-multi-item:last-child { border-bottom: none; }
 
-/* ---------- Admin 전용 구분(design-style-guide.md 3.5) ---------- */
-.admin-screen { border-left: 3px solid var(--color-admin-bar); padding-left: 21px; }
+/* ---------- Admin 전용 구분: 상단 "관리자" 뱃지(.badge-admin-top)로만 표시. 좌측 컬러 바는 제거(design-style-guide.md 3.5 갱신) ---------- */
+.admin-screen {}
 
 /* ---------- 등록/수정 모달 (design-style-guide.md 5.2) ---------- */
 #modal-root { position: fixed; inset: 0; z-index: 100; display: none; }

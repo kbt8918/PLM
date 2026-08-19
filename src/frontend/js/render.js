@@ -745,7 +745,7 @@
     return (
       '<div data-screen-label="SCR-003 모듈 공정 자동화 현황">' +
         renderTabs('module') +
-        renderFilterBar(D.scr003Filters, { placeholders: D.scr003FilterPlaceholders, hideLabels: true }) +
+        renderFilterBar(D.scr003Filters, { placeholders: D.scr003FilterPlaceholders, hideLabels: true, noReset: true }) +
         '<div style="margin-bottom:var(--sp-md);display:inline-block;font-size:11px;color:var(--color-text-faint)">최종 동기화: ' + esc(D.scr003LastSync) + '</div>' +
         (D.scr003Warning ? '<div class="warning-banner"><span>&#9888;</span><span>정합성 검증 실패 항목이 있습니다. 관리자 확인이 필요합니다.</span></div>' : '') +
         '<div class="section-title">요약 현황 <span style="font-size:12px;color:var(--color-text-faint);font-weight:400">(공장/차종별 자동화율·인원 및 성인화 실적/계획)</span></div>' +
