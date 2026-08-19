@@ -764,6 +764,19 @@ def check_no_number_ambiguity(page):
     비교하는 것으로 기계적으로 판별 가능하다 — 영역명이 다르면 잘못된 중복(사람이 확인),
     같으면 정상 이어붙임(문제 없음)으로 분류한다.
 
+    **상태 변형 섹션(-selectmode/-detail)도 비교 대상에서 제외한다(2026-08-19 두 번째 오탐
+    수정)**: `scr-014-selectmode`(카드 그리드가 선택모드로 전환된 상태)의 NO=1/2가 `scr-014`
+    (기본 목록 상태)의 NO=1/2와 문자열도 다르고 실제로 서로 다른 영역을 가리켜 R15가 잡았지만,
+    사용자 확인 결과 selectmode는 "안내문/리다이렉트"가 아니라 원본과 구조가 다른 **화면 상태를
+    설명하는 별도의 정식 Description**이었다 — groupKey가 `-selectmode`/`-detail` 접미사를
+    잘라내 원본과 같은 그룹으로 묶어버리는 것 자체가 과잉 비교였다. 팝업과 동일한 논리(자기
+    완결적 설명은 독자적 NO 네임스페이스를 가질 수 있다)로, `-selectmode`/`-detail`로 끝나는
+    섹션은 `is_state_variant`로 판별해 그룹 내 NO 충돌 비교에서 제외한다. 만약 향후 다른
+    상태 변형 접미사(예: `-expanded`, `-edit`)가 같은 패턴의 오탐을 낸다면 이 정규식에 추가할 것
+    — 단, 그 전에 "정말 안내문인지 자기 완결적 정식 설명인지"를 실제 내용으로 먼저 확인해야
+    한다(모든 접미사가 이 예외에 해당하는 것은 아니다 — `scr-001-scroll`은 반대로 R15가 잡아야
+    하는 진짜 사고 케이스였다).
+
     **해결 절차(2026-08-19 사고에서 실제로 적용한 표준 처리, 이후 유사 사고에도 그대로
     적용할 것)**:
     1. 두 섹션 중 어느 쪽이 "진짜 상세설명"이고 어느 쪽이 "다른 페이지를 참고하라는 안내문/
@@ -800,6 +813,14 @@ def check_no_number_ambiguity(page):
                 // 다른 섹션과의 NO 충돌 비교에서는 제외한다. .popup-backdrop 유무로 판별
                 // (R6/R7이 이미 같은 마커로 팝업 섹션을 식별하는 것과 동일한 방식).
                 const isPopup = !!section.querySelector('.popup-backdrop');
+                // -selectmode/-detail 등은 팝업과 마찬가지로 "원본 화면의 특정 상태"를 그
+                // 상태만 떼어 자기 완결적으로 설명하는 독립 섹션일 수 있다(2026-08-19 발견:
+                // scr-014-selectmode NO=1 "선택모드 안내 배너"/NO=2 "카드+라디오 오버레이"가
+                // scr-014 NO=1 "검색 & 액션 버튼"/NO=2 "카드 그리드(목록뷰)"와 번호만 겹칠 뿐
+                // 서로 다른 정식 설명 — selectmode는 "안내문"이 아니라 원본과 구조적으로 다른
+                // 화면 상태의 정식 Description이므로, groupKey가 원본과 합쳐버리는 것 자체가
+                // 과잉 비교다). 팝업과 동일하게 그룹 내 NO 충돌 비교에서 제외한다.
+                const isStateVariant = /-(selectmode|detail)$/i.test(section.id);
                 const rows = Array.from(table.querySelectorAll('tbody > tr'));
                 rows.forEach(row => {
                     const numCell = row.querySelector('td.num');
@@ -820,16 +841,16 @@ def check_no_number_ambiguity(page):
 
                     if (!groups[key]) groups[key] = {};
                     if (!groups[key][no]) groups[key][no] = [];
-                    groups[key][no].push({ section_id: section.id, area_name: areaName, is_popup: isPopup, is_cont_row: isContRow });
+                    groups[key][no].push({ section_id: section.id, area_name: areaName, is_popup: isPopup, is_cont_row: isContRow, is_state_variant: isStateVariant });
                 });
             });
 
             const ambiguous = {};
             Object.keys(groups).forEach(key => {
                 Object.keys(groups[key]).forEach(no => {
-                    // 팝업 섹션과 cont-row(이어붙임 반복 행)는 비교 대상에서 제외 — 나머지
-                    // "정식 영역명 행"끼리만 충돌 여부를 판단한다.
-                    const entries = groups[key][no].filter(e => !e.is_popup && !e.is_cont_row);
+                    // 팝업 섹션, cont-row(이어붙임 반복 행), 상태 변형 섹션(selectmode/detail)은
+                    // 비교 대상에서 제외 — 나머지 "정식 영역명 행"끼리만 충돌 여부를 판단한다.
+                    const entries = groups[key][no].filter(e => !e.is_popup && !e.is_cont_row && !e.is_state_variant);
                     const distinctSectionIds = new Set(entries.map(e => e.section_id));
                     if (distinctSectionIds.size < 2) return; // 한 섹션 안에서만 나오면 문제 아님(예: cont-row 반복은 같은 섹션 아님, 별도 섹션이어야 대상)
                     const distinctAreaNames = new Set(entries.map(e => e.area_name));
