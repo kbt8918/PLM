@@ -19,9 +19,30 @@
   var screenParamMatch = /[?&]screen=(SCR-\d{3}|MTRM-MAIN)(&|$)/.exec(global.location.search);
   var initialScreen = screenParamMatch ? screenParamMatch[1] : 'SCR-001';
 
-  var state = {
+  // 같은 목적으로 팝업(모달)도 페이지 로드 시 바로 열리게 하는 파라미터.
+  // 예: index.html?screen=SCR-002&modal=stdProcessRegister
+  // 특수 모달(autoVideo/chartDetail/dashTrendDetail/techPrDetail)은 상세 데이터가 필요해
+  // 첫 번째 데이터 항목으로 기본값을 채운다. 유효하지 않은 modal 값은 무시.
+  var modalParamMatch = /[?&]modal=([A-Za-z0-9_-]+)(&|$)/.exec(global.location.search);
+  var initialModal = modalParamMatch ? decodeURIComponent(modalParamMatch[1]) : null;
+  var initialModalExtras = {};
+  if (initialModal === 'autoVideo') {
+    initialModalExtras = { videoProcess: '오버몰딩', videoKind: 'part' };
+  } else if (initialModal === 'chartDetail') {
+    initialModalExtras = {
+      chartTaskDetail: { category: '차체', manager: '-', status: '진행중', progress: '-', period: '-' },
+    };
+  } else if (initialModal === 'dashTrendDetail') {
+    initialModalExtras = { dashTrendDetailIndex: 0 };
+  } else if (initialModal === 'techPrDetail') {
+    // Tech PR 상세는 activeModal이 아닌 별도 오버레이(techPrDetailIndex)로 열린다.
+    initialModal = null;
+    initialModalExtras = { techPrDetailIndex: 0 };
+  }
+
+  var state = $.extend({
     currentScreen: initialScreen, // 근거: design_handoff_생기포털/source/부품 공정 자동화 현황.dc.html activeView 기본값 'part-auto' — 최초 진입 화면은 통합 대시보드(DASH-AUTO)가 아니라 부품 공정 자동화 현황(SCR-001)
-    activeModal: null,
+    activeModal: initialModal,
     chartMode: 'summary', // SCR-008 통합 로드맵 차트 요약본/전체보기 토글
     expandedChartRoadmaps: [], // SCR-008에서 아코디언으로 펼쳐진 로드맵명 목록(여러 개 동시 펼침 유지)
     chartTaskDetail: null, // SCR-008 간트 막대 클릭 시 표시할 과제 상세 정보
@@ -46,7 +67,7 @@
     mtrmPage: 1, // SCR-011 mTRM 협의체 페이지네이션
     mtrmMgmtPage: 1, // SCR-012 mTRM 관리 페이지네이션
     techTrendPage: 1, // SCR-014 기술동향 페이지네이션
-  };
+  }, initialModalExtras);
   var toastTimer = null;
 
   function setState(patch) {
