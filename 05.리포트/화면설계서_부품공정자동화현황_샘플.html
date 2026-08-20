@@ -6847,7 +6847,22 @@ async function downloadPPTX(e) {
       // 적용할 y오프셋"을 구성한다. 같은 desc-table 안에서 tr이 하나씩 늘어날 때마다 그 아래
       // 모든 형제 tr(과 그 안의 모든 자손 요소)이 누적된 만큼 통째로 아래로 밀린다 — 실제
       // HTML 테이블의 자동 흐름과 동일한 결과.
+      //
+      // 버그 수정(2026-08-20, 사용자 재제보 — SCR-001 NO=1 배경 셀이 늘어난 텍스트를 다 못
+      // 감싸고, NO=3 아래 ".desc-continue"("다음 화면에 계속 ▼") 배너가 안 밀려 겹쳐 보임).
+      // 두 가지가 빠져 있었다:
+      //   (a) heightDeltaMap: desc-table의 각 <td> 자신의 "배경 도형" 높이도 텍스트박스처럼
+      //       늘려야 하는데, 배경/테두리 렌더링 코드는 rect.height(HTML 원본)를 그대로 썼다
+      //       — 텍스트만 길어지고 배경 셀은 원래 크기라 텍스트가 셀 밖으로 삐져나와 보였다.
+      //       tr별 초과분을 그 tr 소속 <td> 요소들 자신에게도 매핑해, 배경 도형이 자기 자신을
+      //       그 초과분만큼 늘려 그리도록 한다.
+      //   (b) desc-table "바깥"(.desc-continue 등 desc-wrap의 다른 자식)도 desc-table 전체가
+      //       늘어난 총량만큼 밀려야 하는데, yOffsetMap이 desc-table 내부(tr)만 다뤄서 desc-table
+      //       다음에 오는 형제 요소는 전혀 안 밀렸다. desc-table 전체 총 초과분을 구해 그
+      //       desc-table의 nextElementSibling부터 desc-wrap이 끝날 때까지의 모든 형제에게도
+      //       동일하게 적용한다.
       const yOffsetMap = new Map();
+      const heightDeltaMap = new Map();
       if (dryRunCollector.size > 0) {
         const descTables = section.querySelectorAll('.desc-table');
         descTables.forEach(table => {
@@ -6856,8 +6871,21 @@ async function downloadPPTX(e) {
           trs.forEach(tr => {
             if (cumulative > 0) yOffsetMap.set(tr, cumulative);
             const excess = dryRunCollector.get(tr) || 0;
+            if (excess > 0) {
+              tr.querySelectorAll(':scope > td, :scope > th').forEach(cell => {
+                heightDeltaMap.set(cell, excess);
+              });
+            }
             cumulative += excess;
           });
+          // (b) desc-table 다음에 오는 형제 요소(.desc-continue 등)에 총 누적량 적용
+          if (cumulative > 0) {
+            let sib = table.nextElementSibling;
+            while (sib) {
+              yOffsetMap.set(sib, cumulative);
+              sib = sib.nextElementSibling;
+            }
+          }
         });
       }
 
@@ -6872,7 +6900,7 @@ async function downloadPPTX(e) {
         if (skipEls.has(el)) continue;
         if (el.classList && (el.classList.contains('indicator') || el.classList.contains('indicator-el') || el.classList.contains('on-top'))) continue;
         if (el.closest && el.closest('.popup-backdrop')) continue;
-        sbpptxRenderElement(pptx, slide, el, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H, yOffsetMap);
+        sbpptxRenderElement(pptx, slide, el, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H, yOffsetMap, null, heightDeltaMap);
       }
       // 2차 패스: 인디케이터(영역·요소)·.on-top을 맨 위 레이어로. .indicator-el은 이제
       // 타겟 요소(버튼/탭/span) 내부에 중첩된 자식으로 배치되므로(요소 위치가 뷰포트/내보내기
@@ -6882,7 +6910,7 @@ async function downloadPPTX(e) {
         if (skipEls.has(el)) continue;
         if (!el.classList || (!el.classList.contains('indicator') && !el.classList.contains('indicator-el') && !el.classList.contains('on-top'))) continue;
         if (el.closest && el.closest('.popup-backdrop')) continue;
-        sbpptxRenderElement(pptx, slide, el, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H, yOffsetMap);
+        sbpptxRenderElement(pptx, slide, el, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H, yOffsetMap, null, heightDeltaMap);
       }
       await new Promise(r => requestAnimationFrame(r));
     }
@@ -6987,7 +7015,7 @@ function sbpptxCaptureLiveDom(section, timeoutMs) {
   });
 }
 
-function sbpptxRenderElement(pptx, slide, el, baseX, baseY, scale, offsetX, offsetY, slideW, slideH, yOffsetMap, dryRunCollector) {
+function sbpptxRenderElement(pptx, slide, el, baseX, baseY, scale, offsetX, offsetY, slideW, slideH, yOffsetMap, dryRunCollector, heightDeltaMap) {
   const tag = el.tagName;
   if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'LINK' || tag === 'META' || tag === 'TITLE' || tag === 'HEAD' || tag === 'TEMPLATE' || tag === 'BR' || tag === 'HR') return;
   if (tag === 'svg' || tag === 'SVG' || tag === 'PATH' || tag === 'CIRCLE' || tag === 'LINE' || tag === 'RECT' || tag === 'POLYLINE' || tag === 'POLYGON') return;
@@ -7067,7 +7095,13 @@ function sbpptxRenderElement(pptx, slide, el, baseX, baseY, scale, offsetX, offs
   }
   const y = offsetY + (ry - baseY) * scale + yOffsetIn;
   const w = rect.width * scale;
-  const h = rect.height * scale;
+  // heightDeltaMap: 이 요소 자신(desc-table의 <td>)이 늘어난 텍스트를 담기 위해 배경 도형도
+  // 함께 커져야 할 때의 증가분(2026-08-20 수정 — 이전에는 텍스트박스만 늘리고 배경 셀은
+  // HTML 원래 높이 그대로라, 늘어난 텍스트가 배경 밖으로 삐져나와 보였다). node 자신에게만
+  // 매핑되므로(상위로 거슬러 올라가지 않음 — 부모 요소까지 늘려버리면 다른 형제 자손과의
+  // 상대 위치가 깨진다) el 자신이 dry-run에서 수집된 <td>일 때만 적용된다.
+  const selfHeightDeltaIn = (heightDeltaMap && heightDeltaMap.get(el)) || 0;
+  const h = rect.height * scale + selfHeightDeltaIn;
 
   if (x >= slideW + 0.05 || y >= slideH + 0.05) return;
   if (x + w <= -0.05 || y + h <= -0.05) return;
