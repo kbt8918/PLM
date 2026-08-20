@@ -7174,14 +7174,35 @@ function sbpptxRenderElement(pptx, slide, el, baseX, baseY, scale, offsetX, offs
         fill: bgHex ? { color: bgHex } : { type: 'none' },
         line: (bw > 0 && bColor) ? { color: bColor, width: Math.max(0.25, bw * 0.6) } : { type: 'none' },
       };
-      // 도형 종류 선택 (단순화):
+      // 도형 종류 선택:
       //   - 정사각형(1:1) + border-radius ≥ 절반 → OVAL (완전한 원, 예: 넘버링 인디케이터)
-      //   - 그 외 모든 도형 → RECTANGLE (직각, HTML 둥근 모서리는 무시)
+      //   - border-radius > 0(부분 둥근 모서리, 예: 카드/버튼/모달) → ROUNDED_RECTANGLE + rectRadius
+      //     (2026-08-20 추가 — 하이파이델리티 요청: 이전엔 모든 둥근 모서리를 직각으로
+      //     단순화했으나, HTML의 카드/모달/버튼 둥근 느낌을 PPT에서도 재현한다.
+      //     PptxGenJS의 rectRadius는 인치 단위 절대값이며, 너무 크면 도형이 알약(pill) 모양이
+      //     되어 원래 느낌과 달라지므로 짧은 변의 50%로 상한을 둔다.)
+      //   - 그 외 → RECTANGLE (직각)
       const minDim = Math.min(rect.width, rect.height);
       const aspectRatio = Math.max(rect.width, rect.height) / Math.max(0.1, minDim);
       const fullyRounded = radiusPx >= minDim / 2 - 1;
       const isCircle = fullyRounded && aspectRatio <= 1.2;
-      const shapeType = isCircle ? pptx.shapes.OVAL : pptx.shapes.RECTANGLE;
+      let shapeType = pptx.shapes.RECTANGLE;
+      if (isCircle) {
+        shapeType = pptx.shapes.OVAL;
+      } else if (radiusPx > 1) {
+        shapeType = pptx.shapes.ROUNDED_RECTANGLE;
+        const minSideIn = Math.min(sw, sh);
+        opts.rectRadius = Math.min(radiusPx * scale, minSideIn * 0.5);
+      }
+      // box-shadow → PPT outer shadow (2026-08-20 추가 — 하이파이델리티 요청: 모달/카드의
+      // box-shadow가 PPT에서 완전히 사라져 밋밋해 보이던 것을 재현). CSS box-shadow는
+      // "offsetX offsetY blur [spread] color"를 콤마로 구분해 여러 겹 쓸 수 있는데, PptxGenJS
+      // shadow는 1겹만 지원하므로 첫 번째 그림자만 사용한다(대부분 이 문서의 모달은 단일
+      // box-shadow만 씀). spread는 PPT에 대응 옵션이 없어 무시.
+      const shadowSpec = sbpptxParseBoxShadow(style.boxShadow, scale);
+      if (shadowSpec) {
+        opts.shadow = shadowSpec;
+      }
       try { slide.addShape(shapeType, opts); } catch (err) { /* ignore */ }
     }
   }
@@ -7659,6 +7680,44 @@ function sbpptxBlendHex(bgHex, fgHex, alpha) {
   const g = Math.round(alpha * fgC + (1 - alpha) * bgC);
   const b = Math.round(alpha * fb + (1 - alpha) * bb);
   return ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0').toUpperCase();
+}
+
+// CSS box-shadow(getComputedStyle 결과, 예: "rgba(0, 0, 0, 0.35) 0px 10px 30px 0px")를
+// PptxGenJS의 shadow 옵션(type:'outer', angle, blur, offset, color, opacity)으로 변환한다.
+// 2026-08-20 추가(하이파이델리티 요청) — 모달/카드 팝업의 box-shadow가 PPT에서 완전히
+// 사라져 밋밋해 보이던 것을 재현. 여러 겹 그림자(콤마 구분) 중 첫 번째만 사용(PptxGenJS는
+// 1겹만 지원). "none"이거나 파싱 실패 시 null.
+function sbpptxParseBoxShadow(boxShadowStr, scale) {
+  if (!boxShadowStr || boxShadowStr === 'none') return null;
+  const first = boxShadowStr.split(/,(?![^(]*\))/)[0].trim();
+  const colorMatch = first.match(/rgba?\([^)]+\)|#[0-9a-fA-F]{3,8}\b/);
+  if (!colorMatch) return null;
+  const colorStr = colorMatch[0];
+  const rest = first.replace(colorStr, '').trim();
+  const nums = rest.match(/-?[\d.]+px/g);
+  if (!nums || nums.length < 3) return null;
+  const offsetXpx = parseFloat(nums[0]);
+  const offsetYpx = parseFloat(nums[1]);
+  const blurPx = parseFloat(nums[2]);
+  const alpha = sbpptxGetAlpha(colorStr);
+  const hex = sbpptxRgbToHex(colorStr);
+  if (!hex) return null;
+  // PPT shadow.offset/blur는 pt 단위(PptxGenJS 내부에서 12700 EMU/pt로 환산), angle은
+  // 도(0=오른쪽, 시계방향 — CSS offsetY가 양수(아래로)일 때 PPT angle도 그만큼 시계방향).
+  // offsetX/Y(px)를 슬라이드 인치 좌표계로 변환한 뒤 다시 pt로 바꿔 벡터를 구성한다.
+  const offsetXIn = offsetXpx * scale;
+  const offsetYIn = offsetYpx * scale;
+  const offsetInPt = Math.sqrt(offsetXIn * offsetXIn + offsetYIn * offsetYIn) * 72;
+  let angle = Math.round(Math.atan2(offsetYIn, offsetXIn) * 180 / Math.PI);
+  if (angle < 0) angle += 360;
+  return {
+    type: 'outer',
+    color: hex,
+    opacity: alpha !== null ? alpha : 0.35,
+    blur: Math.max(0, blurPx * scale * 72), // px → in(scale) → pt(*72)
+    offset: Math.max(0, offsetInPt),
+    angle: angle,
+  };
 }
 
 function sbpptxFontName(ff) {
