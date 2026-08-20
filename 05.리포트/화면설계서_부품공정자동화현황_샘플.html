@@ -58,13 +58,28 @@
   .desc-table tr.cont-row td { border-top: 1px dashed #adb5bd; }
   .desc-continue { margin-top: 10px; padding: 8px 10px; text-align: center; font-size: 12px; font-weight: 600; color: #6c757d; border: 1px dashed #ced4da; border-radius: 6px; }
 
-  /* 근거: 화면설계서_템플릿.md 1-5절 — 16:9(960x540pt) 슬라이드 기준 헤더 0~8%/캔버스 0~76%/
-     설명 76~100% 고정 비율. 화면마다 재배치하지 않고 모든 SCR-XXX에 동일 적용한다(퍼센트 그대로
-     유지 — PDF~1240px/PPT 1680px 등 렌더 폭이 달라져도 비율 자체는 고정되어야 템플릿 준수). */
+  /* 근거: 화면설계서_템플릿.md 1-5절 — PDF 원본 템플릿(화면설계서 템플릿_샘플.pdf) 실측 반영.
+     헤더는 전체 폭을 가로지르지 않고 좌측 캔버스 폭(76%)까지만 걸리며, 그 오른쪽은 처음부터
+     검은 "Description" 타이틀 바가 시작된다 — 즉 헤더 행부터 좌(캔버스 76%)/우(설명 24%)가
+     분할되어 있다. 이를 재현하기 위해 .desc-wrap을 grid-row 1부터 끝까지(1/-1) 세로로 전부
+     차지하게 하여, 내부 최상단 <h3>Description</h3>가 자연히 헤더 행과 나란한 높이에서
+     시작하도록 한다(46개 섹션의 <h3> 마크업 위치는 그대로 두고 CSS만으로 처리 — 마크업 변경 없음).
+     버그 수정(2026-08-20, PPT→PDF 변환본에서 SCR-001 좌우 여백 사용자 제보 — 원인 규명):
+     align-self: stretch였던 것을 auto로 되돌린다. stretch를 쓰면 .desc-wrap이 실제 텍스트
+     분량과 무관하게 항상 grid row(캔버스 높이, min-height:800px 등)만큼 강제로 늘어나
+     getBoundingClientRect().height가 부풀려진다. downloadPPTX()의 fit-to-slide 배율은
+     섹션 전체의 실측 높이(scrollHeight/rect.height)를 기준으로 계산되므로(위 6700행대
+     참고), 이 부풀려진 높이 때문에 세로가 가로보다 먼저 슬라이드에 꽉 차버려(scale이 세로
+     기준으로 결정) 좌우에 균등한 여백이 남는 현상이 SCR-001처럼 Description 분량이 캔버스에
+     버금가는 화면에서 발생했다(SCR-002처럼 Description이 짧은 화면은 영향 없음 — 실측
+     확인: SCR-001 h_offset 0.53in vs SCR-002 h_offset 0). align-self를 auto로 되돌리면
+     .desc-wrap은 자신의 실제 콘텐츠 높이만큼만 차지하고, 캔버스보다 짧을 때 grid row 하단에
+     남는 공간은 .desc-wrap 배경(#fff)이 아니라 .wireframe-wrap 배경(#f2f2f2)이 그대로
+     보이므로 시각적으로도 자연스럽다(두 영역이 원래도 색이 달라 뚜렷이 구분됨). */
   .screen-section:not(#cover-page) { display: grid; grid-template-columns: 76% 24%; grid-template-rows: auto 1fr; }
-  .screen-section:not(#cover-page) .meta-box { grid-column: 1 / -1; }
+  .screen-section:not(#cover-page) .meta-box { grid-column: 1; grid-row: 1; }
   .screen-section:not(#cover-page) .wireframe-wrap { grid-column: 1; grid-row: 2; }
-  .screen-section:not(#cover-page) .desc-wrap { grid-column: 2; grid-row: 2; position: static; margin: 0 !important; padding: 16px; border-left: 2px solid #dee2e6; background: #fff; align-self: start; }
+  .screen-section:not(#cover-page) .desc-wrap { grid-column: 2; grid-row: 1 / -1; position: static; margin: 0 !important; padding: 16px; border-left: 2px solid #dee2e6; background: #fff; align-self: start; }
   .desc-wrap h3 { font-size: 14px !important; margin: 0 0 10px 0 !important; }
 
   .download-btns { position: absolute; top: 60px; right: 32px; display: flex; gap: 8px; z-index: 10; }
@@ -80,6 +95,19 @@
     .desc-wrap { position: static !important; max-height: none !important; overflow: visible !important; }
     .wireframe-wrap { overflow: hidden !important; }
     .meta-box { margin: 0 24px !important; }
+    /* PDF 깨짐 수정(2026-08-20, 실측 확인): APPENDIX 2개 섹션(#appendix-exceptions,
+       #appendix-exceptions-2)은 .desc-wrap이 없는 "전체 폭 1단 표" 레이아웃(인라인
+       style="display:block; grid-template-columns:1fr")인데, 위 82번째 줄의
+       .screen-section:not(#cover-page) 규칙 특정도가 class 1개 + id 1개(:not() 안의
+       #cover-page도 id 자리에 가산) = (0,1,1,0)이라 인쇄 시 이 인라인 style을 덮어써
+       강제로 76%/24% 2단 그리드로 바뀌었다 — 표가 우측 24% 트랙에만 눌려 들어가고 좌측
+       76%가 텅 비는 형태로 깨짐을 Playwright 스크린샷으로 실측 확인했다. id 1개만으로는
+       (0,1,0,0)이라 (0,1,1,0)에 여전히 밀리므로(id 자리는 비기고 class 자리에서 짐),
+       id를 두 번 반복해 (0,2,0,0)으로 만들어 id 자리 수에서 확실히 이긴다
+       (:not(#cover-page).screen-section 특정도 산정 방식과 동일하게 아래쪽 R14 규칙에서도
+       #scr-001-scroll.screen-only-page처럼 id+class 조합을 썼지만, 그건 상대가 id 1개뿐인
+       규칙이라 가능했던 것 — 여기 상대는 이미 id 1개를 가진 규칙이라 id를 2개로 만들어야 함). */
+    #appendix-exceptions#appendix-exceptions, #appendix-exceptions-2#appendix-exceptions-2 { display: block !important; grid-template-columns: 1fr !important; }
   }
 
   /* 요구사항 1 (2026-08-18): 세로 스크롤 배지(.scroll-badge-vertical)는 실제 스크롤이
@@ -454,20 +482,6 @@
                 <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;"><span style="border:1px solid #999; padding:3px 8px; display:inline-block; word-break:keep-all;">협의必(회수불가) 1명</span></td>
                 <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;"><span style="border:1px solid #999; padding:3px 8px; display:inline-block; word-break:keep-all;">협의必(회수불가) 1명</span></td>
                 <td style="border-bottom:1px solid #ccc; padding:8px; font-size:12px; text-align:center;"><span style="border:1px solid #999; padding:3px 8px; display:inline-block; word-break:keep-all;">협의必(회수불가) 1명</span></td>
-              </tr><tr>
-                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">5</td>
-                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; font-weight:600;">ECU S/W 다운</td>
-                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">&#9679; 旣자동화</td>
-                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">&#9679; 자동</td>
-                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">&#9679; 자동</td>
-                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">&#9679; 자동</td>
-                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">&#9679; 자동</td>
-                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;"><span style="border:1px solid #999; padding:3px 8px; display:inline-block; word-break:keep-all; color:#e8590c;">미적용(협의完) 1명</span></td>
-                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center; color:#1971c2; font-weight:600;">가능('29)</td>
-                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;"><span style="border:1px solid #999; padding:3px 8px; display:inline-block; word-break:keep-all;">협의必(ROI 18년) 1명</span></td>
-                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;"><span style="border:1px solid #999; padding:3px 8px; display:inline-block; word-break:keep-all;">협의必(ROI 44년) 1명</span></td>
-                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;"><span style="border:1px solid #999; padding:3px 8px; display:inline-block; word-break:keep-all;">협의必(ROI 159년) 1명</span></td>
-                <td style="border-bottom:1px solid #ccc; padding:8px; font-size:12px; text-align:center;"><span style="border:1px solid #999; padding:3px 8px; display:inline-block; word-break:keep-all;">협의必(회수불가) 1명</span></td>
               </tr>
               <tr>
                 <td colspan="13" style="padding:10px 8px; font-size:12px; color:#888; text-align:center; background:#fafafa; border-top:1px dashed #ccc;">전체 공정 목록(NO 1&ndash;17)은 다음 화면(공정별 상세 전체)에서 확인 가능합니다.</td>
@@ -497,7 +511,7 @@
         <tr>
           <td class="num">1</td>
           <td>
-            <b>영역명: 탭 영역</b><br>ㄴ 부품 공정 / 모듈 공정 탭으로 공정 유형을 전환하는 영역이다. 요소 2종(부품 공정 탭, 모듈 공정 탭)으로 구성된다.<br><br><b>요소: 1-1 부품 공정 탭</b><br><span class="cond-label">노출조건:</span> 화면 진입 시 항상 표시. 기본 활성 탭.<br><span class="cond-label">입력조건:</span> 클릭 시 활성화. 활성화되면 하단 요약 현황·공정별 상세 표가 부품 공정 데이터로 갱신.<br><span class="cond-label">출력조건:</span> 활성 시 다크 배경의 필 형태로 강조 표시.<br><span class="cond-label">인터랙션:</span> 탭 전환 시 하단 콘텐츠 페이드 전환.<br><br><b>요소: 1-2 모듈 공정 탭</b><br><span class="cond-label">노출조건:</span> 화면 진입 시 항상 표시.<br><span class="cond-label">입력조건:</span> 클릭 시 활성화, 하단 표가 모듈 공정 데이터로 갱신.<br><span class="cond-label">출력조건:</span> 비활성 시 회색 텍스트로 표시.<br><span class="cond-label">인터랙션:</span> 탭 전환 시 하단 콘텐츠 페이드 전환.
+            <b>영역명: 탭 영역</b><br>ㄴ 부품 공정 / 모듈 공정 탭으로 공정 유형을 전환하는 영역이다. 요소 2종(부품 공정 탭, 모듈 공정 탭)으로 구성된다.<br><br><b>요소: 1-1 부품 공정 탭</b><br><span class="cond-label">노출조건:</span> 화면 진입 시 항상 표시. 기본 활성 탭.<br><span class="cond-label">입력조건:</span> 클릭 시 활성화. 활성화되면 하단 요약 현황·공정별 상세 표가 부품 공정 데이터로 갱신.<br><span class="cond-label">출력조건:</span> 활성 시 다크 배경의 필 형태로 강조 표시.<br><span class="cond-label">인터랙션:</span> 탭 전환 시 하단 콘텐츠 페이드 전환.
           </td>
         </tr>
         <tr>
@@ -742,20 +756,6 @@
                 <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;"><span style="border:1px solid #999; padding:3px 8px; display:inline-block; word-break:keep-all;">협의必(회수불가) 1명</span></td>
                 <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;"><span style="border:1px solid #999; padding:3px 8px; display:inline-block; word-break:keep-all;">협의必(회수불가) 1명</span></td>
                 <td style="border-bottom:1px solid #ccc; padding:8px; font-size:12px; text-align:center;"><span style="border:1px solid #999; padding:3px 8px; display:inline-block; word-break:keep-all;">협의必(회수불가) 1명</span></td>
-              </tr><tr>
-                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">5</td>
-                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; font-weight:600;">ECU S/W 다운</td>
-                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">&#9679; 旣자동화</td>
-                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">&#9679; 자동</td>
-                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">&#9679; 자동</td>
-                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">&#9679; 자동</td>
-                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">&#9679; 자동</td>
-                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;"><span style="border:1px solid #999; padding:3px 8px; display:inline-block; word-break:keep-all; color:#e8590c;">미적용(협의完) 1명</span></td>
-                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center; color:#1971c2; font-weight:600;">가능('29)</td>
-                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;"><span style="border:1px solid #999; padding:3px 8px; display:inline-block; word-break:keep-all;">협의必(ROI 18년) 1명</span></td>
-                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;"><span style="border:1px solid #999; padding:3px 8px; display:inline-block; word-break:keep-all;">협의必(ROI 44년) 1명</span></td>
-                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;"><span style="border:1px solid #999; padding:3px 8px; display:inline-block; word-break:keep-all;">협의必(ROI 159년) 1명</span></td>
-                <td style="border-bottom:1px solid #ccc; padding:8px; font-size:12px; text-align:center;"><span style="border:1px solid #999; padding:3px 8px; display:inline-block; word-break:keep-all;">협의必(회수불가) 1명</span></td>
               </tr>
               <tr>
                 <td colspan="13" style="padding:10px 8px; font-size:12px; color:#888; text-align:center; background:#fafafa; border-top:1px dashed #ccc;">전체 공정 목록(NO 1&ndash;17)은 다음 화면(공정별 상세 전체)에서 확인 가능합니다.</td>
@@ -782,6 +782,12 @@
     <table class="desc-table">
       <thead><tr><th class="num">NO</th><th>상세설명</th></tr></thead>
       <tbody>
+        <tr class="cont-row">
+          <td class="num">1</td>
+          <td>
+            <b>요소: 1-2 모듈 공정 탭</b><br><span class="cond-label">노출조건:</span> 화면 진입 시 항상 표시.<br><span class="cond-label">입력조건:</span> 클릭 시 활성화, 하단 표가 모듈 공정 데이터로 갱신.<br><span class="cond-label">출력조건:</span> 비활성 시 회색 텍스트로 표시.<br><span class="cond-label">인터랙션:</span> 탭 전환 시 하단 콘텐츠 페이드 전환.
+          </td>
+        </tr>
         <tr>
           <td class="num">4</td>
           <td>
@@ -1015,20 +1021,6 @@
                 <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;"><span style="border:1px solid #999; padding:3px 8px; display:inline-block; word-break:keep-all;">협의必(ROI 45년) 1명</span></td>
                 <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;"><span style="border:1px solid #999; padding:3px 8px; display:inline-block; word-break:keep-all;">협의必(회수불가) 1명</span></td>
                 <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;"><span style="border:1px solid #999; padding:3px 8px; display:inline-block; word-break:keep-all;">협의必(회수불가) 1명</span></td>
-                <td style="border-bottom:1px solid #ccc; padding:8px; font-size:12px; text-align:center;"><span style="border:1px solid #999; padding:3px 8px; display:inline-block; word-break:keep-all;">협의必(회수불가) 1명</span></td>
-              </tr><tr>
-                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">5</td>
-                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; font-weight:600;">ECU S/W 다운</td>
-                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">&#9679; 旣자동화</td>
-                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">&#9679; 자동</td>
-                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">&#9679; 자동</td>
-                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">&#9679; 자동</td>
-                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;">&#9679; 자동</td>
-                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;"><span style="border:1px solid #999; padding:3px 8px; display:inline-block; word-break:keep-all; color:#e8590c;">미적용(협의完) 1명</span></td>
-                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center; color:#1971c2; font-weight:600;">가능('29)</td>
-                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;"><span style="border:1px solid #999; padding:3px 8px; display:inline-block; word-break:keep-all;">협의必(ROI 18년) 1명</span></td>
-                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;"><span style="border:1px solid #999; padding:3px 8px; display:inline-block; word-break:keep-all;">협의必(ROI 44년) 1명</span></td>
-                <td style="border-bottom:1px solid #ccc; border-right:1px solid #ccc; padding:8px; font-size:12px; text-align:center;"><span style="border:1px solid #999; padding:3px 8px; display:inline-block; word-break:keep-all;">협의必(ROI 159년) 1명</span></td>
                 <td style="border-bottom:1px solid #ccc; padding:8px; font-size:12px; text-align:center;"><span style="border:1px solid #999; padding:3px 8px; display:inline-block; word-break:keep-all;">협의必(회수불가) 1명</span></td>
               </tr>
               <tr>
@@ -6898,6 +6890,34 @@ function sbpptxRenderElement(pptx, slide, el, baseX, baseY, scale, offsetX, offs
   const style = window.getComputedStyle(el);
   if (style.display === 'none' || style.visibility === 'hidden') return;
   if (parseFloat(style.opacity) === 0) return;
+
+  // 버그 수정(2026-08-20, 사용자 제보 — PPT→PDF 변환본에서 SCR-003 "요약 현황"/"작업내용별
+  // 상세" 두 표(.scroll-wrap-summary-003, .scroll-wrap-detail-003, overflow:auto;
+  // max-height:230px)의 스크롤 밖 잔여 내용이 아래 영역과 겹쳐 보이는 원인이었다. HTML
+  // 화면에서는 overflow:auto가 초과분을 시각적으로 가려주지만, getBoundingClientRect()는
+  // 스크롤 컨테이너의 클리핑과 무관하게 요소의 실제 DOM 레이아웃 좌표를 그대로 반환한다
+  // (실측 확인: scrollHeight 293px vs clientHeight 230px, 초과 63px). sbpptxRenderElement는
+  // 이 rect를 그대로 좌표 변환해 그리므로, 스크롤 밖으로 밀려 시각적으로 안 보이던 콘텐츠가
+  // PPTX에는 원래 DOM 위치(다음 영역과 겹치는 자리)에 그대로 그려졌다. 조상 체인에서 가장
+  // 가까운 스크롤 클리핑 컨테이너(overflow: hidden/auto/scroll, scrollHeight >
+  // clientHeight 또는 scrollWidth > clientWidth)를 찾아, 그 컨테이너의 화면상 사각형을 벗어난
+  // 요소는 렌더링하지 않는다 — 팝업(.popup-backdrop) 방어와 같은 원리로, 시각적으로 보이지
+  // 않는 요소는 PPTX에도 그리지 않아야 한다.
+  let clipAncestor = el.parentElement;
+  while (clipAncestor && clipAncestor !== document.body) {
+    const cs = window.getComputedStyle(clipAncestor);
+    const clips = (cs.overflow === 'hidden' || cs.overflow === 'auto' || cs.overflow === 'scroll'
+      || cs.overflowY === 'hidden' || cs.overflowY === 'auto' || cs.overflowY === 'scroll'
+      || cs.overflowX === 'hidden' || cs.overflowX === 'auto' || cs.overflowX === 'scroll');
+    if (clips && (clipAncestor.scrollHeight > clipAncestor.clientHeight + 1 || clipAncestor.scrollWidth > clipAncestor.clientWidth + 1)) {
+      const cRect = clipAncestor.getBoundingClientRect();
+      if (rect.bottom <= cRect.top - 0.5 || rect.top >= cRect.bottom + 0.5
+        || rect.right <= cRect.left - 0.5 || rect.left >= cRect.right + 0.5) {
+        return;
+      }
+    }
+    clipAncestor = clipAncestor.parentElement;
+  }
 
   // Skip inline wrapper elements whose direct parent is a text leaf —
   // the parent will render their combined text (incl. surrounding text nodes) as one block.
