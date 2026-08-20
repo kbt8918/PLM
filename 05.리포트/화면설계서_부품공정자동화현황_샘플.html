@@ -7323,7 +7323,17 @@ function sbpptxRenderElement(pptx, slide, el, baseX, baseY, scale, offsetX, offs
       // 단일행 텍스트 자동 감지:
       //   - white-space:nowrap/pre, 또는
       //   - 버튼·배지·사이드바·탭 항목, 또는
-      //   - 요소 높이 < line-height × 1.8
+      //   - 요소 높이 < line-height × 1.8, 또는
+      //   - 가운데 정렬 flex 라벨(팝업 액션 버튼처럼 class 없이 순수 style="display:flex;
+      //     align-items:center; justify-content:center"로 만든 div)이면서 텍스트가 짧은 경우
+      // 버그 수정(2026-08-20, 사용자 제보 — 팝업 액션 버튼(등록/공유/저장/삭제/닫기/전송/
+      // 다운로드/확인 등)이 PPT에서 세로로 한 글자씩 쌓여 보임). 원인: 이 버튼들은 <button>/
+      // <a> 태그도 아니고 btn/badge 같은 class도 없는 순수 style="display:flex;
+      // align-items:center; justify-content:center; height:34px..."인 <div>라, 위 isButtonLike에
+      // 걸리지 않았다. 높이(34px)가 lineHeightPx×1.8(약 26px)보다 커서 마지막 폴백 조건도
+      // 통과하지 못해 isSingleLine이 false로 판정 → wrap:true로 렌더되고, 버튼 폭(narrow)에서
+      // 짧은 한글 텍스트가 글자 단위로 줄바꿈되어 세로로 쌓여 보였다. 가운데 정렬 flex 박스에
+      // 짧은(공백 없는) 텍스트가 들어있는 경우도 단일행으로 취급한다.
       let lineHeightPx = parseFloat(style.lineHeight);
       if (!isFinite(lineHeightPx) || style.lineHeight === 'normal') {
         lineHeightPx = fontPx * 1.2;
@@ -7335,7 +7345,11 @@ function sbpptxRenderElement(pptx, slide, el, baseX, baseY, scale, offsetX, offs
                           || cls.contains('btn') || cls.contains('badge')
                           || cls.contains('sidebar-item') || cls.contains('tab-btn')
                           || cls.contains('chip') || cls.contains('pill') || cls.contains('tag');
-      const isSingleLine = nowrapCss || isButtonLike || (rect.height < lineHeightPx * 1.8);
+      const isCenteredFlexLabel = style.display === 'flex'
+                          && style.alignItems === 'center'
+                          && style.justifyContent === 'center'
+                          && text.length <= 8 && !/\s/.test(text);
+      const isSingleLine = nowrapCss || isButtonLike || isCenteredFlexLabel || (rect.height < lineHeightPx * 1.8);
 
       // padding inset
       const padT = (parseFloat(style.paddingTop) || 0) * scale;
