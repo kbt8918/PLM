@@ -7258,24 +7258,62 @@ function sbpptxRenderElement(pptx, slide, el, baseX, baseY, scale, offsetX, offs
       const padR = (parseFloat(style.paddingRight) || 0) * scale;
       const padB = (parseFloat(style.paddingBottom) || 0) * scale;
 
-      // 텍스트박스 폭 버퍼: 단일행 +15% / Description 영역 0% / 기타 다행 +5%
+      // 텍스트박스 폭 버퍼: 단일행 +15% / Description 다행 텍스트 +8% / 기타 다행 +5%
       // Description 영역은 우측 슬라이드 가장자리 안전 여백 확대 (텍스트가 모서리에 닿지 않도록)
       const inDescAreaText = el.closest && (el.closest('.desc-wrap') || el.closest('.desc-table') || el.closest('.always-top'));
-      const widthBufferRatio = isSingleLine ? 0.15 : (inDescAreaText ? 0 : 0.05);
+      // 버그 수정(2026-08-20, 사용자 제보 — SCR-001 NO=1 "출력조건" 아래 "인터랙션" 줄, NO=4/5
+      // "BE 연동" 줄이 PPT→PDF 변환본에서 안 보임). 원인: desc-table의 각 <td>는 여러 문단(<br>
+      // 구분)을 한 텍스트박스에 richRuns로 담는데, 박스 높이(th)는 HTML의 rect.height를 그대로
+      // 쓴다 — 이는 "브라우저가 이 폭에서 wrap한 실제 줄 수" 기준으로 계산된 값이다. 그런데
+      // PowerPoint는 같은 텍스트를 같은 폭(tw)에서 맑은 고딕으로 다시 줄바꿈하며, 브라우저 폰트
+      // 메트릭과 미세하게 달라 특정 문장(예: "활성화되면 하단 요약 현황·공정별 상세 표가...")이
+      // HTML에서보다 한 줄 더 wrap된다. 문단이 많은 desc 텍스트일수록 이 오차가 누적되어, 총
+      // 줄 수가 박스 높이(line_spacing 기준 가용 줄 수)를 초과해 마지막 문단(주로 "인터랙션"·
+      // "BE 연동")이 박스 아래로 밀려 시각적으로 잘려 보인다(PowerPoint는 넘친 텍스트를 자동
+      // 축소하지 않고 그대로 클리핑). 이전엔 Description 다행 텍스트의 폭 버퍼가 0%였는데,
+      // 폭에 여유가 없으면 wrap이 그만큼 더 쉽게 발생해 오차를 그대로 증폭시켰다 — 버퍼를 8%로
+      // 늘려 줄바꿈 여유를 주고, 아래 높이(th)에도 문단 수 기반 안전 마진을 별도로 더한다.
+      const widthBufferRatio = isSingleLine ? 0.15 : (inDescAreaText ? 0.08 : 0.05);
       // 버퍼를 폭의 비율로만 계산하면, 긴 한 줄 문장(예: 섹션 타이틀)이나 표 안의 촘촘한 셀처럼
       // 박스 자체가 넓거나 옆 요소와 여백이 거의 없을 때 버퍼가 옆(우측) 요소·다음 컬럼(우측
       // Description 패널 등) 영역을 침범해 텍스트가 겹쳐 보이는 원인이 된다. 이제 텍스트가
       // 박스 폭/높이 버퍼(아래)를 이미 텍스트 실측 크기 기준으로 계산해 넣으므로,
       // PowerPoint 쪽 자동맞춤(정상적으로 도형이 늘어나는 대신 글자가 줄어드는 동작)에
-      // 기댈 필요가 없다 — 절대량 상한을 6px 상당으로 크게 낮춘다.
-      const widthBuffer = Math.min(w * widthBufferRatio, 6 * scale);
+      // 기댈 필요가 없다 — 절대량 상한을 Description 다행 텍스트만 10px 상당으로, 그 외는
+      // 6px 상당으로 낮춘다(Description은 위 wrap 오차 흡수를 위해 상한을 살짝 더 둔다).
+      const widthBufferCapPx = (inDescAreaText && !isSingleLine) ? 10 : 6;
+      const widthBuffer = Math.min(w * widthBufferRatio, widthBufferCapPx * scale);
       const rightSafe = inDescAreaText ? 0.15 : 0.05;
+
+      // Description 다행 텍스트(desc-table의 <td> 등)는 박스 높이(th)를 HTML의 rect.height
+      // 그대로 쓰는데, 이는 "브라우저가 이 폭에서 wrap한 실제 줄 수" 기준값이다. PowerPoint는
+      // 같은 텍스트를 같은 폭(tw)에서 맑은 고딕으로 다시 줄바꿈하는데, 브라우저 폰트 메트릭과
+      // 미세하게 달라 특정 문장이 HTML에서보다 한 줄 더 wrap되곤 한다 — 문단이 많거나 긴
+      // 문단이 여러 개인 셀일수록 이 오차가 누적되어 마지막 줄(주로 "인터랙션"·"BE 연동")이
+      // 박스 아래로 밀려 시각적으로 잘려 보인다(PowerPoint는 넘친 텍스트를 자동 축소하지
+      // 않고 그대로 클리핑). 이를 흡수하기 위해 실제 줄 수(Range.getClientRects()로 브라우저가
+      // "실제로 그린" 줄 수를 직접 셈 — 추정이 아닌 실측)에 비례한 안전 마진을 높이에 더한다.
+      // 마진은 짧은 셀까지 과도하게 늘려 다음 행 배경(desc-table tr:nth-child(even) 줄무늬)을
+      // 침범하지 않도록 상한(0.45in)을 둔다.
+      let heightBuffer = 0;
+      if (inDescAreaText && !isSingleLine) {
+        const lineSpacingIn = lineHeightPx * scale;
+        try {
+          const range = document.createRange();
+          range.selectNodeContents(el);
+          const rects = Array.from(range.getClientRects()).filter(r => r.height > 0.5);
+          const actualLineCount = rects.length; // 인라인 콘텐츠는 시각적 줄 하나당 rect 하나
+          if (actualLineCount > 0) {
+            heightBuffer = Math.min(0.45, lineSpacingIn * Math.max(1.5, actualLineCount * 0.12));
+          }
+        } catch (err) { /* Range 실패 시 버퍼 없이 진행(기존 동작과 동일) */ }
+      }
 
       const tx = Math.max(0, x + padL);
       const ty = Math.max(0, y + padT);
       const naturalRight = x + w - padR + widthBuffer;
       const trEdge = Math.min(slideW - rightSafe, naturalRight);
-      const tbEdge = Math.min(slideH, y + h - padB);
+      const tbEdge = Math.min(slideH, y + h - padB + heightBuffer);
       const tw = Math.max(0.1, trEdge - tx);
       const th = Math.max(0.1, tbEdge - ty);
 
