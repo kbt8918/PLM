@@ -512,7 +512,7 @@
         <tr>
           <td class="num">1</td>
           <td>
-            <b>영역명: 탭 영역</b><br>ㄴ 부품 공정 / 모듈 공정 탭으로 공정 유형을 전환하는 영역이다. 요소 2종(부품 공정 탭, 모듈 공정 탭)으로 구성된다.<br><br><b>요소: 1-1 부품 공정 탭</b><br><span class="cond-label">노출조건:</span> 화면 진입 시 항상 표시. 기본 활성 탭.<br><span class="cond-label">입력조건:</span> 클릭 시 활성화. 활성화되면 하단 요약 현황·공정별 상세 표가 부품 공정 데이터로 갱신.<br><span class="cond-label">출력조건:</span> 활성 시 다크 배경의 필 형태로 강조 표시.<br><span class="cond-label">인터랙션:</span> 탭 전환 시 하단 콘텐츠 페이드 전환.
+            <b>영역명: 탭 영역</b><br>ㄴ 부품 공정 / 모듈 공정 탭으로 공정 유형을 전환하는 영역이다. 요소 2종(부품 공정 탭, 모듈 공정 탭)으로 구성된다.<br><br><b>요소: 1-1 부품 공정 탭</b><br><span class="cond-label">노출조건:</span> 화면 진입 시 항상 표시. 기본 활성 탭.<br><span class="cond-label">입력조건:</span> 클릭 시 활성화. 활성화되면 하단 요약 현황·공정별 상세 표가 부품 공정 데이터로 갱신.<br><span class="cond-label">출력조건:</span> 활성 시 다크 배경의 필 형태로 강조 표시.<br><span class="cond-label">인터랙션:</span> 탭 전환 시 하단 콘텐츠 페이드 전환.<br><br><b>요소: 1-2 모듈 공정 탭</b><br><span class="cond-label">노출조건:</span> 화면 진입 시 항상 표시.<br><span class="cond-label">입력조건:</span> 클릭 시 활성화, 하단 표가 모듈 공정 데이터로 갱신.<br><span class="cond-label">출력조건:</span> 비활성 시 회색 텍스트로 표시.<br><span class="cond-label">인터랙션:</span> 탭 전환 시 하단 콘텐츠 페이드 전환.
           </td>
         </tr>
         <tr>
@@ -524,7 +524,7 @@
         <tr>
           <td class="num">3</td>
           <td>
-            <b>영역명: 요약 현황</b><br>ㄴ 라인별 자동화율/직접인원/완료일정을 비교하는 요약 매트릭스 표이다.<br><br><b>요소: 요약 현황 표</b><br><span class="cond-label">노출조건:</span> 필터 조회 결과에 따라 라인 컬럼이 동적으로 구성.<br><span class="cond-label">출력조건:</span> 자동화율은 "현재% &rarr; 목표%(증감폭)", 직접인원은 "현재명 &rarr; 목표명(감소폭)" 형식으로 표시. [B/P] 창원2C 라인 컬럼은 기준(베이스라인)으로 강조 표시.<br><span class="cond-label">BE 연동:</span> 부품/모듈 공정배치 원천 데이터 집계 배치 결과를 조회(GET /api/automation/parts/summary).
+            <b>영역명: 요약 현황</b><br>ㄴ 라인별 자동화율/직접인원/완료일정을 비교하는 요약 매트릭스 표이다.<br><br><b>요소: 요약 현황 표</b><br><span class="cond-label">노출조건:</span> 필터 조회 결과에 따라 라인 컬럼이 동적으로 구성.
           </td>
         </tr>
       </tbody>
@@ -784,9 +784,9 @@
       <thead><tr><th class="num">NO</th><th>상세설명</th></tr></thead>
       <tbody>
         <tr class="cont-row">
-          <td class="num">1</td>
+          <td class="num">3</td>
           <td>
-            <b>요소: 1-2 모듈 공정 탭</b><br><span class="cond-label">노출조건:</span> 화면 진입 시 항상 표시.<br><span class="cond-label">입력조건:</span> 클릭 시 활성화, 하단 표가 모듈 공정 데이터로 갱신.<br><span class="cond-label">출력조건:</span> 비활성 시 회색 텍스트로 표시.<br><span class="cond-label">인터랙션:</span> 탭 전환 시 하단 콘텐츠 페이드 전환.
+            <span class="cond-label">출력조건:</span> 자동화율은 "현재% &rarr; 목표%(증감폭)", 직접인원은 "현재명 &rarr; 목표명(감소폭)" 형식으로 표시. [B/P] 창원2C 라인 컬럼은 기준(베이스라인)으로 강조 표시.<br><span class="cond-label">BE 연동:</span> 부품/모듈 공정배치 원천 데이터 집계 배치 결과를 조회(GET /api/automation/parts/summary).
           </td>
         </tr>
         <tr>
