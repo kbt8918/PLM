@@ -6831,6 +6831,36 @@ async function downloadPPTX(e) {
       // 되돌린다 — 셀 배경/테두리/텍스트는 그대로 유지되며, 매 PPT 생성 시점의 라이브 DOM
       // 측정값을 그대로 쓰므로 설명 텍스트가 늘어나면 다음 생성 때 셀 크기도 함께 늘어난다.
 
+      // 0차 패스(dry-run): desc-table 행 흐름 재현(2026-08-20 근본 수정)을 위한 사전 스캔.
+      // HTML <table>은 한 행(tr)의 콘텐츠가 늘어나면 다음 행이 자동으로 밀리지만, PPT는 각
+      // <td>를 독립된 고정 좌표 도형으로 그려 이 흐름이 없다. 오프셋 없이(yOffsetMap=null)
+      // 모든 텍스트 리프를 한 번 dry-run으로 훑어, desc-table의 각 <tr>이 HTML 원래 높이보다
+      // 얼마나 더 필요한지(초과분)를 dryRunCollector(Map<tr, excessIn>)에 모은다.
+      const dryRunCollector = new Map();
+      for (const el of elements) {
+        if (skipEls.has(el)) continue;
+        if (el.classList && (el.classList.contains('indicator') || el.classList.contains('indicator-el') || el.classList.contains('on-top'))) continue;
+        if (el.closest && el.closest('.popup-backdrop')) continue;
+        sbpptxRenderElement(pptx, slide, el, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H, null, dryRunCollector);
+      }
+      // dry-run 결과(tr별 초과분)를 DOM 순서(desc-table 내 tr 등장 순서)대로 누적해, "이 tr부터
+      // 적용할 y오프셋"을 구성한다. 같은 desc-table 안에서 tr이 하나씩 늘어날 때마다 그 아래
+      // 모든 형제 tr(과 그 안의 모든 자손 요소)이 누적된 만큼 통째로 아래로 밀린다 — 실제
+      // HTML 테이블의 자동 흐름과 동일한 결과.
+      const yOffsetMap = new Map();
+      if (dryRunCollector.size > 0) {
+        const descTables = section.querySelectorAll('.desc-table');
+        descTables.forEach(table => {
+          let cumulative = 0;
+          const trs = table.querySelectorAll('tr');
+          trs.forEach(tr => {
+            if (cumulative > 0) yOffsetMap.set(tr, cumulative);
+            const excess = dryRunCollector.get(tr) || 0;
+            cumulative += excess;
+          });
+        });
+      }
+
       // 1차 패스: 인디케이터(영역·요소)·.on-top 외 모든 요소
       // .popup-backdrop(팝업 페이지의 딤 처리된 배경 스냅샷)은 HTML/PDF에서는 opacity:0.32로
       // 흐려지고 그 위에 불투명 모달이 absolute로 덮여 시각적으로 안 보이지만, 이 PPT 변환은
@@ -6842,7 +6872,7 @@ async function downloadPPTX(e) {
         if (skipEls.has(el)) continue;
         if (el.classList && (el.classList.contains('indicator') || el.classList.contains('indicator-el') || el.classList.contains('on-top'))) continue;
         if (el.closest && el.closest('.popup-backdrop')) continue;
-        sbpptxRenderElement(pptx, slide, el, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H);
+        sbpptxRenderElement(pptx, slide, el, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H, yOffsetMap);
       }
       // 2차 패스: 인디케이터(영역·요소)·.on-top을 맨 위 레이어로. .indicator-el은 이제
       // 타겟 요소(버튼/탭/span) 내부에 중첩된 자식으로 배치되므로(요소 위치가 뷰포트/내보내기
@@ -6852,7 +6882,7 @@ async function downloadPPTX(e) {
         if (skipEls.has(el)) continue;
         if (!el.classList || (!el.classList.contains('indicator') && !el.classList.contains('indicator-el') && !el.classList.contains('on-top'))) continue;
         if (el.closest && el.closest('.popup-backdrop')) continue;
-        sbpptxRenderElement(pptx, slide, el, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H);
+        sbpptxRenderElement(pptx, slide, el, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H, yOffsetMap);
       }
       await new Promise(r => requestAnimationFrame(r));
     }
@@ -6957,7 +6987,7 @@ function sbpptxCaptureLiveDom(section, timeoutMs) {
   });
 }
 
-function sbpptxRenderElement(pptx, slide, el, baseX, baseY, scale, offsetX, offsetY, slideW, slideH) {
+function sbpptxRenderElement(pptx, slide, el, baseX, baseY, scale, offsetX, offsetY, slideW, slideH, yOffsetMap, dryRunCollector) {
   const tag = el.tagName;
   if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'LINK' || tag === 'META' || tag === 'TITLE' || tag === 'HEAD' || tag === 'TEMPLATE' || tag === 'BR' || tag === 'HR') return;
   if (tag === 'svg' || tag === 'SVG' || tag === 'PATH' || tag === 'CIRCLE' || tag === 'LINE' || tag === 'RECT' || tag === 'POLYLINE' || tag === 'POLYGON') return;
@@ -7019,13 +7049,34 @@ function sbpptxRenderElement(pptx, slide, el, baseX, baseY, scale, offsetX, offs
   const rx = rect.left + window.scrollX;
   const ry = rect.top + window.scrollY;
   const x = offsetX + (rx - baseX) * scale;
-  const y = offsetY + (ry - baseY) * scale;
+  // desc-table 행 흐름 재현(2026-08-20 근본 수정): HTML <table>은 한 행(tr)의 실제 콘텐츠가
+  // 늘어나면 다음 행이 "자동으로" 그만큼 아래로 밀린다(테이블의 기본 성질). 반면 PPT는 각
+  // <td> 텍스트를 독립된 고정 좌표 도형으로 그리므로 이 자동 흐름이 없다 — 한 셀의 실측
+  // 필요 높이(sbpptxMeasureWrappedLineCount)가 HTML의 원래 rect.height보다 커서 그 셀을
+  // 늘리면, 같은 좌표계를 쓰는 다음 셀(다음 tr)과 겹치는 문제가 있었다(실측 확인: 문장이
+  // 매우 많은 desc-table 행일수록 심함). yOffsetMap은 섹션 렌더링 시작 전 0차 dry-run
+  // 패스(downloadPPTX() 안, elements 순회 직전)가 미리 계산해 둔 "이 요소가 속한 tr까지
+  // 누적된 밀림량"이다 — 이걸 y좌표에 더해 HTML 테이블의 자동 흐름을 PPT에서도 재현한다.
+  let yOffsetIn = 0;
+  if (yOffsetMap && yOffsetMap.size > 0) {
+    let node = el;
+    while (node) {
+      if (yOffsetMap.has(node)) { yOffsetIn = yOffsetMap.get(node); break; }
+      node = node.parentElement;
+    }
+  }
+  const y = offsetY + (ry - baseY) * scale + yOffsetIn;
   const w = rect.width * scale;
   const h = rect.height * scale;
 
   if (x >= slideW + 0.05 || y >= slideH + 0.05) return;
   if (x + w <= -0.05 || y + h <= -0.05) return;
   if (w < 0.02 || h < 0.02) return;
+
+  // dry-run 사전 스캔 패스(downloadPPTX()의 0차 패스)에서는 desc-table 안의 텍스트 리프만
+  // 필요하다 — IMG/배경도형/폼요소(desc-table에는 나오지 않음)는 도형을 그리지 않고 여기서
+  // 조기 종료한다(계산 낭비 방지).
+  if (dryRunCollector && !sbpptxIsTextLeaf(el)) return;
 
   // (0) IMG 요소 — 실제 화면 스크린샷(live-screen)을 PptxGenJS addImage로 삽입.
   //     [sb-creator-kbt 패치] 와이어프레임이 아닌 구현 화면 캡처를 PPTX에 그대로 담는다.
@@ -7285,37 +7336,11 @@ function sbpptxRenderElement(pptx, slide, el, baseX, baseY, scale, offsetX, offs
       const widthBuffer = Math.min(w * widthBufferRatio, widthBufferCapPx * scale);
       const rightSafe = inDescAreaText ? 0.15 : 0.05;
 
-      // Description 다행 텍스트(desc-table의 <td> 등)는 박스 높이(th)를 HTML의 rect.height
-      // 그대로 쓰는데, 이는 "브라우저가 이 폭에서 wrap한 실제 줄 수" 기준값이다. PowerPoint는
-      // 같은 텍스트를 같은 폭(tw)에서 맑은 고딕으로 다시 줄바꿈하는데, 브라우저 폰트 메트릭과
-      // 미세하게 달라 특정 문장이 HTML에서보다 한 줄 더 wrap되곤 한다 — 문단이 많거나 긴
-      // 문단이 여러 개인 셀일수록 이 오차가 누적되어 마지막 줄(주로 "인터랙션"·"BE 연동")이
-      // 박스 아래로 밀려 시각적으로 잘려 보인다(PowerPoint는 넘친 텍스트를 자동 축소하지
-      // 않고 그대로 클리핑). 이를 흡수하기 위해 실제 줄 수(Range.getClientRects()로 브라우저가
-      // "실제로 그린" 줄 수를 직접 셈 — 추정이 아닌 실측)에 비례한 안전 마진을 높이에 더한다.
-      // 마진은 짧은 셀까지 과도하게 늘려 다음 행 배경(desc-table tr:nth-child(even) 줄무늬)을
-      // 침범하지 않도록 상한(0.45in)을 둔다.
-      let heightBuffer = 0;
-      if (inDescAreaText && !isSingleLine) {
-        const lineSpacingIn = lineHeightPx * scale;
-        try {
-          const range = document.createRange();
-          range.selectNodeContents(el);
-          const rects = Array.from(range.getClientRects()).filter(r => r.height > 0.5);
-          const actualLineCount = rects.length; // 인라인 콘텐츠는 시각적 줄 하나당 rect 하나
-          if (actualLineCount > 0) {
-            heightBuffer = Math.min(0.45, lineSpacingIn * Math.max(1.5, actualLineCount * 0.12));
-          }
-        } catch (err) { /* Range 실패 시 버퍼 없이 진행(기존 동작과 동일) */ }
-      }
-
       const tx = Math.max(0, x + padL);
       const ty = Math.max(0, y + padT);
       const naturalRight = x + w - padR + widthBuffer;
       const trEdge = Math.min(slideW - rightSafe, naturalRight);
-      const tbEdge = Math.min(slideH, y + h - padB + heightBuffer);
       const tw = Math.max(0.1, trEdge - tx);
-      const th = Math.max(0.1, tbEdge - ty);
 
       // <br> 줄바꿈과 .cond-label 굵은 레이블을 PPTX에서도 보존:
       //   textContent를 통째로 쓰면 모든 공백이 한 칸으로 합쳐져 줄바꿈이 사라지고
@@ -7323,6 +7348,51 @@ function sbpptxRenderElement(pptx, slide, el, baseX, baseY, scale, offsetX, offs
       //   → HTML 자식 노드를 순회해 리치 텍스트 런(run) 배열로 변환(줄바꿈 + 굵게 유지).
       const richRuns = sbpptxRichRuns(el, bold);
       const textPayload = (richRuns.length > 0) ? richRuns : text;
+
+      // 근본 수정(2026-08-20, 사용자 제보 반복 — SCR-001 NO=1/4/5, SCR-014 NO=4 등 여러 화면의
+      // desc-table 텍스트가 "출력조건 아래 인터랙션", "BE 연동" 같은 뒤쪽 줄에서 계속 안 보이거나
+      // 박스를 벗어나 노출됨). 근본 원인: 텍스트박스 높이(th)를 HTML의 rect.height로 고정해
+      // 두고 PowerPoint가 폭(tw) 안에서 "제멋대로" 다시 줄바꿈하게 두면, 브라우저-PowerPoint
+      // 폰트 메트릭 차이로 실제 wrap 줄 수가 항상 달라질 수 있어 경험적 버퍼/마진으로는 문장
+      // 조합에 따라 계속 새로운 잘림이 재발한다(실제로 버퍼를 올릴 때마다 일부만 해결되고 다른
+      // 화면에서 다시 터짐). 근본 해결: 폭(tw)은 고정한 채로, Canvas 2D measureText를 "맑은
+      // 고딕" 폰트로 사용해 PowerPoint가 그릴 실제 줄 수를 텍스트 삽입 전에 정밀 계산하고,
+      // 그 줄 수만큼의 높이를 처음부터 정확히 부여한다 — 즉 "텍스트가 길어지면 박스가 아래로
+      // 늘어난다"를 추정이 아니라 실측으로 구현한다. Canvas measureText는 OS에 실제 설치된
+      // "맑은 고딕" 폰트 파일을 그대로 사용하므로(브라우저 자체 렌더러가 아닌 시스템 폰트
+      // 셰이핑을 거침), PowerPoint가 같은 폰트로 그리는 폭과 사실상 일치한다.
+      const measuredLines = sbpptxMeasureWrappedLineCount(richRuns.length > 0 ? richRuns : [{ text, options: { bold } }], fontPt, fontFace, tw);
+      const lineSpacingIn = lineHeightPx * scale;
+      const measuredHeightIn = Math.max(0.1, measuredLines * lineSpacingIn);
+      // HTML이 이미 계산해 둔 높이(rect.height 기반)와, 방금 실측한 필요 높이 중 더 큰 쪽을
+      // 쓴다 — HTML 쪽이 더 크면(짧은 텍스트가 큰 셀에 들어있는 경우 등) 기존 레이아웃을
+      // 그대로 존중하고, 실측 쪽이 더 크면(폰트 메트릭 차이로 wrap이 늘어난 경우) 그만큼
+      // 박스를 아래로 확장해 절대 잘리지 않게 한다.
+      // desc-table 행 흐름 재현(위 y 계산의 yOffsetMap)으로 다음 행 자체가 미리 밀려있으므로,
+      // 여기서는 더 이상 "다음 행 침범 방지" 클램프가 필요 없다 — 늘어난 만큼만 정직하게
+      // 높이를 준다(HTML table이 정확히 그렇게 동작하는 것과 동일).
+      const htmlHeightIn = h - padT - padB;
+      const neededHeightIn = isSingleLine ? htmlHeightIn : Math.max(htmlHeightIn, measuredHeightIn);
+
+      // dry-run 모드(downloadPPTX()의 0차 사전 스캔 패스): 실제 도형/텍스트를
+      // 그리지 않고, 이 요소가 desc-table 안에 있다면 "얼마나 더 늘어나야 하는지"(초과분)만
+      // 수집한다. yOffsetMap이 아직 없는(오프셋 0인) 시점에 이 함수를 한 번 미리 돌려, 각
+      // <tr>이 필요로 하는 최대 초과분을 구하고 이를 바탕으로 다음 tr부터의 y오프셋을 누적
+      // 계산한다.
+      if (dryRunCollector) {
+        if (inDescAreaText && !isSingleLine) {
+          const tr = el.closest('tr');
+          if (tr) {
+            const excess = Math.max(0, neededHeightIn - htmlHeightIn);
+            const prevMax = dryRunCollector.get(tr) || 0;
+            if (excess > prevMax) dryRunCollector.set(tr, excess);
+          }
+        }
+        return;
+      }
+
+      const tbEdge = Math.min(slideH, ty + neededHeightIn);
+      const th = Math.max(0.1, tbEdge - ty);
 
       // PPT 텍스트박스는 line_spacing을 지정하지 않으면 PowerPoint 기본 줄간격(HTML의
       // line-height:1.5보다 좁음)이 적용되어, 셀 배경 도형 높이(HTML 실측값 그대로)보다
@@ -7548,6 +7618,66 @@ function sbpptxFontName(ff) {
   const f = ff.toLowerCase();
   if (f.includes('mono') || f.includes('courier') || f.includes('consolas')) return 'Consolas';
   return '맑은 고딕';
+}
+
+// Description 텍스트박스 높이 실측(2026-08-20 근본 수정)의 핵심 함수. richRuns 배열
+// (breakLine으로 강제 줄바꿈, bold로 굵게 구분)을 Canvas 2D measureText로 "PowerPoint가
+// 실제로 그릴 폰트"(맑은 고딕 등, PPTX addText에 넘기는 것과 동일한 fontFace)로 측정해,
+// 주어진 폭(availWidthIn, 인치) 안에서 몇 줄이 필요한지 정확히 센다. 브라우저 텍스트 레이아웃
+// 엔진(줄바꿈 알고리즘)이 아니라 글리프 폭 측정만 이용하므로, HTML의 line wrapping과는
+// 별개로 "이 폭에 이 글자들이 실제로 몇 줄 필요한가"를 폰트 단위로 정밀 계산할 수 있다.
+// 문자 단위 그리디 wrap(한글은 글자 단위, 공백은 별도 처리하지 않음 — PowerPoint 동아시아
+// 언어 줄바꿈도 어절보다 글자 단위 브레이크를 허용하므로 근사도가 높다)을 쓴다.
+let _sbpptxMeasureCanvas = null;
+let _sbpptxMeasureCtx = null;
+function sbpptxMeasureWrappedLineCount(runs, fontPt, fontFace, availWidthIn) {
+  if (!_sbpptxMeasureCanvas) {
+    _sbpptxMeasureCanvas = document.createElement('canvas');
+    _sbpptxMeasureCtx = _sbpptxMeasureCanvas.getContext('2d');
+  }
+  const ctx = _sbpptxMeasureCtx;
+  // measureText는 CSS px 단위 폰트를 기준으로 동작하므로 pt→px 변환(1pt = 96/72 px)해 지정.
+  const fontPx = fontPt * 96 / 72;
+  // PowerPoint 내부 텍스트 여백(inset)·렌더링 엔진의 글리프 폭 반올림 차이를 흡수하기 위해
+  // 측정 가용폭을 3% 보수적으로 좁게 잡는다 — 실측(48슬라이드 전수) 결과 여유 없이 그대로
+  // 쓰면 아주 드물게(문장 끝이 폭 경계에 걸치는 경우) 1줄 부족한 케이스가 남았다.
+  const availWidthPx = Math.max(1, availWidthIn * 96 * 0.97);
+
+  const setFont = (bold) => {
+    ctx.font = `${bold ? 'bold ' : ''}${fontPx}px "${fontFace}"`;
+  };
+
+  let totalLines = 1;
+  let curLineWidth = 0;
+  let curLineHasContent = false;
+
+  const measureChar = (ch, bold) => {
+    setFont(bold);
+    return ctx.measureText(ch).width;
+  };
+
+  runs.forEach(run => {
+    const runText = run.text || '';
+    const bold = !!(run.options && run.options.bold);
+    for (let i = 0; i < runText.length; i++) {
+      const ch = runText[i];
+      const chW = measureChar(ch, bold);
+      if (curLineHasContent && curLineWidth + chW > availWidthPx) {
+        totalLines++;
+        curLineWidth = chW;
+      } else {
+        curLineWidth += chW;
+      }
+      curLineHasContent = true;
+    }
+    if (run.options && run.options.breakLine) {
+      totalLines++;
+      curLineWidth = 0;
+      curLineHasContent = false;
+    }
+  });
+
+  return totalLines;
 }
 
 function loadScript(src) {
