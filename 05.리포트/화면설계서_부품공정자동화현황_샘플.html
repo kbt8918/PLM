@@ -6994,7 +6994,11 @@ async function downloadPPTX(e) {
         // 다음 화면 desc-table 앞부분으로 채운다. 판정은 built를 만든 후에나 가능하므로,
         // 여기서는 항상 nextTableBodyRows를 후보로 넘기고 실제 사용 여부는 함수 내부에서
         // maxHeightIn 초과 여부로 자연히 결정된다(여유가 없으면 pulledCount=0으로 끝남).
-        const pullCandidateRows = nextTableBodyRows.length > 0 ? nextTableBodyRows : null;
+        // 단, 다음 섹션의 맨 첫 행이 cont-row(이 화면 자신의 NO 연속)라면 끌어오지 않는다
+        // (2026-08-26 사용자 제보 — SCR-006 23p에서 NO=3이 같은 화면 안에 두 번 노출되는
+        // 사고: cont-1의 cont-row(3-3)가 pull-forward로 원본 NO=3 옆에 당겨져 옴).
+        const pullCandidateRows = (nextTableBodyRows.length > 0 && !nextTableBodyRows[0].isContRow)
+          ? nextTableBodyRows : null;
         const built = sbpptxBuildDescTable(
           table, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H,
           effectiveQueue, maxHeightIn, pullCandidateRows, pullForwardSkipCount, nextIsSameChainCont
@@ -7822,6 +7826,7 @@ function sbpptxParseDescTableBodyRows(table) {
     bodyRowDefs.push({
       noRuns: noRuns.length ? noRuns : [{ text: cells[0].textContent.trim(), options: {} }],
       detailRuns: detailRuns.length ? detailRuns : [{ text: cells[1].textContent.trim(), options: {} }],
+      isContRow: tr.classList.contains('cont-row'),
     });
   });
   return bodyRowDefs;
