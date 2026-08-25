@@ -6997,7 +6997,7 @@ async function downloadPPTX(e) {
         const pullCandidateRows = nextTableBodyRows.length > 0 ? nextTableBodyRows : null;
         const built = sbpptxBuildDescTable(
           table, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H,
-          effectiveQueue, maxHeightIn, pullCandidateRows, pullForwardSkipCount
+          effectiveQueue, maxHeightIn, pullCandidateRows, pullForwardSkipCount, nextIsSameChainCont
         );
         if (built) builtDescTables.push(built);
         if (built && built.hasOverflow) {
@@ -7827,7 +7827,7 @@ function sbpptxParseDescTableBodyRows(table) {
   return bodyRowDefs;
 }
 
-function sbpptxBuildDescTable(table, baseX, baseY, scale, offsetX, offsetY, slideW, slideH, prependQueue, maxHeightIn, pullForwardRows, pullForwardSkipCount) {
+function sbpptxBuildDescTable(table, baseX, baseY, scale, offsetX, offsetY, slideW, slideH, prependQueue, maxHeightIn, pullForwardRows, pullForwardSkipCount, hasRealNextChunk) {
   const rect = table.getBoundingClientRect();
   if (rect.width < 0.5 || rect.height < 0.5) return null;
   const style = window.getComputedStyle(table);
@@ -7951,17 +7951,24 @@ function sbpptxBuildDescTable(table, baseX, baseY, scale, offsetX, offsetY, slid
 
     const fullRow = makeRow(def.noRuns, def.detailRuns, bg);
 
-    // 소형 초과 허용치(2026-08-25 사용자 요청): 8pt 재근사 계산은 원본 HTML(12px, 폭 100%)과
-    // 폭/폰트 축소 비율이 서로 달라(캔버스 전체는 scale로 폭까지 줄어드는데 desc-table 폰트는
-    // 8pt로 고정) 실제로는 안 넘치는 경계 케이스에서도 계산상 살짝 넘친다고 오판하는 경우가
-    // 있다(실측: SCR-014 NO=3이 텍스트 2줄 분량인 0.4in 안팎만 초과했는데도 캔버스 전체를
-    // 복제한 이월 페이지가 통째로 하나 더 생겨, 원본에 없던 페이지가 PPT에만 추가되는 문제가
-    // 있었다 — 사용자 제보로 발견). 이 행 하나를 마저 담는 데 필요한 초과분이 작으면(아래
-    // SMALL_OVERFLOW_TOLERANCE_IN 이하) 새 이월 페이지를 만들지 않고 이 표에 그대로 담아
-    // 캔버스 하단 여백을 소폭 침범하는 쪽을 택한다 — 페이지가 통째로 하나 더 늘어나는 것보다
-    // 훨씬 덜 눈에 띄는 트레이드오프다.
+    // (2026-08-25 폐기) 과거 "소형 초과 허용치"(SMALL_OVERFLOW_TOLERANCE_IN=0.5in) 로직은
+    // 표가 maxHeightIn을 살짝 넘겨도 그대로 담아 이월 페이지 생성을 피했었다 — SCR-014처럼
+    // 원본에 -cont-N 청크가 아예 없는 화면에서 가상 페이지가 통째로 하나 더 생기는 걸 막기
+    // 위한 트레이드오프였다. 그런데 이 허용치(최대 0.5in)가 배너 예약 공간(bannerReserveIn
+    // 0.32in)보다 커서, 표가 그 허용치 안에서 초과하면 실제로는 "다음 화면에 계속" 배너
+    // 텍스트박스 영역을 침범해 텍스트 마지막 줄이 배너에 가려 안 보이는 사고가 났다(SCR-003
+    // NO=3 "...결과 조회." 유실처럼 보임 — 실제로는 addTable 데이터엔 있었으나 배너에 가려짐,
+    // 사용자 제보로 발견). R24(pull-forward)가 도입된 지금은 다음 화면(-cont-N)이 이미 있으면
+    // 이월된 조각이 그 화면 맨 위에 자연스럽게 붙으므로, 더 이상 "이월=가상 페이지 생성"이
+    // 아니다 — 이 허용치 자체를 없애고 항상 정상 분할(줄 단위 이월) 경로를 taken다. 원본에
+    // -cont-N이 없는 화면(SCR-014류)에서는 이월해도 받아줄 실제 다음 페이지가 없어 downloadPPTX()가
+    // 캔버스 전체를 복제한 가상 페이지를 새로 만들어야 한다 — 그 가상 페이지 생성 자체를 피하려면
+    // 이런 화면에서만 여전히 소형 초과를 허용한다(hasRealNextChunk === false일 때만). 원본에
+    // -cont-N이 실제로 있는 화면(예: SCR-003)은 hasRealNextChunk === true이므로 이 허용을 건너뛰고
+    // 바로 아래 정상 분할(줄 단위 이월) 경로로 가며, pull-forward가 그 다음 실제 화면 맨 위에
+    // 자연스럽게 이어 붙인다.
     const SMALL_OVERFLOW_TOLERANCE_IN = 0.5;
-    if (maxHeightIn != null && acc + fullRow.rowHIn > maxHeightIn
+    if (!hasRealNextChunk && maxHeightIn != null && acc + fullRow.rowHIn > maxHeightIn
         && (acc + fullRow.rowHIn - maxHeightIn) <= SMALL_OVERFLOW_TOLERANCE_IN) {
       finalRows.push({ cells: fullRow.cells, rowHIn: fullRow.rowHIn });
       acc += fullRow.rowHIn;
