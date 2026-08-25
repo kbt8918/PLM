@@ -6994,11 +6994,17 @@ async function downloadPPTX(e) {
         // 다음 화면 desc-table 앞부분으로 채운다. 판정은 built를 만든 후에나 가능하므로,
         // 여기서는 항상 nextTableBodyRows를 후보로 넘기고 실제 사용 여부는 함수 내부에서
         // maxHeightIn 초과 여부로 자연히 결정된다(여유가 없으면 pulledCount=0으로 끝남).
-        // 다음 섹션의 맨 첫 행이 cont-row(이 화면 자신의 NO 연속)인 경우, 통째로(fully)
-        // 당겨서 완전히 다 넣으면 같은 NO가 같은 화면에 중복 표기되므로(2026-08-26 사용자
-        // 제보 — SCR-006 23p 사고) 함수 내부에서 이 경우만 "줄 단위로 일부만" 당기도록
-        // 강제한다(아래 sbpptxBuildDescTable의 pullForwardRows 처리부, forcePartialFirst 참고).
-        const pullCandidateRows = nextTableBodyRows.length > 0 ? nextTableBodyRows : null;
+        // 단, 다음 섹션의 맨 첫 행이 cont-row(원본 작성자가 이미 "이 NO는 다음 화면에서
+        // 이어간다"고 손으로 화면을 나눠둔 것 — 화면설계서_템플릿.md 180행 SCR-006 사례)
+        // 라면 pull-forward 후보에서 제외한다. 이런 cont-row를 당겨오면 같은 NO 숫자가
+        // 같은 화면 Description NO열에 두 번 찍히는 시각적 문제가 생긴다(2026-08-26 사용자
+        // 재확인 — SCR-006 23p, "줄 단위로 일부만 당기기"로 완화를 시도했으나 텍스트가
+        // 짧아 어차피 fully 들어가 버려 문제가 그대로 남았음). 원본이 나눠둔 화면 경계는
+        // pull-forward가 넘지 않는다 — pull-forward는 어디까지나 "자동 8pt 재계산으로
+        // 생긴 여백"을 메우는 것이지, 원본 사람이 의도적으로 분리한 cont-row 경계를
+        // 재배치하는 기능이 아니다.
+        const pullCandidateRows = (nextTableBodyRows.length > 0 && !nextTableBodyRows[0].isContRow)
+          ? nextTableBodyRows : null;
         const built = sbpptxBuildDescTable(
           table, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H,
           effectiveQueue, maxHeightIn, pullCandidateRows, pullForwardSkipCount, nextIsSameChainCont
