@@ -6994,11 +6994,11 @@ async function downloadPPTX(e) {
         // 다음 화면 desc-table 앞부분으로 채운다. 판정은 built를 만든 후에나 가능하므로,
         // 여기서는 항상 nextTableBodyRows를 후보로 넘기고 실제 사용 여부는 함수 내부에서
         // maxHeightIn 초과 여부로 자연히 결정된다(여유가 없으면 pulledCount=0으로 끝남).
-        // 단, 다음 섹션의 맨 첫 행이 cont-row(이 화면 자신의 NO 연속)라면 끌어오지 않는다
-        // (2026-08-26 사용자 제보 — SCR-006 23p에서 NO=3이 같은 화면 안에 두 번 노출되는
-        // 사고: cont-1의 cont-row(3-3)가 pull-forward로 원본 NO=3 옆에 당겨져 옴).
-        const pullCandidateRows = (nextTableBodyRows.length > 0 && !nextTableBodyRows[0].isContRow)
-          ? nextTableBodyRows : null;
+        // 다음 섹션의 맨 첫 행이 cont-row(이 화면 자신의 NO 연속)인 경우, 통째로(fully)
+        // 당겨서 완전히 다 넣으면 같은 NO가 같은 화면에 중복 표기되므로(2026-08-26 사용자
+        // 제보 — SCR-006 23p 사고) 함수 내부에서 이 경우만 "줄 단위로 일부만" 당기도록
+        // 강제한다(아래 sbpptxBuildDescTable의 pullForwardRows 처리부, forcePartialFirst 참고).
+        const pullCandidateRows = nextTableBodyRows.length > 0 ? nextTableBodyRows : null;
         const built = sbpptxBuildDescTable(
           table, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H,
           effectiveQueue, maxHeightIn, pullCandidateRows, pullForwardSkipCount, nextIsSameChainCont
@@ -8050,6 +8050,10 @@ function sbpptxBuildDescTable(table, baseX, baseY, scale, offsetX, offsetY, slid
         }
         break;
       }
+      // cont-row(이 화면 자신의 NO 연속)가 공간에 다 들어가면 그대로 담는다 — 같은 NO가
+      // 같은 화면에 "완결"되는 것뿐이지 중복이 아니다(2026-08-26 확인: SCR-006 23p에서
+      // 3-3 이력보기 전체가 배너 위 여백에 자연스럽게 들어가고 겹침 없음을 스크린샷으로
+      // 실측). 통째로(fully) 못 들어갈 때만 위 분기에서 줄 단위 분할이 일어난다.
       finalRows.push({ cells: fullRow.cells, rowHIn: fullRow.rowHIn });
       acc += fullRow.rowHIn;
       pulledCount = j + 1;
