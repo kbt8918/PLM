@@ -6994,17 +6994,15 @@ async function downloadPPTX(e) {
         // 다음 화면 desc-table 앞부분으로 채운다. 판정은 built를 만든 후에나 가능하므로,
         // 여기서는 항상 nextTableBodyRows를 후보로 넘기고 실제 사용 여부는 함수 내부에서
         // maxHeightIn 초과 여부로 자연히 결정된다(여유가 없으면 pulledCount=0으로 끝남).
-        // 단, 다음 섹션의 맨 첫 행이 cont-row(원본 작성자가 이미 "이 NO는 다음 화면에서
-        // 이어간다"고 손으로 화면을 나눠둔 것 — 화면설계서_템플릿.md 180행 SCR-006 사례)
-        // 라면 pull-forward 후보에서 제외한다. 이런 cont-row를 당겨오면 같은 NO 숫자가
-        // 같은 화면 Description NO열에 두 번 찍히는 시각적 문제가 생긴다(2026-08-26 사용자
-        // 재확인 — SCR-006 23p, "줄 단위로 일부만 당기기"로 완화를 시도했으나 텍스트가
-        // 짧아 어차피 fully 들어가 버려 문제가 그대로 남았음). 원본이 나눠둔 화면 경계는
-        // pull-forward가 넘지 않는다 — pull-forward는 어디까지나 "자동 8pt 재계산으로
-        // 생긴 여백"을 메우는 것이지, 원본 사람이 의도적으로 분리한 cont-row 경계를
-        // 재배치하는 기능이 아니다.
-        const pullCandidateRows = (nextTableBodyRows.length > 0 && !nextTableBodyRows[0].isContRow)
-          ? nextTableBodyRows : null;
+        // 다음 섹션의 맨 첫 행이 cont-row(원본 작성자가 이미 "이 NO는 다음 화면에서
+        // 이어간다"고 손으로 화면을 나눠둔 것)라도 후보에는 포함한다 — 2026-08-26 최종
+        // 확정: "영역/요소 경계와 무관하게 배너 바로 위까지 줄 단위로 채우고 나머지는
+        // 다음 화면으로 넘긴다"가 사용자 최종 지시. 다만 cont-row는 함수 내부에서
+        // 절대 fully(통째로) 담기지 않고 항상 줄 단위 강제 분할되며(그래야 남는 텍스트가
+        // 확실히 다음 화면에 남는다), 이때 23p에 붙는 앞부분 조각은 NO열을 비워서
+        // "이미 위에 나온 NO=3의 연속"임을 표시하고 NO 중복 표기를 피한다(아래
+        // sbpptxBuildDescTable의 forcePartialOnly/emptyNoOnCarry 처리 참고).
+        const pullCandidateRows = nextTableBodyRows.length > 0 ? nextTableBodyRows : null;
         const built = sbpptxBuildDescTable(
           table, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H,
           effectiveQueue, maxHeightIn, pullCandidateRows, pullForwardSkipCount, nextIsSameChainCont
@@ -8035,18 +8033,27 @@ function sbpptxBuildDescTable(table, baseX, baseY, scale, offsetX, offsetY, slid
       const def = pullForwardRows[j];
       const isEven = (finalRows.length - headerRow.length) % 2 === 1;
       const bg = isEven ? 'F8F9FA' : 'FFFFFF';
-      const fullRow = makeRow(def.noRuns, def.detailRuns, bg);
+      // cont-row(이 화면 자신의 NO 연속)는 이 화면에 이미 같은 NO가 나와 있으므로, 앞부분
+      // 조각의 NO열은 항상 비운다(2026-08-26 최종 확정 — NO 중복 표기 방지). 그리고
+      // 공간이 남더라도 절대 fully(통째로) 담지 않고 무조건 줄 단위 분할만 시도한다 —
+      // "영역/요소 경계와 무관하게 배너 바로 위까지 채우고 나머지는 다음 화면으로"가
+      // 사용자 최종 지시이므로, cont-row라고 예외적으로 fully 통과시키지 않는다.
+      const carryNoRuns = def.isContRow ? [] : def.noRuns;
+      const fullRow = makeRow(carryNoRuns, def.detailRuns, bg);
+      const forcePartial = !!def.isContRow;
 
-      if (acc + fullRow.rowHIn > maxHeightIn) {
-        // 이 항목 전체는 안 들어간다 — 줄 단위로 앞부분만 끌어올 수 있는지 시도한다.
+      if (forcePartial || acc + fullRow.rowHIn > maxHeightIn) {
+        // 이 항목 전체는 안 들어간다(또는 cont-row라 애초에 전체를 넣지 않는다) —
+        // 줄 단위로 앞부분만 끌어올 수 있는지 시도한다.
         const remainIn = Math.max(0, maxHeightIn - acc - padYIn * 2);
         const allowedLines = Math.max(0, Math.floor(remainIn / bodyLineHeightIn) - 1);
         if (allowedLines > 0) {
           const totalLines = sbpptxMeasureWrappedLineCount(def.detailRuns, BODY_FONT_PT, fontFace, detailAvailIn);
-          if (allowedLines < totalLines) {
-            const { beforeRuns, afterRuns } = sbpptxSplitRunsAtLine(def.detailRuns, BODY_FONT_PT, fontFace, detailAvailIn, allowedLines);
+          const linesToTake = forcePartial ? Math.min(allowedLines, Math.max(1, totalLines - 1)) : allowedLines;
+          if (linesToTake < totalLines) {
+            const { beforeRuns, afterRuns } = sbpptxSplitRunsAtLine(def.detailRuns, BODY_FONT_PT, fontFace, detailAvailIn, linesToTake);
             if (beforeRuns.length > 0 && afterRuns.length > 0) {
-              const partialRow = makeRow(def.noRuns, beforeRuns, bg);
+              const partialRow = makeRow(carryNoRuns, beforeRuns, bg);
               finalRows.push({ cells: partialRow.cells, rowHIn: partialRow.rowHIn });
               acc += partialRow.rowHIn;
               pulledCount = j + 1;
@@ -8056,10 +8063,6 @@ function sbpptxBuildDescTable(table, baseX, baseY, scale, offsetX, offsetY, slid
         }
         break;
       }
-      // cont-row(이 화면 자신의 NO 연속)가 공간에 다 들어가면 그대로 담는다 — 같은 NO가
-      // 같은 화면에 "완결"되는 것뿐이지 중복이 아니다(2026-08-26 확인: SCR-006 23p에서
-      // 3-3 이력보기 전체가 배너 위 여백에 자연스럽게 들어가고 겹침 없음을 스크린샷으로
-      // 실측). 통째로(fully) 못 들어갈 때만 위 분기에서 줄 단위 분할이 일어난다.
       finalRows.push({ cells: fullRow.cells, rowHIn: fullRow.rowHIn });
       acc += fullRow.rowHIn;
       pulledCount = j + 1;
