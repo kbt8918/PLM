@@ -8102,9 +8102,16 @@ function sbpptxBuildDescTable(table, baseX, baseY, scale, offsetX, offsetY, slid
         // 줄 단위로 앞부분만 끌어올 수 있는지 시도한다.
         const remainIn = Math.max(0, maxHeightIn - acc - padYIn * 2);
         const allowedLines = Math.max(0, Math.floor(remainIn / bodyLineHeightIn) - 1);
-        if (allowedLines > 0) {
+        // "요소: N-N 제목" 한 줄만 잘라 넣고 그 아래 인터랙션/BE 연동 등 본문 내용이
+        // 하나도 안 딸려오면, 제목만 뚝 떨어진 채 다음 화면으로 끊기는 어색한 분할이
+        // 된다(2026-08-26 사용자 제보 — SCR-006 23p에서 "요소: 3-3 이력보기" 제목만
+        // 있고 그 설명 내용이 하나도 없이 24p로 다 넘어감). 최소 2줄(제목 줄 + 본문
+        // 최소 1줄) 이상을 담을 수 있을 때만 분할을 시도하고, 그렇지 않으면 이 항목을
+        // 통째로 다음 화면에 넘긴다(= 이 화면에서는 이 요소를 아예 시작하지 않음).
+        const MIN_LINES_FOR_PARTIAL = 2;
+        if (allowedLines >= MIN_LINES_FOR_PARTIAL) {
           const totalLines = sbpptxMeasureWrappedLineCount(def.detailRuns, BODY_FONT_PT, fontFace, detailAvailIn);
-          const linesToTake = forcePartial ? Math.min(allowedLines, Math.max(1, totalLines - 1)) : allowedLines;
+          const linesToTake = forcePartial ? Math.min(allowedLines, Math.max(MIN_LINES_FOR_PARTIAL, totalLines - 1)) : allowedLines;
           if (linesToTake < totalLines) {
             const { beforeRuns, afterRuns } = sbpptxSplitRunsAtLine(def.detailRuns, BODY_FONT_PT, fontFace, detailAvailIn, linesToTake);
             if (beforeRuns.length > 0 && afterRuns.length > 0) {
