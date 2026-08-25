@@ -6768,6 +6768,14 @@ async function downloadPPTX(e) {
     // 청크)의 desc-table 앞에 같은 NO로 이어붙인다. 화면이 바뀌면(id 접두사가 다르면) 이월하지
     // 않고 버린다.
     let pendingOverflowQueue = null; // Array<{noRuns, detailRuns}> | null
+    // pull-forward(2026-08-25, 사용자 요청 — "다음 화면에 계속" 배너 위 여백을 다음 화면의
+    // desc-table 앞부분으로 채운다): 이번 섹션이 자기 몫의 desc-table을 다 그렸는데도
+    // 배너 예약분을 뺀 여유 공간이 남으면, 다음 화면(-cont-N+1)의 desc-table 앞부분을 줄
+    // 단위로 끌어와 채운다. { fromId, count, partialAfterRuns } | null — fromId는 끌어온
+    // "원본이 속했던 섹션"이 아니라 "이 값을 소비해야 할 다음 섹션의 baseId"(=pull한 이번
+    // 섹션의 sectionBaseId)이다. pendingOverflowQueue(넘칠 때 다음으로 밀어내는 이월)와는
+    // 정반대 방향이지만 같은 "화면 그룹 경계에서만 유효" 규칙을 공유한다.
+    let pendingPullForward = null; // { fromId, count, partialAfterRuns } | null
     const descBaseId = (id) => id.replace(/-cont-\d+$/, '');
 
     // 팝업(-popup-) 아닌 기본 화면(SCR-XXX) 중 가장 작은 fit-to-slide 배율을 전체 배율
@@ -6922,6 +6930,13 @@ async function downloadPPTX(e) {
       let inheritedQueue = (pendingOverflowQueue && pendingOverflowQueue.fromId === sectionBaseId)
         ? pendingOverflowQueue.queue : null;
       pendingOverflowQueue = null;
+      // 직전 섹션이 이번 섹션의 desc-table 앞부분을 pull-forward로 미리 끌어갔다면(아래
+      // pull-forward 블록 참고), 그만큼(pendingPullForward.count 완전한 행 + 잘린 나머지
+      // pendingPullForward.partialAfterRuns)을 이 섹션의 표 첫머리에서 건너뛰고 시작해야
+      // 중복 렌더링을 막는다. 이 섹션이 그 화면의 다음 청크(-cont-N+1)일 때만 적용한다.
+      const myPullForwardSkip = (pendingPullForward && pendingPullForward.fromId === sectionBaseId)
+        ? pendingPullForward : null;
+      pendingPullForward = null;
       // 캔버스(.wireframe-wrap) 하단 y좌표(슬라이드 in 단위) — 화면설계서_템플릿.md 1-3절
       // 8항 규칙: Description은 "같은 화면의 캔버스 높이"를 넘으면 다음 화면으로 자른다.
       // 슬라이드 전체 높이가 아니라 이 화면 자신의 캔버스 하단을 오버플로우 기준으로 쓴다.
@@ -6929,6 +6944,16 @@ async function downloadPPTX(e) {
       const wfBottomIn = wfEl
         ? pageOffsetY + (wfEl.getBoundingClientRect().bottom + window.scrollY - sy) * scale
         : SLIDE_H;
+      // pull-forward 제공 후보: 다음 섹션이 같은 화면 그룹(-cont-N+1)이고 팝업이 아니면,
+      // 그 섹션의 desc-table 원본 행을 미리 파싱해 둔다(실제로 쓰일지는 이 섹션의 desc-table이
+      // 자기 몫을 다 그리고도 여유가 남는지에 달렸다 — 아래 루프에서 결정).
+      const nextSectionForPull = sections[i + 1];
+      const nextIsSameChainCont = nextSectionForPull && descBaseId(nextSectionForPull.id || '') === sectionBaseId
+        && nextSectionForPull.id !== sectionBaseId && /-cont-\d+$/.test(nextSectionForPull.id || '')
+        && !(nextSectionForPull.id || '').includes('-popup-');
+      const nextTable = nextIsSameChainCont ? nextSectionForPull.querySelector('.desc-table') : null;
+      const nextTableBodyRows = nextTable ? sbpptxParseDescTableBodyRows(nextTable) : [];
+
       descTables.forEach(table => {
         // 원본 HTML 작성자가 이미 손으로 청크를 나눠둔 경우(이 표의 첫 본문 행이
         // <tr class="cont-row">), 자동 이월 큐를 버리면 그 사이(자동 분할 지점 ~ 원본
@@ -6940,7 +6965,14 @@ async function downloadPPTX(e) {
         // [이월 큐, ...이 표의 실제 본문 행(원본 cont-row 포함)] 순서로 조립하므로,
         // 원본 cont-row는 자동 이월분 뒤에 자연스럽게 이어진다(같은 NO가 두 번 나올 수
         // 있으나 내용이 다른 연속 조각이라 중복이 아니다).
-        const effectiveQueue = inheritedQueue;
+        let effectiveQueue = inheritedQueue;
+        // 직전 섹션이 이 표의 앞부분을 pull-forward로 이미 그렸다면(myPullForwardSkip),
+        // 그 잘린 나머지(partialAfterRuns)를 이 표의 새 첫 행으로 이어붙인다 — 이월 큐와
+        // 동일한 조립 메커니즘(prependQueue)을 재사용한다. myPullForwardSkip.count(완전히
+        // 끌려간 행 개수)는 아래에서 원본 bodyRowDefs 파싱 후 별도로 건너뛴다.
+        if (myPullForwardSkip && myPullForwardSkip.partialAfterRuns) {
+          effectiveQueue = (effectiveQueue || []).concat([myPullForwardSkip.partialAfterRuns]);
+        }
 
         const htmlRect = table.getBoundingClientRect();
         const tableX = pageOffsetX + (htmlRect.left + window.scrollX - sx) * scale;
@@ -6951,13 +6983,36 @@ async function downloadPPTX(e) {
         // (템플릿 1-3절 8항 — 슬라이드 전체 높이가 아니라 캔버스 높이 기준).
         const bannerReserveIn = 0.32;
         const maxHeightIn = Math.max(0.5, wfBottomIn - tableY - bannerReserveIn);
+        // 이 표가 pull-forward의 소비자였다면(myPullForwardSkip.count > 0), 다음 섹션의
+        // 원본 행 중 이미 이전 화면에서 그려진 만큼(count)을 건너뛴 나머지만 이 표 자신의
+        // 본문으로 쓴다 — 이 skip 정보는 sbpptxBuildDescTable에 직접 넘기지 않고, 대신
+        // 이 표 DOM 자체가 그 다음 섹션의 desc-table이므로 pullForwardSkipCount 인자로
+        // 전달해 그 함수 내부에서 bodyRowDefs를 자를 때 사용한다.
+        const pullForwardSkipCount = (myPullForwardSkip && myPullForwardSkip.count) || 0;
+        // pull-forward 제공: 이 표가 자기 몫을 다 그렸는데(hasOverflow 없음) 원본에 이미
+        // "다음 화면에 계속" 배너가 있다면(hasOriginalBanner, 아래에서 판정) 남는 공간을
+        // 다음 화면 desc-table 앞부분으로 채운다. 판정은 built를 만든 후에나 가능하므로,
+        // 여기서는 항상 nextTableBodyRows를 후보로 넘기고 실제 사용 여부는 함수 내부에서
+        // maxHeightIn 초과 여부로 자연히 결정된다(여유가 없으면 pulledCount=0으로 끝남).
+        const pullCandidateRows = nextTableBodyRows.length > 0 ? nextTableBodyRows : null;
         const built = sbpptxBuildDescTable(
           table, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H,
-          effectiveQueue, maxHeightIn
+          effectiveQueue, maxHeightIn, pullCandidateRows, pullForwardSkipCount
         );
         if (built) builtDescTables.push(built);
         if (built && built.hasOverflow) {
           pendingOverflowQueue = { fromId: sectionBaseId, queue: built.overflowQueue };
+        }
+        // 이 표가 다음 화면의 앞부분을 실제로 끌어왔으면(pulledCount > 0), 다음 섹션 처리
+        // 시점에 그만큼을 건너뛰도록 기록한다. sectionBaseId를 그대로 쓰는 이유: 다음
+        // 섹션이 소비 시점에 "자기 섹션의 baseId"로 이 값을 찾기 때문(위 myPullForwardSkip
+        // 계산부와 대칭).
+        if (built && (built.pulledCount > 0 || built.pulledPartialAfterRuns)) {
+          pendingPullForward = {
+            fromId: sectionBaseId,
+            count: built.pulledCount,
+            partialAfterRuns: built.pulledPartialAfterRuns,
+          };
         }
         // "다음 화면에 계속" 배너 노출 조건은 두 가지 중 하나라도 해당하면 그린다:
         //   (a) 자동 오버플로우 계산 결과 이 표가 실제로 다음 화면으로 잘렸을 때(built.hasOverflow)
@@ -6968,6 +7023,11 @@ async function downloadPPTX(e) {
         //       원인: desc-table만 기준으로 hasOverflow를 판단해 원본에 이미 있던 배너 케이스를
         //       놓쳤었다). 원본 .desc-continue는 sbpptxRenderElement에서 스킵되므로(중복 방지),
         //       여기서 감지해 새 고정 위치 배너로 대체해 그린다.
+        //       (2026-08-25 추가) 이 표가 pull-forward로 다음 화면 내용을 이미 일부/전부
+        //       끌어와 그렸어도(pulledCount > 0), 다음 섹션에 아직 남은 내용이 있는 한
+        //       "다음 화면에 계속" 배너는 그대로 유지한다 — pull-forward는 배너 위 공백을
+        //       메우는 것일 뿐 배너 자체를 없애지 않는다(다음 화면 desc-table이 완전히
+        //       비게 되는 극단적 경우만 다음 섹션 쪽에서 자연히 배너가 안 뜨게 된다).
         const hasOriginalBanner = !!table.closest('.desc-wrap') &&
           !!table.closest('.desc-wrap').querySelector(':scope > .desc-continue');
         if ((built && built.hasOverflow) || hasOriginalBanner) {
@@ -7744,7 +7804,30 @@ function sbpptxRenderElement(pptx, slide, el, baseX, baseY, scale, offsetX, offs
 // 화면 그룹(SCR-XXX)별로 합산 비교했을 때 유실이 없는지를 확인한다. 육안 검토만으로는
 // 이 문서 분량(48+ 섹션)에서 놓치는 경우가 많으므로 반드시 스크립트로 전수 스캔한다.
 // ============================================================================
-function sbpptxBuildDescTable(table, baseX, baseY, scale, offsetX, offsetY, slideW, slideH, prependQueue, maxHeightIn) {
+// desc-table의 본문 행(NO/상세설명)만 순수 데이터로 파싱한다. sbpptxBuildDescTable() 내부
+// 파싱 로직과 동일하되 폰트/좌표 계산 없이 데이터만 뽑는다 — pull-forward(2026-08-25,
+// 다음 화면 desc-table 앞부분을 미리 끌어와 이번 화면 배너 위 여백을 채우는 기능)가 다음
+// 섹션의 원본 행을 미리 읽어야 해서 분리했다.
+function sbpptxParseDescTableBodyRows(table) {
+  if (!table) return [];
+  const rowsHtml = Array.from(table.querySelectorAll(':scope > thead > tr, :scope > tbody > tr'));
+  const bodyRowDefs = [];
+  rowsHtml.forEach(tr => {
+    const isHeader = tr.parentElement.tagName === 'THEAD';
+    if (isHeader) return;
+    const cells = Array.from(tr.children).filter(c => c.tagName === 'TD' || c.tagName === 'TH');
+    if (cells.length < 2) return;
+    const noRuns = sbpptxRichRuns(cells[0], false);
+    const detailRuns = sbpptxRichRuns(cells[1], false);
+    bodyRowDefs.push({
+      noRuns: noRuns.length ? noRuns : [{ text: cells[0].textContent.trim(), options: {} }],
+      detailRuns: detailRuns.length ? detailRuns : [{ text: cells[1].textContent.trim(), options: {} }],
+    });
+  });
+  return bodyRowDefs;
+}
+
+function sbpptxBuildDescTable(table, baseX, baseY, scale, offsetX, offsetY, slideW, slideH, prependQueue, maxHeightIn, pullForwardRows, pullForwardSkipCount) {
   const rect = table.getBoundingClientRect();
   if (rect.width < 0.5 || rect.height < 0.5) return null;
   const style = window.getComputedStyle(table);
@@ -7835,6 +7918,15 @@ function sbpptxBuildDescTable(table, baseX, baseY, scale, offsetX, offsetY, slid
     });
   });
 
+  // pull-forward 소비(2026-08-25): 직전 화면이 이 표의 앞부분을 이미 자기 캔버스 하단
+  // 배너 위 여백에 그렸다면(pullForwardSkipCount), 그만큼을 이 표 자신의 본문에서 제거해
+  // 중복 렌더링을 막는다. 잘린 나머지(줄 단위 partial)는 여기서 처리하지 않는다 — 호출부
+  // (downloadPPTX)가 이미 prependQueue에 그 나머지를 넣어서 전달했으므로, 여기서는 "완전히
+  // 끌려간 행 개수"만 건너뛰면 된다.
+  if (pullForwardSkipCount && pullForwardSkipCount > 0) {
+    bodyRowDefs.splice(0, pullForwardSkipCount);
+  }
+
   const hasPrepend = prependQueue && prependQueue.length > 0;
   if (headerRow.length === 0 && bodyRowDefs.length === 0 && !hasPrepend) return null;
 
@@ -7911,7 +8003,51 @@ function sbpptxBuildDescTable(table, baseX, baseY, scale, offsetX, offsetY, slid
     acc += fullRow.rowHIn;
   }
 
-  return sbpptxFinishBuildDescTable(finalRows, acc, x, y, w, numColIn, detailColIn, padXIn, padYIn, []);
+  // 이 표(원본 NO 배정분)를 다 그렸는데도 배너 예약분을 뺀 여유 공간(maxHeightIn)이 남으면,
+  // 다음 화면(-cont-N+1)의 desc-table 앞부분을 줄 단위로 끌어와 마저 채운다(2026-08-25
+  // 사용자 요청 — "다음 화면에 계속" 배너 바로 위까지 항상 텍스트로 채우고, 남는 만큼만
+  // 다음 페이지로 넘긴다. 영역/요소 단위가 아니라 줄 단위로 자른다). 원본 HTML의 캔버스
+  // (와이어프레임 이미지)와 화면 분할(-cont-N 경계) 자체는 그대로 유지하고, PPT의
+  // desc-table 콘텐츠 배분만 이 규칙을 따른다 — 그 결과 한 페이지 하단에 다음 화면 NO의
+  // 앞부분이, 다음 페이지 상단에 그 NO의 나머지가 이어서 나올 수 있다(사용자 확인됨).
+  let pulledCount = 0;
+  let pulledPartialAfterRuns = null; // 마지막으로 끌어온 항목이 줄 단위로 잘렸으면 그 나머지
+  if (pullForwardRows && pullForwardRows.length > 0 && maxHeightIn != null) {
+    for (let j = 0; j < pullForwardRows.length; j++) {
+      const def = pullForwardRows[j];
+      const isEven = (finalRows.length - headerRow.length) % 2 === 1;
+      const bg = isEven ? 'F8F9FA' : 'FFFFFF';
+      const fullRow = makeRow(def.noRuns, def.detailRuns, bg);
+
+      if (acc + fullRow.rowHIn > maxHeightIn) {
+        // 이 항목 전체는 안 들어간다 — 줄 단위로 앞부분만 끌어올 수 있는지 시도한다.
+        const remainIn = Math.max(0, maxHeightIn - acc - padYIn * 2);
+        const allowedLines = Math.max(0, Math.floor(remainIn / bodyLineHeightIn) - 1);
+        if (allowedLines > 0) {
+          const totalLines = sbpptxMeasureWrappedLineCount(def.detailRuns, BODY_FONT_PT, fontFace, detailAvailIn);
+          if (allowedLines < totalLines) {
+            const { beforeRuns, afterRuns } = sbpptxSplitRunsAtLine(def.detailRuns, BODY_FONT_PT, fontFace, detailAvailIn, allowedLines);
+            if (beforeRuns.length > 0 && afterRuns.length > 0) {
+              const partialRow = makeRow(def.noRuns, beforeRuns, bg);
+              finalRows.push({ cells: partialRow.cells, rowHIn: partialRow.rowHIn });
+              acc += partialRow.rowHIn;
+              pulledCount = j + 1;
+              pulledPartialAfterRuns = { noRuns: def.noRuns, detailRuns: afterRuns };
+            }
+          }
+        }
+        break;
+      }
+      finalRows.push({ cells: fullRow.cells, rowHIn: fullRow.rowHIn });
+      acc += fullRow.rowHIn;
+      pulledCount = j + 1;
+    }
+  }
+
+  const built = sbpptxFinishBuildDescTable(finalRows, acc, x, y, w, numColIn, detailColIn, padXIn, padYIn, []);
+  built.pulledCount = pulledCount;
+  built.pulledPartialAfterRuns = pulledPartialAfterRuns;
+  return built;
 }
 
 // sbpptxBuildDescTable의 공통 마무리 단계: 조립된 행 배열을 addTable 인자 형태로 포장한다.
@@ -7933,6 +8069,8 @@ function sbpptxFinishBuildDescTable(finalRows, totalHIn, x, y, w, numColIn, deta
     heightIn: totalHIn,
     overflowQueue: overflowQueue,
     hasOverflow: overflowQueue.length > 0,
+    pulledCount: 0,
+    pulledPartialAfterRuns: null,
   };
 }
 
