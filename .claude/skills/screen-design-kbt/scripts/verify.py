@@ -1161,6 +1161,77 @@ def check_area_indicator_distance(page, max_distance_px=150):
     """, max_distance_px)
 
 
+def check_popup_indicator_inheritance(html_path):
+    """R22(2026-08-25 도입): 팝업 섹션(id에 `-popup-` 또는 `popup`이 포함된 `.screen-section`)의
+    캔버스 배지(`class="indicator"`, 팝업 박스 좌상단에 중첩)와 Description NO가 그 팝업을
+    연 트리거 요소의 번호(예: SCR-001의 "5-1 + 공정 등록 버튼"이 열면 배지도 `5-1`)를
+    그대로 이어받았는지 정적으로 검사한다.
+
+    사고 배경: 19개 팝업 전원이 트리거 번호와 무관하게 팝업 내부에서 새로 `1`(또는 목록·상세
+    화면의 경우 `2`, `3` 등)부터 매긴 상태로 방치돼 있었다 — 예를 들어 SCR-001 "+ 공정
+    등록"(5-1) 버튼이 여는 팝업의 배지가 `5-1`이 아니라 그냥 `1`이었다. 사용자가 "팝업
+    화면의 인디케이터는 화면 영역의 인디케이터와 동일하게 노출"이라고 두 차례 요청했는데도
+    처음에는 이 규칙 자체를 다른 의미(배지 스타일이 같은지)로 잘못 해석해 놓쳤다 — 실제로는
+    "번호 값 자체가 트리거 요소 번호를 상속해야 한다"는 뜻이었다.
+
+    판별 방법: 각 팝업의 meta-box `Trigger` 텍스트(`"...버튼"(N-1) 클릭` 형태)에서 괄호 안
+    번호를 추출할 수 있으면, 그 번호가 팝업의 캔버스 배지·Description NO와 정확히 일치하는지
+    비교한다. Trigger 텍스트에 괄호 번호가 없는 팝업(예: "행 삭제 클릭", "카드 클릭"처럼
+    특정 서브요소 번호가 없는 트리거)은 이 함수로 자동 판별할 수 없으므로 결함 여부만이
+    아니라 "even 없음"으로 별도 분류해 사람이 상위 화면 Description과 대조하도록 안내한다
+    (2026-08-25 실측: 이런 케이스는 대개 상위 화면의 목록/카드 그리드 영역 번호(NO=2, NO=3
+    등)를 그대로 쓴다 — Step 4-2 규칙과 동일한 맥락).
+
+    수정 방법(재발 시 참고): 팝업 섹션 안의 `<div class="indicator" style="top:-12px;
+    left:-12px;">N</div>`과 desc-table의 `<td class="num">N</td>`을 트리거 번호로 함께
+    교체한다(캔버스 배지와 Description NO 두 곳 모두 바꿔야 한다 — 한쪽만 바꾸면 새로운
+    불일치가 생긴다)."""
+    html_path = pathlib.Path(html_path)
+    content = html_path.read_text(encoding="utf-8")
+
+    ids = [m.group(1) for m in _re.finditer(r'<div id="([a-z0-9-]+)" class="screen-section', content)]
+    starts = [(i, content.find(f'id="{i}"')) for i in ids]
+    popup_ids = [i for i in ids if "popup" in i]
+
+    mismatches = []
+    no_trigger_number = []
+
+    for pid in popup_ids:
+        idx = [i for i, (sid, _) in enumerate(starts) if sid == pid][0]
+        s = starts[idx][1]
+        e = starts[idx + 1][1] if idx + 1 < len(starts) else len(content)
+        seg = content[s:e]
+
+        m_trig = _re.search(r'Trigger</span><div class="meta-value">([^<]*)</div>', seg)
+        trig_text = m_trig.group(1) if m_trig else ""
+        m_num_in_trig = _re.search(r'\(([0-9]+(?:-[0-9]+)?)\)', trig_text)
+
+        m_badge = _re.search(r'<div class="indicator" style="top:-12px; left:-12px;">([^<]*)</div>', seg)
+        m_desc_no = _re.search(r'<td class="num">([^<]*)</td>', seg)
+        badge_val = m_badge.group(1) if m_badge else None
+        desc_val = m_desc_no.group(1) if m_desc_no else None
+
+        if not m_num_in_trig:
+            no_trigger_number.append({
+                "popup_id": pid,
+                "trigger_text": trig_text[:60],
+                "canvas_badge": badge_val,
+                "desc_no": desc_val,
+            })
+            continue
+
+        expected = m_num_in_trig.group(1)
+        if badge_val != expected or desc_val != expected:
+            mismatches.append({
+                "popup_id": pid,
+                "expected_from_trigger": expected,
+                "canvas_badge": badge_val,
+                "desc_no": desc_val,
+            })
+
+    return {"ok": len(mismatches) == 0, "mismatches": mismatches, "no_trigger_number": no_trigger_number}
+
+
 def check_all_regressions(html_path, page):
     """R1~R8, R13(+ 정보성 R12)을 한 번에 실행하고 통합 결과를 반환한다. page는 이미
     html_path를 goto()해서 로드가 끝난 Playwright Page 객체여야 한다(check_dom_order 등과
@@ -1188,10 +1259,11 @@ def check_all_regressions(html_path, page):
     r20 = check_pptx_phantom_overflow_pages(page)
     r20_bad = [p for p in r20 if not p.get("within_tolerance", True) or p.get("error")]
     r21 = check_area_indicator_distance(page)
+    r22 = check_popup_indicator_inheritance(html_path)
     ok = (r1["ok"] and (len(r2) == 0) and r3["ok"] and (len(r4) == 0) and r5["ok"]
           and (len(r6) == 0) and (len(r7) == 0) and r8["ok"] and (len(r13) == 0)
           and r14a["ok"] and r14b["ok"] and r16["ok"] and r19["ok"] and (len(r20_bad) == 0)
-          and (len(r21) == 0))
+          and (len(r21) == 0) and r22["ok"])
     return {
         "ok": ok,
         "R1_colgroup_widths": r1,
@@ -1213,6 +1285,7 @@ def check_all_regressions(html_path, page):
         "R19_unclosed_tag_attr": r19,
         "R20_pptx_phantom_overflow_pages": r20,
         "R21_area_indicator_distance": r21,
+        "R22_popup_indicator_inheritance": r22,
     }
 
 
@@ -1316,6 +1389,13 @@ def print_regression_report(result):
     lines.append(f"  R21 영역 인디케이터-대상 원거리 배치: bad={len(r21)} ok={len(r21) == 0}")
     for p in r21[:10]:
         lines.append(f"    - {p['section_id']} NO={p['no']}: 대상([data-area=\"{p['no']}\"])과 {p['distance_px']}px 떨어짐 — 고정좌표 대신 컨테이너 중첩 배치로 교체할 것")
+
+    r22 = result.get("R22_popup_indicator_inheritance", {"ok": True, "mismatches": [], "no_trigger_number": []})
+    lines.append(f"  R22 팝업 인디케이터 트리거 번호 상속: bad={len(r22['mismatches'])} ok={r22['ok']} (판별불가 {len(r22['no_trigger_number'])}건은 별도 표시)")
+    for p in r22["mismatches"]:
+        lines.append(f"    - {p['popup_id']}: trigger에서 기대값={p['expected_from_trigger']}, 캔버스 배지={p['canvas_badge']}, Description NO={p['desc_no']} — 트리거 번호로 통일할 것")
+    for p in r22["no_trigger_number"]:
+        lines.append(f"    - (판별불가) {p['popup_id']}: trigger=\"{p['trigger_text']}\" 캔버스={p['canvas_badge']} desc={p['desc_no']} — 상위 화면 Description과 대조해 사람이 확인할 것")
 
     lines.append(f"  => 전체 ok={result['ok']}")
     report = "\n".join(lines)

@@ -2346,7 +2346,7 @@
     </div>
     <div style="position:absolute; inset:0; background:rgba(20,20,20,0.45); display:flex; align-items:center; justify-content:center; z-index:10;">
       <div style="position:relative; width:640px; background:#fff; border-radius:6px; box-shadow:0 10px 30px rgba(0,0,0,0.35);">
-        <div class="indicator" style="top:-12px; left:-12px;">1</div>
+        <div class="indicator" style="top:-12px; left:-12px;">5-1</div>
         <div style="display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid #eee;">
           <div style="font-size:15px; font-weight:700; color:#333;">공정 등록</div>
           <div style="width:22px; height:22px; text-align:center; color:#999; font-size:16px; line-height:22px;">&times;</div>
@@ -2372,7 +2372,7 @@
       <thead><tr><th class="num">NO</th><th>상세설명</th></tr></thead>
       <tbody>
         <tr>
-          <td class="num">1</td>
+          <td class="num">5-1</td>
           <td>
             <b>영역명: 공정 등록 폼 영역</b><br>ㄴ SCR-001 "+ 공정 등록"(5-1) 클릭 시 오픈되는 모달이다.<br><br><b>요소: 등록 폼(공정명·Best Practice 지정·상태·담당자·첨부)</b><br><span class="cond-label">노출조건:</span> "+ 공정 등록" 클릭 시 오픈. 배경(부품 공정 자동화 현황 화면)은 비활성화(딤 처리)된다.<br><span class="cond-label">입력조건:</span> 공정명(텍스트)/상태(선택: 자동·수동·旣자동화)/담당자(선택: 홍**·김**)는 필수 입력. Best Practice 지정(선택: 창원 2C 라인·창원 2A·창원 2B)은 선택 입력 — 지정 시 해당 라인이 [B/P] 기준(베이스라인) 컬럼으로 표시. 첨부는 선택 — "파일을 드래그하거나 클릭하여 첨부" 안내 문구가 있는 점선 테두리 드롭존(drag&amp;drop) 형태이며, 별도의 "파일 선택" 버튼은 없다.<br><span class="cond-label">출력조건:</span> "상태" 값에 따라 공정별 상세 표의 셀 표기 규칙(&#9679;자동, 가능(연도), 협의필 등)이 결정된다.<br><span class="cond-label">인터랙션:</span> "등록" 클릭 시 저장 후 모달 닫힘, 공정별 상세 표 갱신, "새 공정이 성공적으로 등록되었습니다." 안내. "취소"/배경 클릭/우측 상단 &times; 클릭 시 입력 폐기 후 닫힘.<br><span class="cond-label">예외 Case:</span> 필수값 누락 &rarr; alert: "필수 항목을 입력해주세요."<br><span class="cond-label">BE 연동:</span> POST /api/automation/parts/process
           </td>
@@ -2814,7 +2814,7 @@
     </div>
     <div style="position:absolute; inset:0; background:rgba(20,20,20,0.45); display:flex; align-items:center; justify-content:center; z-index:10;">
       <div style="position:relative; width:420px; background:#fff; border-radius:6px; box-shadow:0 10px 30px rgba(0,0,0,0.35);">
-        <div class="indicator" style="top:-12px; left:-12px;">1</div>
+        <div class="indicator" style="top:-12px; left:-12px;">5-3</div>
         <div style="display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid #eee;">
           <div style="font-size:15px; font-weight:700; color:#333;">이메일 공유</div>
           <div style="width:22px; height:22px; text-align:center; color:#999; font-size:16px; line-height:22px;">&times;</div>
@@ -2838,7 +2838,7 @@
       <thead><tr><th class="num">NO</th><th>상세설명</th></tr></thead>
       <tbody>
         <tr>
-          <td class="num">1</td>
+          <td class="num">5-3</td>
           <td>
             <b>영역명: 이메일 공유 폼 영역</b><br>ㄴ SCR-001 "이메일 공유"(5-3) 클릭 시 오픈되는 모달이다. 현재 조회된 공정별 상세 표를 수신자에게 이메일로 전송한다.<br><br><b>요소: 공유 폼(수신자·첨부 자료·메모)</b><br><span class="cond-label">노출조건:</span> "이메일 공유" 클릭 시 오픈.<br><span class="cond-label">입력조건:</span> 수신자는 필수, 이메일 형식 검증. 여러 명은 쉼표로 구분 입력. 첨부 자료는 "요약 현황(엑셀)"/"공정별 상세(엑셀)" 2종 체크박스로 기본 모두 체크된 상태로 노출(해제 가능). 메모는 선택.<br><span class="cond-label">인터랙션:</span> "공유" 클릭 시 전송 후 toast: "이메일 공유가 완료되었습니다." 노출, 모달 닫힘.<br><span class="cond-label">예외 Case:</span> 수신자 미입력 &rarr; alert: "받는 사람을 입력해주세요." · 이메일 형식 오류 &rarr; alert: "올바른 이메일 형식이 아닙니다."<br><span class="cond-label">BE 연동:</span> POST /api/automation/parts/share
           </td>
@@ -3280,7 +3280,7 @@
     </div>
     <div style="position:absolute; inset:0; background:rgba(20,20,20,0.45); display:flex; align-items:center; justify-content:center; z-index:10;">
       <div style="position:relative; width:560px; background:#fff; border-radius:6px; box-shadow:0 10px 30px rgba(0,0,0,0.35);">
-        <div class="indicator" style="top:-12px; left:-12px;">1</div>
+        <div class="indicator" style="top:-12px; left:-12px;">4-1</div>
         <div style="display:flex; align-items:center; justify-content:space-between; padding:16px 20px; background:#111827;">
           <div style="font-size:14px; font-weight:700; color:#fff;">[자동화 동영상] 오버몰딩</div>
           <div style="width:22px; height:22px; text-align:center; color:#9CA3AF; font-size:16px; line-height:22px;">&times;</div>
@@ -3303,7 +3303,7 @@
       <thead><tr><th class="num">NO</th><th>상세설명</th></tr></thead>
       <tbody>
         <tr>
-          <td class="num">1</td>
+          <td class="num">4-1</td>
           <td>
             <b>영역명: 동영상 미리보기 영역</b><br>ㄴ 공정별 상세 표에서 video:true로 지정된 "&#9679;자동" 배지(재생 아이콘 동반)를 클릭하면 오픈되는 공용 동영상 모달이다(SCR-003 "기술현황=●" 배지 클릭 시에도 동일 모달 재사용). 어두운 헤더(#111827)와 검정 16:9 플레이어 영역으로 구성된 정적 목업이다.<br><br><b>요소: 헤더(공정명) + 동영상 플레이어</b><br><span class="cond-label">노출조건:</span> 공정별 상세 표의 video:true 셀("&#9679;자동" + 재생 아이콘) 클릭 시 오픈. 헤더 타이틀은 "[자동화 동영상] {클릭한 행의 공정명}"으로 치환.<br><span class="cond-label">출력조건:</span> 플레이어 영역은 검정 배경에 재생 아이콘 + "해당 공정 자동화 시연 동영상 재생 중..." 문구 + "(프로토타입 샘플 플레이어)" 안내가 고정 노출되는 정적 목업(실제 재생 컨트롤 없음).<br><span class="cond-label">인터랙션:</span> "닫기" 클릭/배경 클릭/우측 상단 &times; 클릭 시 모달 닫힘.<br><span class="cond-label">BE 연동:</span> GET /api/automation/parts/process/{{id}}/video
           </td>
@@ -3527,7 +3527,7 @@
     </div>
     <div style="position:absolute; inset:0; background:rgba(20,20,20,0.45); display:flex; align-items:center; justify-content:center; z-index:10;">
       <div style="position:relative; width:480px; background:#fff; border-radius:6px; box-shadow:0 10px 30px rgba(0,0,0,0.35);">
-        <div class="indicator" style="top:-12px; left:-12px;">1</div>
+        <div class="indicator" style="top:-12px; left:-12px;">1-3</div>
         <div style="display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid #eee;">
           <div style="font-size:15px; font-weight:700; color:#333;">표준공정 마스터 등록</div>
           <div style="width:22px; height:22px; text-align:center; color:#999; font-size:16px; line-height:22px;">&times;</div>
@@ -3543,7 +3543,7 @@
       <thead><tr><th class="num">NO</th><th>상세설명</th></tr></thead>
       <tbody>
                 <tr>
-          <td class="num">1</td>
+          <td class="num">1-3</td>
           <td>
             <b>영역명: 팝업 영역</b><br>ㄴ 표준공정 마스터 등록을 트리거하는 영역이다.<br><br><b>요소: 표준공정 마스터 등록</b><br><span class="cond-label">노출조건:</span> "+ 표준공정 등록"(1-3) 또는 행 "수정" 클릭 시 오픈. 배경 화면은 비활성화(딤 처리)된다.<br><span class="cond-label">입력조건:</span> 공장*, 라인*, 표준공정명*, 순서*, 비고 입력.<br><span class="cond-label">인터랙션:</span> "저장" 클릭 시 처리 후 모달 닫힘. 배경 클릭/우측 상단 &times; 클릭 시 입력 폐기 후 닫힘.<br><span class="cond-label">예외 Case:</span> 필수값(공장, 라인, 표준공정명, 순서) 누락 → alert: "필수 항목을 입력해주세요."
           </td>
@@ -3610,7 +3610,7 @@
     </div>
     <div style="position:absolute; inset:0; background:rgba(20,20,20,0.45); display:flex; align-items:center; justify-content:center; z-index:10;">
       <div style="position:relative; width:420px; background:#fff; border-radius:6px; box-shadow:0 10px 30px rgba(0,0,0,0.35);">
-        <div class="indicator" style="top:-12px; left:-12px;">2</div>
+        <div class="indicator" style="top:-12px; left:-12px;">2-3</div>
         <div style="display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid #eee;">
           <div style="font-size:15px; font-weight:700; color:#333;">삭제 확인</div>
           <div style="width:22px; height:22px; text-align:center; color:#999; font-size:16px; line-height:22px;">&times;</div>
@@ -3626,7 +3626,7 @@
       <thead><tr><th class="num">NO</th><th>상세설명</th></tr></thead>
       <tbody>
                 <tr>
-          <td class="num">2</td>
+          <td class="num">2-3</td>
           <td>
             <b>영역명: 팝업 영역</b><br>ㄴ 삭제 확인을 트리거하는 영역이다(상위 SCR-002 Description NO=2 "표준공정 마스터 목록" 요소 2-3과 동일 NO).<br><br><b>요소: 2-3 삭제 확인</b><br><span class="cond-label">노출조건:</span> 행 "삭제" 클릭 시 오픈. 배경 화면은 비활성화(딤 처리)된다.<br><span class="cond-label">입력조건:</span> 안내 문구 확인 후 진행.<br><span class="cond-label">예외 Case:</span> 연동 모듈 존재 → "이 항목은 N개 모듈에서 사용 중입니다. 계속하시겠습니까?" 확인 문구 노출 후 확인 시 삭제 진행.<br><span class="cond-label">인터랙션:</span> "삭제" 클릭 시 처리 후 모달 닫힘. 배경 클릭/우측 상단 &times; 클릭 시 입력 폐기 후 닫힘.
           </td>
@@ -4122,7 +4122,7 @@
     </div>
     <div style="position:absolute; inset:0; background:rgba(20,20,20,0.45); display:flex; align-items:center; justify-content:center; z-index:10;">
       <div style="position:relative; width:480px; background:#fff; border-radius:6px; box-shadow:0 10px 30px rgba(0,0,0,0.35);">
-        <div class="indicator" style="top:-12px; left:-12px;">1</div>
+        <div class="indicator" style="top:-12px; left:-12px;">1-2</div>
         <div style="display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid #eee;">
           <div style="font-size:15px; font-weight:700; color:#333;">표준 작업명 등록</div>
           <div style="width:22px; height:22px; text-align:center; color:#999; font-size:16px; line-height:22px;">&times;</div>
@@ -4138,7 +4138,7 @@
       <thead><tr><th class="num">NO</th><th>상세설명</th></tr></thead>
       <tbody>
                 <tr>
-          <td class="num">1</td>
+          <td class="num">1-2</td>
           <td>
             <b>영역명: 팝업 영역</b><br>ㄴ 표준 작업명 등록을 트리거하는 영역이다.<br><br><b>요소: 표준 작업명 등록</b><br><span class="cond-label">노출조건:</span> "+ 표준 작업명 등록"(1-2) 클릭 시 오픈. 배경 화면은 비활성화(딤 처리)된다.<br><span class="cond-label">입력조건:</span> 작업명*, 공정유형* 입력.<br><span class="cond-label">인터랙션:</span> "등록" 클릭 시 처리 후 모달 닫힘. 배경 클릭/우측 상단 &times; 클릭 시 입력 폐기 후 닫힘.<br><span class="cond-label">예외 Case:</span> 필수값(작업명, 공정유형) 누락 → alert: "필수 항목을 입력해주세요."
           </td>
@@ -4466,7 +4466,7 @@
     </div>
     <div style="position:absolute; inset:0; background:rgba(20,20,20,0.45); display:flex; align-items:center; justify-content:center; z-index:10;">
       <div style="position:relative; width:640px; background:#fff; border-radius:6px; box-shadow:0 10px 30px rgba(0,0,0,0.35);">
-        <div class="indicator" style="top:-12px; left:-12px;">3</div>
+        <div class="indicator" style="top:-12px; left:-12px;">3-2</div>
         <div style="display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid #eee;">
           <div style="font-size:15px; font-weight:700; color:#333;">글로벌 자동화 트렌드 A</div>
           <div style="width:22px; height:22px; text-align:center; color:#999; font-size:16px; line-height:22px;">&times;</div>
@@ -4482,7 +4482,7 @@
       <thead><tr><th class="num">NO</th><th>상세설명</th></tr></thead>
       <tbody>
                 <tr>
-          <td class="num">3</td>
+          <td class="num">3-2</td>
           <td>
             <b>영역명: 팝업 영역</b><br>ㄴ 기술동향 상세를 트리거하는 영역이다(상위 MTRM-MAIN Description NO=3 "팝업 영역" 요소 3-2와 동일 NO).<br><br><b>요소: 3-2 기술동향 상세</b><br><span class="cond-label">노출조건:</span> MTRM-MAIN "최근 기술동향" 8건 리스트 중 항목 클릭 시 대시보드 위에 바로 오픈된다(SCR-014로 화면 이동하지 않음, 공용 modal-root 오버레이 사용).<br><span class="cond-label">출력조건:</span> 모달 헤더에 제목을 표시(고정 라벨 아님). 본문은 등록일·조회수·부서/담당자, 태그(#접두), 이미지 자리표시(280px), 내용 순으로 표시. 하단 별도 footer/닫기 버튼 없음.<br><span class="cond-label">인터랙션:</span> 헤더 우측 &times; 또는 배경(오버레이) 클릭 시 닫힘.<br><span class="cond-label">BE 연동:</span> GET /api/mtrm/trend/{id}
           </td>
@@ -4731,7 +4731,7 @@
     </div>
     <div style="position:absolute; inset:0; background:rgba(20,20,20,0.45); display:flex; align-items:center; justify-content:center; z-index:10;">
       <div style="position:relative; width:640px; background:#fff; border-radius:6px; box-shadow:0 10px 30px rgba(0,0,0,0.35);">
-        <div class="indicator" style="top:-12px; left:-12px;">2</div>
+        <div class="indicator" style="top:-12px; left:-12px;">2-3</div>
         <div style="display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid #eee;">
           <div style="font-size:15px; font-weight:700; color:#333;">통합 로드맵 등록</div>
           <div style="width:22px; height:22px; text-align:center; color:#999; font-size:16px; line-height:22px;">&times;</div>
@@ -4747,7 +4747,7 @@
       <thead><tr><th class="num">NO</th><th>상세설명</th></tr></thead>
       <tbody>
                 <tr>
-          <td class="num">2</td>
+          <td class="num">2-3</td>
           <td>
             <b>영역명: 팝업 영역</b><br>ㄴ 통합 로드맵 등록을 트리거하는 영역이다(상위 SCR-006 Description NO=2 요소 2-3과 동일 NO).<br><br><b>요소: 2-3 통합 로드맵 등록</b><br><span class="cond-label">노출조건:</span> "+ 로드맵 등록"(2-3) 클릭 시 오픈. 배경 화면은 비활성화(딤 처리)된다.<br><span class="cond-label">입력조건:</span> 분과*, 로드맵명*, 기간(시작)*, 기간(종료)*, 대표과제 입력.<br><span class="cond-label">인터랙션:</span> "등록" 클릭 시 처리 후 모달 닫힘. 배경 클릭/우측 상단 &times; 클릭 시 입력 폐기 후 닫힘.<br><span class="cond-label">예외 Case:</span> 필수값(분과, 로드맵명, 기간(시작), 기간(종료)) 누락 → alert: "필수 항목을 입력해주세요."
           </td>
@@ -4820,7 +4820,7 @@
     </div>
     <div style="position:absolute; inset:0; background:rgba(20,20,20,0.45); display:flex; align-items:center; justify-content:center; z-index:10;">
       <div style="position:relative; width:640px; background:#fff; border-radius:6px; box-shadow:0 10px 30px rgba(0,0,0,0.35);">
-        <div class="indicator" style="top:-12px; left:-12px;">3</div>
+        <div class="indicator" style="top:-12px; left:-12px;">3-3</div>
         <div style="display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid #eee;">
           <div style="font-size:15px; font-weight:700; color:#333;">개정 이력</div>
           <div style="width:22px; height:22px; text-align:center; color:#999; font-size:16px; line-height:22px;">&times;</div>
@@ -4836,7 +4836,7 @@
       <thead><tr><th class="num">NO</th><th>상세설명</th></tr></thead>
       <tbody>
                 <tr>
-          <td class="num">3</td>
+          <td class="num">3-3</td>
           <td>
             <b>영역명: 팝업 영역</b><br>ㄴ 개정 이력을 트리거하는 영역이다(상위 SCR-006 Description NO=3 목록 표 요소 3-3과 동일 NO).<br><br><b>요소: 3-3 개정 이력</b><br><span class="cond-label">노출조건:</span> 행별 "이력보기" 클릭 시 오픈.<br><span class="cond-label">출력조건:</span> 버전(v1.0, v1.1…)별 변경일자와 변경 내용을 최신순으로 표시.<br><span class="cond-label">인터랙션:</span> 조회 전용 팝업이며 수정 기능은 없다. "닫기" 또는 배경 클릭 시 닫힘.<br><span class="cond-label">BE 연동:</span> GET /api/mtrm/roadmap/{id}/history
           </td>
@@ -4995,7 +4995,7 @@
     </div>
     <div style="position:absolute; inset:0; background:rgba(20,20,20,0.45); display:flex; align-items:center; justify-content:center; z-index:10;">
       <div style="position:relative; width:640px; background:#fff; border-radius:6px; box-shadow:0 10px 30px rgba(0,0,0,0.35);">
-        <div class="indicator" style="top:-12px; left:-12px;">1</div>
+        <div class="indicator" style="top:-12px; left:-12px;">1-1</div>
         <div style="display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid #eee;">
           <div style="font-size:15px; font-weight:700; color:#333;">상세과제 등록</div>
           <div style="width:22px; height:22px; text-align:center; color:#999; font-size:16px; line-height:22px;">&times;</div>
@@ -5011,7 +5011,7 @@
       <thead><tr><th class="num">NO</th><th>상세설명</th></tr></thead>
       <tbody>
                 <tr>
-          <td class="num">1</td>
+          <td class="num">1-1</td>
           <td>
             <b>영역명: 팝업 영역</b><br>ㄴ 상세과제 등록을 트리거하는 영역이다.<br><br><b>요소: 상세과제 등록</b><br><span class="cond-label">노출조건:</span> "+ 상세과제 등록"(1-1) 또는 행 "수정" 클릭 시 오픈. 배경 화면은 비활성화(딤 처리)된다.<br><span class="cond-label">입력조건:</span> 과제명*, 담당자*, 기간(시작)*, 기간(종료)*, 진행상태* 입력.<br><span class="cond-label">인터랙션:</span> "등록" 클릭 시 처리 후 모달 닫힘. 배경 클릭/우측 상단 &times; 클릭 시 입력 폐기 후 닫힘.<br><span class="cond-label">예외 Case:</span> 필수값(과제명, 담당자, 기간(시작), 기간(종료), 진행상태) 누락 → alert: "필수 항목을 입력해주세요."
           </td>
@@ -5156,7 +5156,7 @@
     </div>
     <div style="position:absolute; inset:0; background:rgba(20,20,20,0.45); display:flex; align-items:center; justify-content:center; z-index:10;">
       <div style="position:relative; width:480px; background:#fff; border-radius:6px; box-shadow:0 10px 30px rgba(0,0,0,0.35);">
-        <div class="indicator" style="top:-12px; left:-12px;">2</div>
+        <div class="indicator" style="top:-12px; left:-12px;">2-2</div>
         <div style="display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid #eee;">
           <div style="font-size:15px; font-weight:700; color:#333;">과제 상세</div>
           <div style="width:22px; height:22px; text-align:center; color:#999; font-size:16px; line-height:22px;">&times;</div>
@@ -5172,7 +5172,7 @@
       <thead><tr><th class="num">NO</th><th>상세설명</th></tr></thead>
       <tbody>
                 <tr>
-          <td class="num">2</td>
+          <td class="num">2-2</td>
           <td>
             <b>영역명: 팝업 영역</b><br>ㄴ 과제 상세를 트리거하는 영역이다(상위 SCR-008 Description NO=2 "통합 로드맵 간트 차트" 요소 2-2와 동일 NO).<br><br><b>요소: 2-2 과제 상세</b><br><span class="cond-label">노출조건:</span> 아코디언으로 펼쳐진 상세과제 막대 클릭 시 오픈.<br><span class="cond-label">출력조건:</span> 담당자/진행상태(%)/과제목표/일정을 표시.<br><span class="cond-label">인터랙션:</span> 조회 전용 팝업. "닫기" 또는 배경 클릭 시 닫힘.<br><span class="cond-label">BE 연동:</span> GET /api/mtrm/task/{id}/detail
           </td>
@@ -5324,7 +5324,7 @@
     </div>
     <div style="position:absolute; inset:0; background:rgba(20,20,20,0.45); display:flex; align-items:center; justify-content:center; z-index:10;">
       <div style="position:relative; width:640px; background:#fff; border-radius:6px; box-shadow:0 10px 30px rgba(0,0,0,0.35);">
-        <div class="indicator" style="top:-12px; left:-12px;">1</div>
+        <div class="indicator" style="top:-12px; left:-12px;">1-2</div>
         <div style="display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid #eee;">
           <div style="font-size:15px; font-weight:700; color:#333;">기술 문의/제안</div>
           <div style="width:22px; height:22px; text-align:center; color:#999; font-size:16px; line-height:22px;">&times;</div>
@@ -5340,7 +5340,7 @@
       <thead><tr><th class="num">NO</th><th>상세설명</th></tr></thead>
       <tbody>
                 <tr>
-          <td class="num">1</td>
+          <td class="num">1-2</td>
           <td>
             <b>영역명: 팝업 영역</b><br>ㄴ 기술 문의/제안을 트리거하는 영역이다.<br><br><b>요소: 기술 문의/제안</b><br><span class="cond-label">노출조건:</span> "기술 문의/제안"(1-2) 클릭 시 오픈. 배경 화면은 비활성화(딤 처리)된다.<br><span class="cond-label">입력조건:</span> 대상 소재, 문의/제안 내용* 입력.<br><span class="cond-label">인터랙션:</span> "전송" 클릭 시 처리 후 모달 닫힘. 배경 클릭/우측 상단 &times; 클릭 시 입력 폐기 후 닫힘.<br><span class="cond-label">예외 Case:</span> 필수값(문의/제안 내용) 누락 → alert: "필수 항목을 입력해주세요."
           </td>
@@ -5577,7 +5577,7 @@
     </div>
     <div style="position:absolute; inset:0; background:rgba(20,20,20,0.45); display:flex; align-items:center; justify-content:center; z-index:10;">
       <div style="position:relative; width:800px; background:#fff; border-radius:6px; box-shadow:0 10px 30px rgba(0,0,0,0.35);">
-        <div class="indicator" style="top:-12px; left:-12px;">1</div>
+        <div class="indicator" style="top:-12px; left:-12px;">1-2</div>
         <div style="display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid #eee;">
           <div style="font-size:15px; font-weight:700; color:#333;">자료 등록</div>
           <div style="width:22px; height:22px; text-align:center; color:#999; font-size:16px; line-height:22px;">&times;</div>
@@ -5593,7 +5593,7 @@
       <thead><tr><th class="num">NO</th><th>상세설명</th></tr></thead>
       <tbody>
                 <tr>
-          <td class="num">1</td>
+          <td class="num">1-2</td>
           <td>
             <b>영역명: 팝업 영역</b><br>ㄴ 자료 등록을 트리거하는 영역이다.<br><br><b>요소: 자료 등록</b><br><span class="cond-label">노출조건:</span> "+ 자료 등록"(1-2) 또는 행 "수정" 클릭 시 오픈. 배경 화면은 비활성화(딤 처리)된다.<br><span class="cond-label">입력조건:</span> 제목*, 과제*, 담당자*, 담당자 이메일*, 상세 설명, 첨부 문서, 첨부 동영상 입력.<br><span class="cond-label">인터랙션:</span> "등록" 클릭 시 처리 후 모달 닫힘. 배경 클릭/우측 상단 &times; 클릭 시 입력 폐기 후 닫힘.<br><span class="cond-label">예외 Case:</span> 필수값(제목, 과제, 담당자, 담당자 이메일) 누락 → alert: "필수 항목을 입력해주세요."
           </td>
@@ -5745,7 +5745,7 @@
     </div>
     <div style="position:absolute; inset:0; background:rgba(20,20,20,0.45); display:flex; align-items:center; justify-content:center; z-index:10;">
       <div style="position:relative; width:480px; background:#fff; border-radius:6px; box-shadow:0 10px 30px rgba(0,0,0,0.35);">
-        <div class="indicator" style="top:-12px; left:-12px;">1</div>
+        <div class="indicator" style="top:-12px; left:-12px;">1-2</div>
         <div style="display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid #eee;">
           <div style="font-size:15px; font-weight:700; color:#333;">협의체 등록</div>
           <div style="width:22px; height:22px; text-align:center; color:#999; font-size:16px; line-height:22px;">&times;</div>
@@ -5761,7 +5761,7 @@
       <thead><tr><th class="num">NO</th><th>상세설명</th></tr></thead>
       <tbody>
                 <tr>
-          <td class="num">1</td>
+          <td class="num">1-2</td>
           <td>
             <b>영역명: 팝업 영역</b><br>ㄴ 협의체 등록을 트리거하는 영역이다.<br><br><b>요소: 협의체 등록</b><br><span class="cond-label">노출조건:</span> "+ 협의체 등록"(1-2) 클릭 시 오픈. 배경 화면은 비활성화(딤 처리)된다.<br><span class="cond-label">입력조건:</span> 협의체명*, 분과*, 연동 mTRM*, 의제, 대상 분과장*, 참조(CC), 일정* 입력.<br><span class="cond-label">인터랙션:</span> "등록" 클릭 시 처리 후 모달 닫힘. 배경 클릭/우측 상단 &times; 클릭 시 입력 폐기 후 닫힘.<br><span class="cond-label">예외 Case:</span> 필수값(협의체명, 분과, 연동 mTRM, 대상 분과장, 일정) 누락 → alert: "필수 항목을 입력해주세요."
           </td>
@@ -5914,7 +5914,7 @@
     </div>
     <div style="position:absolute; inset:0; background:rgba(20,20,20,0.45); display:flex; align-items:center; justify-content:center; z-index:10;">
       <div style="position:relative; width:480px; background:#fff; border-radius:6px; box-shadow:0 10px 30px rgba(0,0,0,0.35);">
-        <div class="indicator" style="top:-12px; left:-12px;">1</div>
+        <div class="indicator" style="top:-12px; left:-12px;">1-2</div>
         <div style="display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid #eee;">
           <div style="font-size:15px; font-weight:700; color:#333;">mTRM 등록</div>
           <div style="width:22px; height:22px; text-align:center; color:#999; font-size:16px; line-height:22px;">&times;</div>
@@ -5930,7 +5930,7 @@
       <thead><tr><th class="num">NO</th><th>상세설명</th></tr></thead>
       <tbody>
                 <tr>
-          <td class="num">1</td>
+          <td class="num">1-2</td>
           <td>
             <b>영역명: 팝업 영역</b><br>ㄴ mTRM 등록을 트리거하는 영역이다.<br><br><b>요소: mTRM 등록</b><br><span class="cond-label">노출조건:</span> "+ mTRM 등록"(1-2) 또는 행 "수정" 클릭 시 오픈. 배경 화면은 비활성화(딤 처리)된다.<br><span class="cond-label">입력조건:</span> mTRM명*, 분과*, 상태*, 등록일* 입력.<br><span class="cond-label">인터랙션:</span> "등록" 클릭 시 처리 후 모달 닫힘. 배경 클릭/우측 상단 &times; 클릭 시 입력 폐기 후 닫힘.<br><span class="cond-label">예외 Case:</span> 필수값(mTRM명, 분과, 상태, 등록일) 누락 → alert: "필수 항목을 입력해주세요."
           </td>
@@ -5997,7 +5997,7 @@
     </div>
     <div style="position:absolute; inset:0; background:rgba(20,20,20,0.45); display:flex; align-items:center; justify-content:center; z-index:10;">
       <div style="position:relative; width:420px; background:#fff; border-radius:6px; box-shadow:0 10px 30px rgba(0,0,0,0.35);">
-        <div class="indicator" style="top:-12px; left:-12px;">2</div>
+        <div class="indicator" style="top:-12px; left:-12px;">2-3</div>
         <div style="display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid #eee;">
           <div style="font-size:15px; font-weight:700; color:#333;">삭제 확인</div>
           <div style="width:22px; height:22px; text-align:center; color:#999; font-size:16px; line-height:22px;">&times;</div>
@@ -6013,7 +6013,7 @@
       <thead><tr><th class="num">NO</th><th>상세설명</th></tr></thead>
       <tbody>
                 <tr>
-          <td class="num">2</td>
+          <td class="num">2-3</td>
           <td>
             <b>영역명: 팝업 영역</b><br>ㄴ 삭제 확인을 트리거하는 영역이다(상위 SCR-012 Description NO=2 목록 표 요소 2-3과 동일 NO).<br><br><b>요소: 2-3 삭제 확인</b><br><span class="cond-label">노출조건:</span> 행 "삭제" 클릭 시 오픈. 배경 화면은 비활성화(딤 처리)된다.<br><span class="cond-label">입력조건:</span> 안내 문구 확인 후 진행.<br><span class="cond-label">예외 Case:</span> 연동 협의체 존재 → "이 항목은 N개 모듈에서 사용 중입니다. 계속하시겠습니까?" 확인 문구 노출 후 확인 시 삭제 진행.<br><span class="cond-label">인터랙션:</span> "삭제" 클릭 시 처리 후 모달 닫힘. 배경 클릭/우측 상단 &times; 클릭 시 입력 폐기 후 닫힘.
           </td>
@@ -6488,7 +6488,7 @@
     </div>
     <div style="position:absolute; inset:0; background:rgba(20,20,20,0.45); display:flex; align-items:center; justify-content:center; z-index:10;">
       <div style="position:relative; width:640px; background:#fff; border-radius:6px; box-shadow:0 10px 30px rgba(0,0,0,0.35);">
-        <div class="indicator" style="top:-12px; left:-12px;">1</div>
+        <div class="indicator" style="top:-12px; left:-12px;">1-3</div>
         <div style="display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid #eee;">
           <div style="font-size:15px; font-weight:700; color:#333;">기술동향 등록</div>
           <div style="width:22px; height:22px; text-align:center; color:#999; font-size:16px; line-height:22px;">&times;</div>
@@ -6504,7 +6504,7 @@
       <thead><tr><th class="num">NO</th><th>상세설명</th></tr></thead>
       <tbody>
                 <tr>
-          <td class="num">1</td>
+          <td class="num">1-3</td>
           <td>
             <b>영역명: 팝업 영역</b><br>ㄴ 기술동향 등록을 트리거하는 영역이다.<br><br><b>요소: 기술동향 등록</b><br><span class="cond-label">노출조건:</span> "+ 등록"(1-3) 클릭 시 오픈. 배경 화면은 비활성화(딤 처리)된다.<br><span class="cond-label">입력조건:</span> 제목*, 담당자 이름*, 부서명*, 태그, 내용*, 첨부파일 입력.<br><span class="cond-label">인터랙션:</span> "등록" 클릭 시 처리 후 모달 닫힘. 배경 클릭/우측 상단 &times; 클릭 시 입력 폐기 후 닫힘.<br><span class="cond-label">예외 Case:</span> 필수값(제목, 담당자 이름, 부서명, 내용) 누락 → alert: "필수 항목을 입력해주세요."
           </td>
