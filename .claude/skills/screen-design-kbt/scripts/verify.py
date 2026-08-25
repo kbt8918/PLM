@@ -685,6 +685,85 @@ def check_screen_only_page_pptx_skip(html_path):
     return {"ok": has_skip, "has_screen_only_page_marker": has_marker, "has_pptx_skip_guard": has_skip}
 
 
+def check_pptx_phantom_overflow_pages(page, small_overflow_tolerance_in=0.5):
+    """R20(2026-08-25 도입): downloadPPTX()의 desc-table 8pt 재계산이 원본 HTML에는 없는
+    "가상 이월(-cont-N) 페이지"를 만들어내는지 다운로드 없이 정적으로 미리 잡는다.
+
+    사고 배경: SCR-014는 원본 HTML에 -cont-1 청크가 없는데(12~13px 기준으로는 한 화면에
+    다 들어가서 애초에 안 나눠 둠), PPT 변환 시 desc-table을 8pt로 재계산하는 과정에서
+    "폭은 scale만큼 줄어드는데 폰트는 8pt로 고정"되는 구조적 특성 때문에 NO=3 행이 캔버스
+    높이를 약 0.4in 초과한다고 오판정됐다. 실제로는 육안상 전혀 넘치지 않는 경계 케이스였는데,
+    downloadPPTX()가 이걸 "진짜 오버플로우"로 처리해 화면 전체(사이드바·GNB·필터·카드
+    그리드 전부)를 통째로 복제한 가상 -cont-1 섹션을 추가로 만들어, 결과 PPTX가 원본보다
+    1장 더 많은 페이지로 나왔다(사용자가 첨부한 목표 PDF와 PPT 다운로드 결과를 페이지 수로
+    비교하다가 발견 — 육안 대조로는 두 페이지 내용이 겹쳐 보여 놓치기 쉬웠다).
+
+    이 함수는 각 원본 SCR 섹션(팝업/이미 존재하는 -cont-N 아님)에 대해 downloadPPTX()와
+    동일한 sbpptxBuildDescTable()을 그대로 호출해 hasOverflow를 실측하고, hasOverflow가
+    나면서 원본 HTML에 그 화면의 다음 -cont-N 섹션이 실제로 없는 경우(=PPT가 가상 섹션을
+    새로 만들어야 하는 경우)만 골라 초과분(in)을 함께 보고한다. 초과분이
+    small_overflow_tolerance_in(desc-table의 SMALL_OVERFLOW_TOLERANCE_IN과 동일 기본값
+    0.5in) 이하면 downloadPPTX() 쪽 소형 초과 허용 로직이 이미 흡수하므로 문제없음으로
+    분류하고, 그보다 크면 실제로 새 가상 페이지가 생길 것이므로 결함으로 보고한다.
+
+    주의: downloadPPTX() 안의 SMALL_OVERFLOW_TOLERANCE_IN 상수값을 바꾸면 이 함수의
+    small_overflow_tolerance_in 인자도 반드시 같이 맞출 것 — 두 값이 어긋나면 이 체크가
+    실제 downloadPPTX() 동작과 다른 기준으로 판정하게 된다."""
+    return page.evaluate("""
+        (toleranceIn) => {
+            const SLIDE_W = 13.33, SLIDE_H = 7.5;
+            const allSections = Array.from(document.querySelectorAll('.screen-section'));
+            const idSet = new Set(allSections.map(s => s.id));
+            const descBaseId = (id) => id.replace(/-cont-\\d+$/, '');
+            const results = [];
+            for (const section of allSections) {
+                if (!section.id || section.classList.contains('screen-only-page')) continue;
+                if (section.id.includes('-popup-')) continue;
+                if (/-cont-\\d+$/.test(section.id)) continue; // 이미 사람이 만들어 둔 청크는 대상 아님
+                const table = section.querySelector('.desc-table');
+                if (!table) continue;
+
+                const sRect = section.getBoundingClientRect();
+                if (sRect.width < 10 || sRect.height < 10) continue;
+                const scale = Math.min(SLIDE_W / sRect.width, SLIDE_H / sRect.height);
+                const sx = sRect.left + window.scrollX, sy = sRect.top + window.scrollY;
+
+                const wfEl = section.querySelector('.wireframe-wrap');
+                const wfBottomIn = wfEl
+                    ? (wfEl.getBoundingClientRect().bottom + window.scrollY - sy) * scale
+                    : SLIDE_H;
+                const tableRect = table.getBoundingClientRect();
+                const tableY = (tableRect.top + window.scrollY - sy) * scale;
+                const bannerReserveIn = 0.32;
+                const maxHeightIn = Math.max(0.5, wfBottomIn - tableY - bannerReserveIn);
+
+                let built;
+                try {
+                    built = sbpptxBuildDescTable(table, sx, sy, scale, 0, 0, SLIDE_W, SLIDE_H, null, maxHeightIn);
+                } catch (e) {
+                    results.push({ section_id: section.id, error: String(e) });
+                    continue;
+                }
+                if (!built || !built.hasOverflow) continue;
+
+                const nextContId = descBaseId(section.id) + '-cont-1';
+                const hasRealContChunk = idSet.has(nextContId);
+                if (hasRealContChunk) continue; // 원본에 이미 사람이 나눠 둔 다음 청크가 있음 — 정상 이월
+
+                const overflowIn = (built.heightIn || 0) - maxHeightIn;
+                results.push({
+                    section_id: section.id,
+                    max_height_in: Math.round(maxHeightIn * 1000) / 1000,
+                    built_height_in: Math.round((built.heightIn || 0) * 1000) / 1000,
+                    overflow_in: Math.round(overflowIn * 1000) / 1000,
+                    within_tolerance: overflowIn <= toleranceIn,
+                });
+            }
+            return results;
+        }
+    """, small_overflow_tolerance_in)
+
+
 def check_template_layout_ratio(page, canvas_pct=76.0, tolerance_pct=1.5):
     """R13: `05.리포트/화면설계서_템플릿.md`가 고정 규격으로 못박은 캔버스(좌측, 0~76%
     폭)/설명(우측, 76~100% 폭) 비율이 실제로 모든 화면 페이지에서 지켜지는지 실측한다
@@ -1023,6 +1102,65 @@ def check_unclosed_tag_attr(html_path):
     return {"ok": len(bad) == 0, "bad_matches": bad}
 
 
+def check_area_indicator_distance(page, max_distance_px=150):
+    """R21(2026-08-25 도입): `.indicator`(영역 레벨 배지, 요소 배지 `.indicator-el`과는 다름)가
+    자신이 가리키는 대상(`data-area="N"` 컨테이너)에서 화면상 너무 멀리 떨어진 고정좌표에
+    배치됐는지 실측한다.
+
+    사고 배경: 여러 목록형 화면(SCR-004/006/007/010/011/012/014)의 페이지네이션 영역(NO=3
+    또는 NO=4) 배지가 `<div class="indicator" style="top:NNNpx; left:185px;">`처럼 화면
+    전체 기준 고정 좌표로 박혀 있었다. `left:185px`는 좌측 사이드바 바로 옆 여백에 해당하는
+    값이라 어느 화면에서도 "그럴듯하게" 보이지만, 실제로 배지가 가리켜야 할 대상(표 하단
+    페이지네이션 버튼)은 표 길이에 따라 세로 위치가 화면마다 다르다 — 그 결과 배지가 대상과
+    수백 px 떨어진 채 사이드바 옆 허공에 떠 있는 상태가 여러 화면에서 반복됐다(사용자가 PDF
+    샘플과 육안 대조하다가 발견, "페이지네이션 요소 인디케이터 노출 위치가 이상하다"는
+    제보로 확인). `check_indicator_el_placement`(R3)는 `.indicator-el`(요소 배지)의 형제
+    배치만 잡고 `.indicator`(영역 배지)의 원거리 배치는 다루지 않아 이 사고 유형을 놓쳤다.
+
+    판별 방법: 각 `.indicator`의 텍스트(NO 번호)와 대응하는 `[data-area="NO"]` 요소를 같은
+    `.screen-section` 안에서 찾아, 배지 중심점과 그 컨테이너의 bounding box 사이 유클리드
+    거리를 잰다. `max_distance_px`(기본 150px)를 넘으면 의심으로 보고한다. `data-area`가
+    없는 영역(팝업 등 구조가 다른 화면)은 대응 컨테이너를 못 찾으므로 비교 대상에서 제외한다
+    — 오탐을 늘리기보다 놓치는 쪽을 택한 설계이므로, 이 함수가 0건이라고 해서 모든 영역
+    배지가 맞다는 보장은 아니다(정보성 성격이 있지만, 실제로 잡아낸 사고 유형이 명확해
+    `ok` 판정에는 포함한다).
+
+    수정 방법(재발 시 참고): `[data-area="N"]`에 `style="position:relative;"`를 추가하고
+    그 자식으로 `<div class="indicator" style="top:-12px; left:-12px;">N</div>`을 넣은 뒤,
+    화면 하단의 기존 고정좌표 `<div class="indicator" style="top:NNNpx; left:185px;">N</div>`은
+    제거한다(2026-08-25에 SCR-004/006/007/010/011/012/014 페이지네이션 영역에 적용한 방식)."""
+    return page.evaluate("""
+        (maxDist) => {
+            const problems = [];
+            document.querySelectorAll('.screen-section').forEach(section => {
+                const indicators = Array.from(section.querySelectorAll(':scope > .indicator'));
+                indicators.forEach(ind => {
+                    const no = ind.textContent.trim();
+                    const target = section.querySelector(`[data-area="${no}"]`);
+                    if (!target) return; // data-area 구조가 없는 화면은 비교 대상 제외
+                    const indRect = ind.getBoundingClientRect();
+                    const tRect = target.getBoundingClientRect();
+                    if (indRect.width === 0 || tRect.width === 0) return;
+                    const indCx = indRect.left + indRect.width / 2;
+                    const indCy = indRect.top + indRect.height / 2;
+                    // 컨테이너 bounding box에서 배지까지의 최단 거리(box 내부면 0)
+                    const dx = Math.max(tRect.left - indCx, 0, indCx - tRect.right);
+                    const dy = Math.max(tRect.top - indCy, 0, indCy - tRect.bottom);
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist > maxDist) {
+                        problems.push({
+                            section_id: section.id,
+                            no: no,
+                            distance_px: Math.round(dist),
+                        });
+                    }
+                });
+            });
+            return problems;
+        }
+    """, max_distance_px)
+
+
 def check_all_regressions(html_path, page):
     """R1~R8, R13(+ 정보성 R12)을 한 번에 실행하고 통합 결과를 반환한다. page는 이미
     html_path를 goto()해서 로드가 끝난 Playwright Page 객체여야 한다(check_dom_order 등과
@@ -1047,9 +1185,13 @@ def check_all_regressions(html_path, page):
     r17 = check_fixed_width_card_grid(html_path)
     r18 = check_card_thumb_aspect_ratio(html_path)
     r19 = check_unclosed_tag_attr(html_path)
+    r20 = check_pptx_phantom_overflow_pages(page)
+    r20_bad = [p for p in r20 if not p.get("within_tolerance", True) or p.get("error")]
+    r21 = check_area_indicator_distance(page)
     ok = (r1["ok"] and (len(r2) == 0) and r3["ok"] and (len(r4) == 0) and r5["ok"]
           and (len(r6) == 0) and (len(r7) == 0) and r8["ok"] and (len(r13) == 0)
-          and r14a["ok"] and r14b["ok"] and r16["ok"] and r19["ok"])
+          and r14a["ok"] and r14b["ok"] and r16["ok"] and r19["ok"] and (len(r20_bad) == 0)
+          and (len(r21) == 0))
     return {
         "ok": ok,
         "R1_colgroup_widths": r1,
@@ -1069,6 +1211,8 @@ def check_all_regressions(html_path, page):
         "R17_fixed_width_card_grid": r17,
         "R18_card_thumb_aspect_ratio": r18,
         "R19_unclosed_tag_attr": r19,
+        "R20_pptx_phantom_overflow_pages": r20,
+        "R21_area_indicator_distance": r21,
     }
 
 
@@ -1158,6 +1302,20 @@ def print_regression_report(result):
     lines.append(f"  R19 속성값 뒤 닫는 '>' 누락(다음 태그가 속성값에 흡수됨): bad={len(r19['bad_matches'])} ok={r19['ok']}")
     for b in r19["bad_matches"]:
         lines.append(f"    - {b['attr']} (line~{b['near_line']}): ...{b['snippet']}...")
+
+    r20 = result.get("R20_pptx_phantom_overflow_pages", [])
+    r20_bad = [p for p in r20 if not p.get("within_tolerance", True) or p.get("error")]
+    lines.append(f"  R20 PPT 가상 이월 페이지(원본에 없는 -cont-N 발생): bad={len(r20_bad)} ok={len(r20_bad) == 0}")
+    for p in r20_bad:
+        if p.get("error"):
+            lines.append(f"    - {p['section_id']}: sbpptxBuildDescTable 호출 실패 — {p['error']}")
+        else:
+            lines.append(f"    - {p['section_id']}: 초과 {p['overflow_in']}in (허용치 초과) — maxHeight={p['max_height_in']}in built={p['built_height_in']}in, downloadPPTX()가 가상 -cont-N 페이지를 생성할 것")
+
+    r21 = result.get("R21_area_indicator_distance", [])
+    lines.append(f"  R21 영역 인디케이터-대상 원거리 배치: bad={len(r21)} ok={len(r21) == 0}")
+    for p in r21[:10]:
+        lines.append(f"    - {p['section_id']} NO={p['no']}: 대상([data-area=\"{p['no']}\"])과 {p['distance_px']}px 떨어짐 — 고정좌표 대신 컨테이너 중첩 배치로 교체할 것")
 
     lines.append(f"  => 전체 ok={result['ok']}")
     report = "\n".join(lines)
