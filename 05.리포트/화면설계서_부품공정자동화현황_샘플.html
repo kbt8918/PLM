@@ -7866,7 +7866,7 @@ function sbpptxBuildDescTable(table, baseX, baseY, scale, offsetX, offsetY, slid
   const BODY_LINE_SPACING_MULTIPLE = 1.22;
   const bodyLineHeightIn = BODY_FONT_PT * BODY_LINE_SPACING_MULTIPLE / 72;
 
-  const cellOpts = (isHeader, isNumCol, bg) => ({
+  const cellOpts = (isHeader, isNumCol, bg, noTopBorder) => ({
     bold: isHeader || isNumCol,
     color: isHeader ? 'FFFFFF' : (isNumCol ? 'E67700' : '343A40'),
     fontFace: fontFace,
@@ -7875,22 +7875,26 @@ function sbpptxBuildDescTable(table, baseX, baseY, scale, offsetX, offsetY, slid
     valign: 'top',
     fill: { color: bg },
     border: [
-      { type: 'solid', color: 'DEE2E6', pt: 0.75 },
+      noTopBorder ? { type: 'none', pt: 0 } : { type: 'solid', color: 'DEE2E6', pt: 0.75 },
       { type: 'solid', color: 'DEE2E6', pt: 0.75 },
       { type: 'solid', color: 'DEE2E6', pt: 0.75 },
       { type: 'solid', color: 'DEE2E6', pt: 0.75 },
     ],
   });
 
-  const makeRow = (noRuns, detailRuns, bg) => {
+  // sameNoContinuation: pull-forward로 "같은 화면 안에서 이미 나온 NO의 연속 조각"을
+  // 이어붙이는 행(NO열을 비워 표시하는 그 행)일 때 true. 이런 행은 위 행과 시각적으로
+  // 한 덩어리로 보여야 하므로 상단 테두리를 없애 구분선처럼 보이지 않게 한다(2026-08-26
+  // 사용자 제보 — PPT 23p에서 3-2와 3-3 사이에 구분선이 보임).
+  const makeRow = (noRuns, detailRuns, bg, sameNoContinuation) => {
     const noLines = sbpptxMeasureWrappedLineCount(noRuns, BODY_FONT_PT, fontFace, numAvailIn);
     const detailLines = sbpptxMeasureWrappedLineCount(detailRuns, BODY_FONT_PT, fontFace, detailAvailIn);
     const maxLines = Math.max(noLines, detailLines, 1);
     const rowHIn = Math.max(0.35, maxLines * bodyLineHeightIn + padYIn * 2);
     return {
       cells: [
-        { text: noRuns, options: cellOpts(false, true, bg) },
-        { text: detailRuns, options: cellOpts(false, false, bg) },
+        { text: noRuns, options: cellOpts(false, true, bg, sameNoContinuation) },
+        { text: detailRuns, options: cellOpts(false, false, bg, sameNoContinuation) },
       ],
       rowHIn: rowHIn,
     };
@@ -8039,7 +8043,7 @@ function sbpptxBuildDescTable(table, baseX, baseY, scale, offsetX, offsetY, slid
       // "영역/요소 경계와 무관하게 배너 바로 위까지 채우고 나머지는 다음 화면으로"가
       // 사용자 최종 지시이므로, cont-row라고 예외적으로 fully 통과시키지 않는다.
       const carryNoRuns = def.isContRow ? [] : def.noRuns;
-      const fullRow = makeRow(carryNoRuns, def.detailRuns, bg);
+      const fullRow = makeRow(carryNoRuns, def.detailRuns, bg, !!def.isContRow);
       const forcePartial = !!def.isContRow;
 
       if (forcePartial || acc + fullRow.rowHIn > maxHeightIn) {
@@ -8053,7 +8057,7 @@ function sbpptxBuildDescTable(table, baseX, baseY, scale, offsetX, offsetY, slid
           if (linesToTake < totalLines) {
             const { beforeRuns, afterRuns } = sbpptxSplitRunsAtLine(def.detailRuns, BODY_FONT_PT, fontFace, detailAvailIn, linesToTake);
             if (beforeRuns.length > 0 && afterRuns.length > 0) {
-              const partialRow = makeRow(carryNoRuns, beforeRuns, bg);
+              const partialRow = makeRow(carryNoRuns, beforeRuns, bg, !!def.isContRow);
               finalRows.push({ cells: partialRow.cells, rowHIn: partialRow.rowHIn });
               acc += partialRow.rowHIn;
               pulledCount = j + 1;
