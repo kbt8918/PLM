@@ -7233,7 +7233,8 @@ async function downloadPPTX(e) {
       const SBPPTX_COMMON_LAYOUT_SCREEN_IDS = [
         'scr-001', 'scr-001-cont-1', 'scr-001-cont-2',
         'scr-001-popup-7-1', 'scr-001-popup-7-2', 'scr-001-popup-7-3',
-        'scr-002', 'scr-003', 'scr-004', 'scr-005', 'mtrm-main',
+        'scr-002', 'scr-002-cont-1', 'scr-002-popup-stdprocess', 'scr-002-popup-delete',
+        'scr-003', 'scr-004', 'scr-005', 'mtrm-main',
         'scr-006', 'scr-007', 'scr-008', 'scr-009', 'scr-010', 'scr-011',
         'scr-012', 'scr-013', 'scr-014',
       ];
@@ -7289,13 +7290,30 @@ async function downloadPPTX(e) {
           }
         }
       }
-      // SCR-001 + cont-1/cont-2(동일 캔버스 반복)만: MAIN CONTENT 내부(탭/필터/요약현황·
-      // 공정별상세 타이틀/CTA/표)까지 확장. cont는 2p와 완전히 동일한 DOM 구조를 반복하므로
-      // (2026-08-26 사용자 제보 — "2p와 3~4p 노출 영역이 다르다") 같은 addTable 처리를 받아야
-      // 세 페이지가 동일하게 보인다.
-      if (section.id === 'scr-001' || section.id === 'scr-001-cont-1' || section.id === 'scr-001-cont-2') {
+      // SCR-001 + cont-1/cont-2(동일 캔버스 반복) + 팝업 3종(7,8,9p)만: MAIN CONTENT 내부
+      // (탭/필터/요약현황·공정별상세 타이틀/CTA/표)까지 확장. cont는 2p와 완전히 동일한 DOM
+      // 구조를 반복하므로(2026-08-26 사용자 제보 — "2p와 3~4p 노출 영역이 다르다") 같은
+      // addTable 처리를 받아야 세 페이지가 동일하게 보인다. 팝업(7,8,9p)의 딤 처리된 컨텐츠
+      // 노출 영역도 2p와 동일하게 개별 테이블로 통일(2026-08-26 사용자 요청).
+      const SBPPTX_SCR001_MAIN_CONTENT_IDS = [
+        'scr-001', 'scr-001-cont-1', 'scr-001-cont-2',
+        'scr-001-popup-7-1', 'scr-001-popup-7-2', 'scr-001-popup-7-3',
+      ];
+      if (SBPPTX_SCR001_MAIN_CONTENT_IDS.includes(section.id)) {
         const wf = section.querySelector('.wireframe-wrap');
-        const mainEl = wf.querySelector(':scope > div:nth-child(2) > div:nth-child(2)');
+        // 팝업은 wireframe-wrap 바로 아래가 아니라 .popup-backdrop 한 겹 더 안에 TopBar/
+        // 사이드바/MAIN CONTENT가 있다(위 SBPPTX_COMMON_LAYOUT_SCREEN_IDS 블록의 layoutRoot
+        // 보정과 동일 이유). MAIN CONTENT는 사이드바의 다음 형제(sidebarEl.nextElementSibling,
+        // 위 블록에서 이미 팝업 모달 재배치 계산에 쓰던 것과 동일한 요소)다.
+        const isPopupScreen = section.id.includes('-popup-');
+        let mainEl;
+        if (isPopupScreen) {
+          const layoutRoot = wf.querySelector(':scope > .popup-backdrop') || wf;
+          const sidebarEl = layoutRoot.querySelector(':scope > div:nth-child(2) > div:first-child');
+          mainEl = sidebarEl ? sidebarEl.nextElementSibling : null;
+        } else {
+          mainEl = wf.querySelector(':scope > div:nth-child(2) > div:nth-child(2)');
+        }
         const tabGroupEl = mainEl ? mainEl.querySelector(':scope > div:nth-child(1)') : null;
         const filterBarEl = mainEl ? mainEl.querySelector(':scope > div:nth-child(2)') : null;
         // mainEl 자식 순서(고정, 313~440행): (1)탭 (2)필터바 (3)"요약 현황"타이틀 (4)요약표wrap
@@ -7309,8 +7327,14 @@ async function downloadPPTX(e) {
         const detailTableWrap = mainEl ? mainEl.querySelector(':scope > div:nth-child(7)') : null;
         const detailTable = detailTableWrap ? detailTableWrap.querySelector('table') : null;
 
-        builtTabTable = sbpptxBuildTabGroupTable(tabGroupEl, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H);
-        builtFilterTables = sbpptxBuildFilterBarSeparateTables(filterBarEl, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H);
+        // 팝업 화면은 컨텐츠 노출 영역 전체가 딤 처리된 배경(.popup-backdrop, 0.32 블렌딩)
+        // 이므로, MAIN CONTENT addTable에도 동일한 dimAlpha를 전달해 원본 sbpptxRenderElement
+        // 폴백 경로와 같은 톤을 재현한다(2026-08-26 사용자 요청).
+        // 0.32는 sbpptxRenderElement() 내부 POPUP_BACKDROP_DIM_ALPHA와 동일한 값(다른 함수
+        // 스코프라 상수를 그대로 참조할 수 없어 리터럴로 동기화).
+        const mainContentDimAlpha = isPopupScreen ? 0.32 : undefined;
+        builtTabTable = sbpptxBuildTabGroupTable(tabGroupEl, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H, mainContentDimAlpha);
+        builtFilterTables = sbpptxBuildFilterBarSeparateTables(filterBarEl, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H, mainContentDimAlpha);
         // 타이틀 표 폭을 텍스트 실측 폭보다 넓게 잡아야 안전마진이 비례축소로 상쇄되지
         // 않는다(2026-08-26 실측 — "공정별 상세" 부가설명이 잘림). 요약현황 타이틀은 옆에
         // 다른 요소가 없어 mainEl 전체 폭까지, 공정별상세 타이틀은 오른쪽 CTA 버튼 시작
@@ -7319,13 +7343,13 @@ async function downloadPPTX(e) {
         const detailCtaLeftIn = (detailCtaEl && detailTitleEl)
           ? (detailCtaEl.getBoundingClientRect().left - detailTitleEl.getBoundingClientRect().left) * scale
           : null;
-        builtSummaryTitleTable = sbpptxBuildSectionTitleTable(summaryTitleEl, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H, mainWIn);
-        if (summaryTable) builtSummaryTable = sbpptxBuildSimpleDataTable(summaryTable, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H);
-        builtDetailTitleTable = sbpptxBuildSectionTitleTable(detailTitleEl, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H, detailCtaLeftIn);
+        builtSummaryTitleTable = sbpptxBuildSectionTitleTable(summaryTitleEl, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H, mainWIn, mainContentDimAlpha);
+        if (summaryTable) builtSummaryTable = sbpptxBuildSimpleDataTable(summaryTable, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H, mainContentDimAlpha);
+        builtDetailTitleTable = sbpptxBuildSectionTitleTable(detailTitleEl, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H, detailCtaLeftIn, mainContentDimAlpha);
         // [2026-08-26 R40] "+ 공정 등록/엑셀/이메일 공유"를 통짜 표가 아니라 개별 표로
         // 분리(사용자가 PPT에서 직접 편집한 결과 역반영 — 각 버튼이 별도 표로 나뉘어 있음).
-        builtDetailCtaTables = sbpptxBuildFilterBarSeparateTables(detailCtaEl, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H);
-        if (detailTable) builtDetailTable = sbpptxBuildProcessDetailTable(detailTable, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H);
+        builtDetailCtaTables = sbpptxBuildFilterBarSeparateTables(detailCtaEl, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H, mainContentDimAlpha);
+        if (detailTable) builtDetailTable = sbpptxBuildProcessDetailTable(detailTable, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H, undefined, undefined, undefined, mainContentDimAlpha);
         // 표(scroll-wrap-detail)를 감싸는 outer wrapper(position:relative; border:1px solid
         // #ccc)와 그 안의 장식용 스크롤바(.scroll-badge-vertical + 형제 가로 막대)는 addTable
         // 경로가 아니라 원본 도형 경로로 그려진다. 이 장식들은 브라우저 실측 높이(원본 12px
@@ -7361,18 +7385,42 @@ async function downloadPPTX(e) {
       // 있음)은 필터든 버튼이든 모두 "텍스트 가진 직계 자식 div"라 sbpptxBuildFilterBarTable을
       // 그대로 재사용 가능(내부적으로 leaf 필터링 방식이 동일). 표(area2 안의 table)는
       // rowspan/colspan 없는 단순 헤더 표라 sbpptxBuildSimpleDataTable 재사용.
-      const SBPPTX_PATTERN_A_SCREEN_IDS = ['scr-004', 'scr-005', 'scr-009', 'scr-010', 'scr-011', 'scr-012'];
+      // SCR-002(원본/cont-1/팝업 2종)도 동일 DOM 골격이라 이 패턴 A로 통일한다(2026-08-26
+      // 사용자 요청 — "SCR-001 작업방식과 동일하게"). 팝업은 wireframe-wrap 바로 아래가
+      // 아니라 .popup-backdrop 한 겹 더 안에 MAIN CONTENT가 있다(SCR-001 팝업과 동일 보정).
+      const SBPPTX_PATTERN_A_SCREEN_IDS = [
+        'scr-004', 'scr-005', 'scr-009', 'scr-010', 'scr-011', 'scr-012',
+        'scr-002', 'scr-002-cont-1', 'scr-002-popup-stdprocess', 'scr-002-popup-delete',
+      ];
       if (SBPPTX_PATTERN_A_SCREEN_IDS.includes(section.id)) {
         const wf = section.querySelector('.wireframe-wrap');
-        const mainEl = wf ? wf.querySelector(':scope > div:nth-child(2) > div:nth-child(2)') : null;
+        const isPatternAPopup = section.id.includes('-popup-');
+        const layoutRootA = wf ? (wf.querySelector(':scope > .popup-backdrop') || wf) : null;
+        const mainEl = layoutRootA ? layoutRootA.querySelector(':scope > div:nth-child(2) > div:nth-child(2)') : null;
         const area1 = mainEl ? mainEl.querySelector(':scope > div[data-area="1"]') : null;
         const area2 = mainEl ? mainEl.querySelector(':scope > div[data-area="2"]') : null;
         const patternATable = area2 ? area2.querySelector('table') : null;
         // area1의 직계 자식 div(필터/버튼)만 leaf로 — area1 자체가 컨테이너.
         const area1InnerRow = area1 ? area1.querySelector(':scope > div') : null;
-        builtFilterTables = sbpptxBuildFilterBarSeparateTables(area1InnerRow || area1, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H);
-        if (patternATable) builtSummaryTable = sbpptxBuildSimpleDataTable(patternATable, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H);
+        // 팝업 화면은 컨텐츠 노출 영역 전체가 딤 처리된 배경이므로 SCR-001과 동일하게
+        // 0.32 dimAlpha를 전달(POPUP_BACKDROP_DIM_ALPHA와 동일 값, 함수 스코프가 달라 리터럴).
+        const patternADimAlpha = isPatternAPopup ? 0.32 : undefined;
+        builtFilterTables = sbpptxBuildFilterBarSeparateTables(area1InnerRow || area1, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H, patternADimAlpha);
+        if (patternATable) builtSummaryTable = sbpptxBuildSimpleDataTable(patternATable, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H, patternADimAlpha);
         [area1, patternATable].forEach(el => { if (el) skipEls.add(el); });
+        // addTable로 재계산된 표 높이(7pt 폰트 기준 rowH 합)가 브라우저 실측 높이(12px 폰트
+        // 기준)보다 커질 수 있어(2026-08-26 SCR-002 제보 — "페이지네이션이 표에 가려 안 보임"),
+        // 표 아래 형제(area3, 페이지네이션)를 표의 실제 addTable 높이만큼 y델타로 밀어낸다.
+        // SCR-001의 desc-table 바깥 형제 밀어내기(yOffsetMap)와 동일한 원리.
+        if (builtSummaryTable && area2 && mainEl) {
+          const area3 = mainEl.querySelector(':scope > div[data-area="3"]');
+          const area2RectHIn = area2.getBoundingClientRect().height * scale;
+          const tableDeltaIn = builtSummaryTable.opts.h - area2RectHIn;
+          if (area3 && Math.abs(tableDeltaIn) > 0.001) {
+            yOffsetMap.set(area3, tableDeltaIn);
+            area3.querySelectorAll('*').forEach(child => yOffsetMap.set(child, tableDeltaIn));
+          }
+        }
       }
 
       // [2026-08-26 R35] "패턴 B" 화면(KPI 카드그룹 → 필터+CTA → 표wrap → 페이지네이션,
@@ -7662,13 +7710,24 @@ async function downloadPPTX(e) {
           }
         }
         const relocEls = [modalEl, ...modalEl.querySelectorAll('*')];
+        // [2026-08-26] 모달 내부(공정 등록/이메일 공유/자동화 설비 동영상)도 2p MAIN CONTENT와
+        // 동일한 방식(개별 addTable + 텍스트 노출)으로 재현한다(사용자 요청). 텍스트 리프
+        // 요소 목록(및 위치·색상이 반영된 addTable)을 먼저 계산해, 아래 배경/테두리 도형
+        // 렌더링(sbpptxRenderElement)에서 그 요소들의 addText만 건너뛰게 한다 — 그렇지 않고
+        // addText와 addTable을 둘 다 그리면 두 렌더 경로의 텍스트 박스 위치 계산 방식이 달라
+        // 미묘하게 어긋난 채로 겹쳐 보이는 문제가 있었다(2026-08-26 육안 검증에서 발견).
+        // 모달 자신은 .popup-backdrop 바깥의 별도 오버레이 자식이라 딤 처리 대상이 아니므로
+        // dimAlpha는 전달하지 않는다(딤 처리는 배경 TopBar/사이드바/MAIN CONTENT에만 적용).
+        const modalTextLeafResult = sbpptxBuildModalTextLeafTables(modalEl, baseX, baseY, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H, undefined, section.id);
+        const modalSkipTextEls = new Set(modalTextLeafResult.skipEls);
         for (const el of relocEls) {
           if (el.classList && (el.classList.contains('indicator') || el.classList.contains('indicator-el') || el.classList.contains('on-top'))) continue;
-          sbpptxRenderElement(pptx, slide, el, baseX, baseY, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H, yOffsetMap, null, heightDeltaMap);
+          sbpptxRenderElement(pptx, slide, el, baseX, baseY, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H, yOffsetMap, null, heightDeltaMap, modalSkipTextEls);
         }
+        modalTextLeafResult.tables.forEach(t => { try { slide.addTable(t.rows, t.opts); } catch (err) { console.warn('modal text leaf addTable failed:', err); } });
         for (const el of relocEls) {
           if (!el.classList || (!el.classList.contains('indicator') && !el.classList.contains('indicator-el') && !el.classList.contains('on-top'))) continue;
-          sbpptxRenderElement(pptx, slide, el, baseX, baseY, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H, yOffsetMap, null, heightDeltaMap);
+          sbpptxRenderElement(pptx, slide, el, baseX, baseY, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H, yOffsetMap, null, heightDeltaMap, modalSkipTextEls);
         }
       }
       // "다음 화면에 계속" 배너는 desc-table보다도 나중에(z-order 최상단) 그려야 desc-table의
@@ -7781,7 +7840,7 @@ function sbpptxCaptureLiveDom(section, timeoutMs) {
   });
 }
 
-function sbpptxRenderElement(pptx, slide, el, baseX, baseY, scale, offsetX, offsetY, slideW, slideH, yOffsetMap, dryRunCollector, heightDeltaMap) {
+function sbpptxRenderElement(pptx, slide, el, baseX, baseY, scale, offsetX, offsetY, slideW, slideH, yOffsetMap, dryRunCollector, heightDeltaMap, skipTextEls) {
   const tag = el.tagName;
   if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'LINK' || tag === 'META' || tag === 'TITLE' || tag === 'HEAD' || tag === 'TEMPLATE' || tag === 'BR' || tag === 'HR') return;
   if (tag === 'svg' || tag === 'SVG' || tag === 'PATH' || tag === 'CIRCLE' || tag === 'LINE' || tag === 'RECT' || tag === 'POLYLINE' || tag === 'POLYGON') return;
@@ -7830,7 +7889,8 @@ function sbpptxRenderElement(pptx, slide, el, baseX, baseY, scale, offsetX, offs
   const commonLayoutParent = el.closest && el.closest(
     '#scr-001, #scr-001-cont-1, #scr-001-cont-2, ' +
     '#scr-001-popup-7-1, #scr-001-popup-7-2, #scr-001-popup-7-3, ' +
-    '#scr-002, #scr-003, #scr-004, #scr-005, #mtrm-main, #scr-006, #scr-007, ' +
+    '#scr-002, #scr-002-cont-1, #scr-002-popup-stdprocess, #scr-002-popup-delete, ' +
+    '#scr-003, #scr-004, #scr-005, #mtrm-main, #scr-006, #scr-007, ' +
     '#scr-008, #scr-009, #scr-010, #scr-011, #scr-012, #scr-013, #scr-014'
   );
   if (commonLayoutParent) {
@@ -7867,10 +7927,13 @@ function sbpptxRenderElement(pptx, slide, el, baseX, baseY, scale, offsetX, offs
         const patternBCandidates = [bArea1, bArea2, bArea3Table].filter(Boolean);
         if (patternBCandidates.some(c => el === c || c.contains(el))) return;
       }
-      // SCR-001 + cont-1/cont-2(동일 캔버스 반복)만: MAIN CONTENT 내부(탭/필터바/요약현황표/
-      // CTA/공정별상세표)도 추가로 스킵. 2p와 동일한 DOM 구조를 가지므로 동일하게 처리해야
-      // 세 페이지 노출 영역이 일치한다(2026-08-26 사용자 제보).
-      if (commonLayoutParent.id === 'scr-001' || commonLayoutParent.id === 'scr-001-cont-1' || commonLayoutParent.id === 'scr-001-cont-2') {
+      // SCR-001 + cont-1/cont-2(동일 캔버스 반복) + 팝업 3종(7,8,9p)만: MAIN CONTENT 내부
+      // (탭/필터바/요약현황표/CTA/공정별상세표)도 추가로 스킵. cont는 2p와 동일한 DOM 구조를
+      // 가지므로 동일하게 처리해야 세 페이지 노출 영역이 일치한다(2026-08-26 사용자 제보).
+      // 팝업은 딤 처리된 컨텐츠 노출 영역도 2p와 동일하게 개별 테이블로 통일(2026-08-26
+      // 사용자 요청) — sidebarRow는 위에서 이미 popup-backdrop 보정된 layoutRoot 기준이라
+      // mainEl 계산식이 팝업에도 그대로 맞는다.
+      if (['scr-001', 'scr-001-cont-1', 'scr-001-cont-2', 'scr-001-popup-7-1', 'scr-001-popup-7-2', 'scr-001-popup-7-3'].includes(commonLayoutParent.id)) {
         const mainEl = sidebarRow ? sidebarRow.querySelector(':scope > div:nth-child(2)') : null;
         const mainCandidates = [
           mainEl ? mainEl.querySelector(':scope > div:nth-child(1)') : null, // tabs
@@ -8220,6 +8283,12 @@ function sbpptxRenderElement(pptx, slide, el, baseX, baseY, scale, offsetX, offs
   }
 
   // (2) 텍스트 리프 요소만 텍스트박스로 추가
+  // skipTextEls: 이 요소의 텍스트를 addText가 아니라 별도 addTable로 그릴 예정이면(2026-08-26
+  // 팝업 모달 텍스트 리프 addTable 전환, 아래 downloadPPTX()의 sbpptxBuildModalTextLeafTables
+  // 참고) 여기서 addText를 건너뛴다 — 이중 렌더링(원본 위치와 addTable 위치가 미묘하게
+  // 어긋나 텍스트가 겹쳐 보이는 버그)을 막기 위해, 배경/테두리 도형((1) 블록)은 그대로 두고
+  // 텍스트만 완전히 addTable로 대체한다.
+  if (skipTextEls && skipTextEls.has(el)) return;
   if (sbpptxIsTextLeaf(el)) {
     const text = (el.textContent || '').replace(/\s+/g, ' ').trim();
     if (text && text.length > 0 && text.length < 2500) {
@@ -8929,7 +8998,7 @@ function sbpptxParseProcessDetailBodyRows(table, numCols) {
   return defs;
 }
 
-function sbpptxBuildProcessDetailTable(table, baseX, baseY, scale, offsetX, offsetY, slideW, slideH, maxHeightIn, pullForwardRows, skipCount) {
+function sbpptxBuildProcessDetailTable(table, baseX, baseY, scale, offsetX, offsetY, slideW, slideH, maxHeightIn, pullForwardRows, skipCount, dimAlpha) {
   const rect = table.getBoundingClientRect();
   if (rect.width < 0.5 || rect.height < 0.5) return null;
   const style = window.getComputedStyle(table);
@@ -8954,21 +9023,31 @@ function sbpptxBuildProcessDetailTable(table, baseX, baseY, scale, offsetX, offs
   const bodyLineHeightIn = BODY_FONT_PT * BODY_LINE_SPACING_MULTIPLE / 72;
   const padXIn = 6 * scale, padYIn = 5 * scale;
 
-  const cellOpts = (isHeader, align, bg) => ({
-    bold: isHeader,
-    color: '343A40',
-    fontFace: fontFace,
-    fontSize: isHeader ? HEADER_FONT_PT : BODY_FONT_PT,
-    align: align || 'center',
-    valign: 'middle',
-    fill: { color: bg },
-    border: [
-      { type: 'solid', color: 'CCCCCC', pt: 0.75 },
-      { type: 'solid', color: 'CCCCCC', pt: 0.75 },
-      { type: 'solid', color: 'CCCCCC', pt: 0.75 },
-      { type: 'solid', color: 'CCCCCC', pt: 0.75 },
-    ],
-  });
+  const cellOpts = (isHeader, align, bg) => {
+    let color = '343A40';
+    let borderColor = 'CCCCCC';
+    let fillColor = bg;
+    if (dimAlpha != null) {
+      color = sbpptxBlendHex('F8F9FA', color, dimAlpha);
+      borderColor = sbpptxBlendHex('F8F9FA', borderColor, dimAlpha);
+      fillColor = sbpptxBlendHex('F8F9FA', bg, dimAlpha);
+    }
+    return {
+      bold: isHeader,
+      color: color,
+      fontFace: fontFace,
+      fontSize: isHeader ? HEADER_FONT_PT : BODY_FONT_PT,
+      align: align || 'center',
+      valign: 'middle',
+      fill: { color: fillColor },
+      border: [
+        { type: 'solid', color: borderColor, pt: 0.75 },
+        { type: 'solid', color: borderColor, pt: 0.75 },
+        { type: 'solid', color: borderColor, pt: 0.75 },
+        { type: 'solid', color: borderColor, pt: 0.75 },
+      ],
+    };
+  };
 
   const theadRows = Array.from(table.querySelectorAll(':scope > thead > tr'));
   if (theadRows.length !== 2) return null; // 예상 구조와 다르면 안전하게 포기(폴백은 기존 경로)
@@ -9104,7 +9183,11 @@ function sbpptxTextExcludingIndicators(el) {
   return clone.textContent.trim();
 }
 
-function sbpptxBuildInlineGroupTable(containerEl, leafEls, baseX, baseY, scale, offsetX, offsetY, slideW, slideH, overrideWIn) {
+// dimAlpha: 팝업 딤 배경(.popup-backdrop) 안의 컨텐츠를 addTable로 그릴 때, sbpptxRenderElement의
+// inPopupBackdrop 블렌딩(sbpptxBlendHex('F8F9FA', color, 0.32))과 동일한 톤을 재현하기 위한
+// 선택 파라미터(2026-08-26 사용자 요청 — 팝업 MAIN CONTENT도 2p와 동일하게 개별 테이블로).
+// 지정하지 않으면(undefined) 기존처럼 원색 그대로 그린다.
+function sbpptxBuildInlineGroupTable(containerEl, leafEls, baseX, baseY, scale, offsetX, offsetY, slideW, slideH, overrideWIn, dimAlpha) {
   if (!containerEl || !leafEls || leafEls.length === 0) return null;
   const rect = containerEl.getBoundingClientRect();
   if (rect.width < 0.5 || rect.height < 0.5) return null;
@@ -9124,10 +9207,11 @@ function sbpptxBuildInlineGroupTable(containerEl, leafEls, baseX, baseY, scale, 
 
   const colWidthsIn = [];
   const finalRowCells = [];
+  const spacerBg = dimAlpha != null ? sbpptxBlendHex('F8F9FA', 'FFFFFF', dimAlpha) : 'FFFFFF';
   const pushSpacer = (wIn) => {
     if (wIn <= 0.01) return;
     colWidthsIn.push(wIn);
-    finalRowCells.push({ text: '', options: { fill: { color: 'FFFFFF' }, border: [{ type: 'none' }, { type: 'none' }, { type: 'none' }, { type: 'none' }] } });
+    finalRowCells.push({ text: '', options: { fill: { color: spacerBg }, border: [{ type: 'none' }, { type: 'none' }, { type: 'none' }, { type: 'none' }] } });
   };
 
   leafEls.forEach(leaf => {
@@ -9149,12 +9233,17 @@ function sbpptxBuildInlineGroupTable(containerEl, leafEls, baseX, baseY, scale, 
     pushSpacer(elLeftIn - prevRightIn);
 
     const cs = window.getComputedStyle(el);
-    const bg = sbpptxIsTransparent(cs.backgroundColor) ? 'FFFFFF' : (sbpptxRgbToHex(cs.backgroundColor) || 'FFFFFF');
-    const color = sbpptxRgbToHex(cs.color) || '333333';
+    let bg = sbpptxIsTransparent(cs.backgroundColor) ? 'FFFFFF' : (sbpptxRgbToHex(cs.backgroundColor) || 'FFFFFF');
+    let color = sbpptxRgbToHex(cs.color) || '333333';
     const bold = parseInt(cs.fontWeight, 10) >= 600;
-    const fontPt = Math.max(6, parseFloat(cs.fontSize) * 0.72);
+    const fontPt = leaf.fontPt || Math.max(6, parseFloat(cs.fontSize) * 0.72);
     const hasBorder = parseFloat(cs.borderTopWidth) > 0;
-    const borderColor = hasBorder ? (sbpptxRgbToHex(cs.borderTopColor) || 'CCCCCC') : null;
+    let borderColor = hasBorder ? (sbpptxRgbToHex(cs.borderTopColor) || 'CCCCCC') : null;
+    if (dimAlpha != null) {
+      bg = sbpptxBlendHex('F8F9FA', bg, dimAlpha);
+      color = sbpptxBlendHex('F8F9FA', color, dimAlpha);
+      if (borderColor) borderColor = sbpptxBlendHex('F8F9FA', borderColor, dimAlpha);
+    }
 
     // 렌더 엔진 간 폰트 메트릭 오차 + addTable 셀 기본 내부 여백(margin 0으로 줘도 완전히
     // 0이 되지 않음) 때문에 원본 실측 폭 그대로 쓰면 셀 안에서 줄바꿈된다(2026-08-26 실측 —
@@ -9208,6 +9297,181 @@ function sbpptxBuildInlineGroupTable(containerEl, leafEls, baseX, baseY, scale, 
   };
 }
 
+// [2026-08-26] SCR-001 팝업 3종(공정 등록/이메일 공유/자동화 설비 동영상) 모달 내부를 2p
+// MAIN CONTENT와 동일한 방식(개별 addTable + 텍스트 노출)으로 그린다(사용자 요청 — "모달
+// 위에 팝업 화면이 있는데 팝업 화면을 개별 테이블로 생성해서 각 테이블 안에 텍스트를 노출
+// 하는 2p 작업 방식과 동일하게"). 3개 모달은 구조가 조금씩 다르므로(폼 필드/체크박스/비디오
+// 플레이어) 공통 셀렉터 대신 modalEl 하위 전체를 순회하며 sbpptxIsTextLeaf()로 "텍스트를
+// 직접 담은 최소 단위 요소"만 골라 각각 원래 위치 그대로 1행 1열 addTable로 그린다.
+// 체크박스 아이콘(이메일 공유의 "요약 현황(엑셀)" 체크 박스)처럼 텍스트가 없는 순수 도형은
+// sbpptxIsTextLeaf가 false를 반환해 여기서 자동으로 제외되고, 기존 sbpptxRenderElement
+// 도형 폴백 경로가 계속 그린다(2p에도 체크박스 addTable 대응 사례가 없어 그대로 유지).
+function sbpptxBuildModalTextLeafTables(modalEl, baseX, baseY, scale, offsetX, offsetY, slideW, slideH, dimAlpha, screenId) {
+  if (!modalEl) return { tables: [], skipEls: [] };
+  const built = [];
+  const skipEls = [];
+  // [2026-08-26] SCR-001 팝업(7p, 공정 등록) 전용 폰트/여백 오버라이드(사용자 요청) —
+  // 다른 팝업(8p 이메일 공유/9p 동영상)은 대상이 아니므로 screenId로 범위를 한정한다.
+  // 판별은 DOM 구조 기반: 타이틀=헤더 row 첫 자식, 필드라벨="width:110px" 부모의 자식,
+  // 플레이스홀더="flex:1" 값 컨테이너 안의 텍스트, 버튼=푸터(justify-content:flex-end) 자식.
+  const isScr001Popup7_1 = screenId === 'scr-001-popup-7-1';
+  const headerRow = isScr001Popup7_1 ? modalEl.querySelector(':scope > div:nth-child(2)') : null;
+  // footerRow(취소/등록/공유/닫기 버튼을 감싼 justify-content:flex-end 행)는 모든 팝업
+  // 공통 구조라 screenId와 무관하게 항상 계산 — 버튼 텍스트 가운데 정렬(사용자 요청)에 사용.
+  const footerRow = modalEl.querySelector(':scope > div:last-child');
+  const walk = (el) => {
+    for (const child of Array.from(el.children)) {
+      if (child.classList && (child.classList.contains('indicator') || child.classList.contains('indicator-el'))) continue;
+      if (sbpptxIsTextLeaf(child)) {
+        const text = sbpptxTextExcludingIndicators(child);
+        if (!text) continue;
+        const elRect = child.getBoundingClientRect();
+        if (elRect.width < 0.5 || elRect.height < 0.5) continue;
+        let x = offsetX + (elRect.left + window.scrollX - baseX) * scale;
+        let y = offsetY + (elRect.top + window.scrollY - baseY) * scale;
+        let w = elRect.width * scale;
+        let h = elRect.height * scale;
+        if (x >= slideW + 0.05 || y >= slideH + 0.05 || w < 0.02) continue;
+        const cs = window.getComputedStyle(child);
+        let bg = sbpptxIsTransparent(cs.backgroundColor) ? null : (sbpptxRgbToHex(cs.backgroundColor) || null);
+        // 텍스트 실제 색상은 child 자신이 아니라, 텍스트를 담은 자식 요소(예: 체크박스의
+        // <span style="color:#fff">✓</span>)에 직접 지정돼 있을 수 있다(2026-08-26 실측
+        // 발견 — 8p 체크박스가 검정 배경 위에 검정 텍스트(부모 상속색)로 그려져 안 보였다).
+        // child 자신이 직접 텍스트 노드를 갖고 있으면(예: "공정명 " + <span>*</span>) 필드
+        // 라벨처럼 전체 라벨색이 우선이어야 하므로 child 색을 그대로 쓴다. child 자신은
+        // 텍스트 노드가 전혀 없고 텍스트가 전부 자식 요소(span 등) 안에만 있는 경우에만
+        // (체크박스처럼) 그 자식의 color를 대신 사용한다.
+        const childHasOwnText = Array.from(child.childNodes).some(n => n.nodeType === 3 && n.textContent.trim());
+        const colorSourceEl = !childHasOwnText && child.children.length > 0
+          ? (Array.from(child.querySelectorAll('*')).find(n => n.textContent && n.textContent.trim()) || child)
+          : child;
+        let color = sbpptxRgbToHex(window.getComputedStyle(colorSourceEl).color) || '333333';
+        const bold = parseInt(cs.fontWeight, 10) >= 600;
+        const fontFace = sbpptxFontName(cs.fontFamily) || '맑은 고딕';
+        // 7p(공정 등록) 요소별 폰트 오버라이드(사용자 요청 — 타이틀 10pt/필드라벨(테이블
+        // 타이틀) 9pt/플레이스홀더 8pt/버튼 9pt). 해당 없으면 기존처럼 원본 CSS 비례축소.
+        let fontPt = Math.max(6, parseFloat(cs.fontSize) * 0.72);
+        let extraLeftPadIn = 0;
+        let isFieldLabel = false;
+        // 푸터 버튼(취소/등록/공유/닫기)은 화면 구분 없이 공통 처리 — 가운데 정렬(사용자
+        // 요청, 2026-08-26). 폰트 크기는 7p 한정 오버라이드(아래 블록)에서만 9pt로 바뀐다.
+        const isFooterBtn = !!(footerRow && child.parentElement === footerRow);
+        if (isScr001Popup7_1) {
+          // 필드 라벨(예: <div style="width:110px;...">공정명 <span>*</span></div>)은 SPAN만
+          // 자식으로 가진 텍스트 리프라 child 자신이 바로 이 div다(child.parentElement가 아님).
+          const isTitle = headerRow && child.parentElement === headerRow && child === headerRow.firstElementChild;
+          isFieldLabel = child.style && child.style.width === '110px';
+          const valueContainer = !isFieldLabel && child.closest && child.closest('div[style*="flex:1"]');
+          const isPlaceholder = valueContainer && modalEl.contains(valueContainer);
+          if (isTitle) fontPt = 10;
+          else if (isFieldLabel) fontPt = 9;
+          else if (isPlaceholder) { fontPt = 8; extraLeftPadIn = 0.2 / 2.54; }
+          else if (isFooterBtn) fontPt = 9;
+        }
+        // [2026-08-26] 8p(이메일 공유) 첨부자료 체크박스 전용 오버라이드(사용자 요청 —
+        // 첨부 이미지처럼 흰 배경+테두리+체크 스타일로, 옆 라벨 텍스트는 7pt). 원본 HTML은
+        // 그대로 두고 PPTX 렌더링(이 addTable 결과물)만 바꾼다. 체크박스는 14x14px 정사각
+        // div, 라벨은 그 다음 형제 span이다(위 DOM 구조 참고, 2824행).
+        const isScr001Popup7_2 = screenId === 'scr-001-popup-7-2';
+        let checkboxOverride = null;
+        if (isScr001Popup7_2) {
+          const isCheckbox = child.style && child.style.width === '14px' && child.style.height === '14px';
+          const prevIsCheckbox = child.previousElementSibling
+            && child.previousElementSibling.style
+            && child.previousElementSibling.style.width === '14px'
+            && child.previousElementSibling.style.height === '14px';
+          if (isCheckbox) { checkboxOverride = 'box'; fontPt = 6; }
+          else if (prevIsCheckbox) { checkboxOverride = 'label'; fontPt = 7; }
+        }
+        // 체크박스 크기를 0.28cm x 0.28cm로 고정(사용자 요청). 중심 위치는 원본 그대로
+        // 유지하기 위해 x/y도 축소분의 절반만큼 보정한다(그렇지 않으면 좌상단 기준으로
+        // 작아져 옆 라벨과의 간격이 벌어져 보인다).
+        if (checkboxOverride === 'box') {
+          const sizeIn = 0.28 / 2.54;
+          x += (w - sizeIn) / 2;
+          y += (h - sizeIn) / 2;
+          w = sizeIn;
+          h = sizeIn;
+        }
+        // 체크박스 자신(checkboxOverride==='box')은 흰 배경 + 연한 회색 얇은 테두리 + 검정
+        // 체크로 강제한다(사용자 요청 — 첨부 이미지 스타일. 색상은 "흰색 배경에 검정색
+        // 박스에 체크는 검정색 체크"로, 테두리는 이후 "연한 회색, 얇은 선(0.75pt)"로 확정).
+        // 원본은 검정 배경(#333)+흰 체크였다.
+        let forceBorder = false, forceBorderColor = null;
+        if (checkboxOverride === 'box') {
+          bg = 'FFFFFF';
+          color = '000000';
+          forceBorder = true;
+          forceBorderColor = 'CCCCCC';
+        }
+        // getComputedStyle().textAlign 기본값은 'left'가 아니라 'start'다(2026-08-26 실측
+        // 발견 — 이메일 공유 모달의 "요약 현황 (엑셀)" span처럼 text-align을 지정하지 않은
+        // 요소가 'center'로 오판정되어, 폭 확장 시 셀이 왼쪽으로 당겨지며 체크박스와 겹쳤다).
+        // 'center'/'right'가 명시된 경우만 그 값을 쓰고, 그 외(start/left/justify/공백)는
+        // 전부 'left'로 취급한다. 푸터 버튼은 명시적으로 가운데 정렬(사용자 요청).
+        const align = isFooterBtn ? 'center' : (cs.textAlign === 'center' ? 'center' : (cs.textAlign === 'right' ? 'right' : 'left'));
+        const hasBorder = forceBorder || parseFloat(cs.borderTopWidth) > 0;
+        let borderColor = forceBorder ? forceBorderColor : (hasBorder ? (sbpptxRgbToHex(cs.borderTopColor) || 'CCCCCC') : null);
+        if (dimAlpha != null) {
+          if (bg) bg = sbpptxBlendHex('F8F9FA', bg, dimAlpha);
+          color = sbpptxBlendHex('F8F9FA', color, dimAlpha);
+          if (borderColor) borderColor = sbpptxBlendHex('F8F9FA', borderColor, dimAlpha);
+        }
+        // 원본이 실제로 몇 줄로 렌더링됐는지(줄바꿈 없는 라벨/버튼 vs 여러 줄 안내문)를
+        // 요소 높이와 line-height 비로 판정한다(2026-08-26 실측 발견 — "요약 현황 (엑셀)"
+        // 처럼 원본은 한 줄인데 wrap:true 고정 + 원본 폭 그대로 쓰면 addTable 셀 안에서
+        // 안전마진 없이 줄바꿈되어 다음 줄과 겹쳐 보였다). 1줄이면 sbpptxBuildInlineGroupTable과
+        // 동일한 35% 안전마진을 폭에 주고 wrap:false로, 여러 줄이면 원본 폭 그대로 wrap:true로.
+        let lineHeightPx = parseFloat(cs.lineHeight);
+        if (!isFinite(lineHeightPx) || cs.lineHeight === 'normal') lineHeightPx = parseFloat(cs.fontSize) * 1.2;
+        const nowrapCss = cs.whiteSpace === 'nowrap' || cs.whiteSpace === 'pre';
+        const isSingleLine = nowrapCss || (elRect.height < lineHeightPx * 1.8);
+        // 35% 안전마진(sbpptxBuildInlineGroupTable과 동일 기준)만으로는 부족한 경우가 있다
+        // (2026-08-26 실측 발견 — "공정 등록"/"이메일 공유" 모달 타이틀은 justify-content:
+        // space-between 부모의 첫 자식이라 원본 elRect.width 자체가 이미 텍스트 콘텐츠에
+        // 딱 맞게 좁아, 1.35배를 곱해도 addTable에서 줄바꿈됐다). sbpptxMeasureWrappedLineCount로
+        // 실측 검증해 여전히 2줄 이상이면 1줄에 들어갈 때까지 폭을 추가로 늘린다(최대 6회).
+        // 7p 필드 라벨은 옆에 셀렉트/인풋 값 컬럼이 바로 붙어 있는 고정폭(110px) 컬럼이라
+        // 폭을 늘리면 값 컬럼과 겹친다(2026-08-26 실측 발견 — "Best Practice 지정"이 9pt로
+        // 바뀌며 폭 확장 루프를 타서 옆 셀렉트박스를 침범, 텍스트가 잘려 보였다). 원본
+        // rect 폭을 그대로 쓰고 wrap을 허용해 필요하면 자연스럽게 여러 줄로 보이게 한다.
+        // 체크박스(checkboxOverride==='box')는 크기를 0.28cm로 고정했으므로 폭 확장 대상에서
+        // 제외한다 — elRect.width*scale(축소 전 원본 실측폭)이 축소된 w보다 커서 확장 루프가
+        // 다시 원래 크기로 되돌릴 수 있다.
+        const allowWiden = isSingleLine && !isFieldLabel && checkboxOverride !== 'box';
+        const padXIn = 4 * scale, padYIn = 2 * scale;
+        let cellWIn = allowWiden ? Math.max(w, elRect.width * scale * 1.35) : w;
+        if (allowWiden) {
+          for (let i = 0; i < 6; i++) {
+            const lines = sbpptxMeasureWrappedLineCount([{ text: text, options: {} }], fontPt, fontFace, Math.max(0.1, cellWIn - padXIn * 2));
+            if (lines <= 1) break;
+            cellWIn *= 1.25;
+          }
+        }
+        const cellXIn = align === 'right' ? x - (cellWIn - w) : (align === 'center' ? x - (cellWIn - w) / 2 : x);
+        built.push({
+          rows: [[{
+            text: [{ text: text, options: {} }],
+            options: {
+              fontSize: fontPt, fontFace, wrap: isFieldLabel ? true : !isSingleLine, bold, color, align, valign: 'middle',
+              fill: bg ? { color: bg } : { type: 'none' },
+              border: hasBorder
+                ? [{ type: 'solid', color: borderColor, pt: 0.75 }, { type: 'solid', color: borderColor, pt: 0.75 }, { type: 'solid', color: borderColor, pt: 0.75 }, { type: 'solid', color: borderColor, pt: 0.75 }]
+                : [{ type: 'none' }, { type: 'none' }, { type: 'none' }, { type: 'none' }],
+            },
+          }]],
+          opts: { x: cellXIn, y, w: cellWIn, h, colW: [cellWIn], rowH: [h], autoPage: false, margin: [padYIn, padXIn, padYIn, padXIn + extraLeftPadIn] },
+        });
+        skipEls.push(child);
+      } else {
+        walk(child);
+      }
+    }
+  };
+  walk(modalEl);
+  return { tables: built, skipEls };
+}
+
 // [2026-08-26] SCR-001 상단 헤더(TOP BAR)를 sbpptxBuildInlineGroupTable로 그리기 위한
 // leaf 요소(로고/Breadcrumb/사용자명/구분자/로그아웃) 추출. 원본 DOM 구조는 고정(화면설계서_
 // 부품공정자동화현황_샘플.html 278~288행): <div TOP_BAR> <div LEFT_GROUP><div 로고><div
@@ -9238,10 +9502,12 @@ function sbpptxBuildTopBarTable(topBarEl, baseX, baseY, scale, offsetX, offsetY,
 
 // [2026-08-26] SCR-001 탭 그룹(부품 공정/모듈 공정 — 316~319행)을 가상 표로 그린다.
 // 컨테이너의 직계 자식 div 각각이 leaf(탭 1개)다.
-function sbpptxBuildTabGroupTable(tabGroupEl, baseX, baseY, scale, offsetX, offsetY, slideW, slideH) {
+function sbpptxBuildTabGroupTable(tabGroupEl, baseX, baseY, scale, offsetX, offsetY, slideW, slideH, dimAlpha) {
   if (!tabGroupEl) return null;
-  const leafEls = Array.from(tabGroupEl.querySelectorAll(':scope > div'));
-  return sbpptxBuildInlineGroupTable(tabGroupEl, leafEls, baseX, baseY, scale, offsetX, offsetY, slideW, slideH);
+  // [2026-08-26] 탭 버튼 텍스트 10pt 고정 + 가로/세로 중앙정렬(사용자 요청 — 콘텐츠
+  // 영역 폰트 사이즈 조정). valign은 sbpptxBuildInlineGroupTable에서 이미 'middle' 고정.
+  const leafEls = Array.from(tabGroupEl.querySelectorAll(':scope > div')).map(el => ({ el, fontPt: 10, align: 'center' }));
+  return sbpptxBuildInlineGroupTable(tabGroupEl, leafEls, baseX, baseY, scale, offsetX, offsetY, slideW, slideH, undefined, dimAlpha);
 }
 
 // [2026-08-26] SCR-001 필터바(제품군/제품/지역/공장/라인 셀렉트 5개 + 조회 버튼 — 322~330행)를
@@ -9265,10 +9531,10 @@ function sbpptxBuildFilterBarTable(filterBarEl, baseX, baseY, scale, offsetX, of
 //  - 그 외(텍스트 1개뿐인 버튼: 조회/엑셀 다운로드 등)는 기존처럼 1컬럼 표.
 // 반환값은 built 객체 배열(단일 객체가 아님) — 호출부는 배열 전체를 순회하며
 // sbpptxRenderDescTable을 각각 호출해야 한다.
-function sbpptxBuildFilterBarSeparateTables(filterBarEl, baseX, baseY, scale, offsetX, offsetY, slideW, slideH) {
+function sbpptxBuildFilterBarSeparateTables(filterBarEl, baseX, baseY, scale, offsetX, offsetY, slideW, slideH, dimAlpha) {
   if (!filterBarEl) return [];
   const leafEls = Array.from(filterBarEl.querySelectorAll(':scope > div')).filter(el => sbpptxTextExcludingIndicators(el));
-  return sbpptxBuildFilterLeafSeparateTables(leafEls, baseX, baseY, scale, offsetX, offsetY, slideW, slideH);
+  return sbpptxBuildFilterLeafSeparateTables(leafEls, baseX, baseY, scale, offsetX, offsetY, slideW, slideH, dimAlpha);
 }
 
 // 위 함수의 핵심 로직을 leaf 배열을 직접 받는 형태로 분리 — SCR-003처럼 필터바가 이중
@@ -9297,8 +9563,9 @@ function sbpptxShrinkFontToFit(text, startFontPt, fontFace, availIn) {
 // select box가 촘촘한 필터바에서 다음 필터와 겹치지 않는다(R38에서 폭만 넓혔다가
 // 옆 표와 겹친 사고 재발 방지 — gap도 비례해서 넓히는 것이 이번 R40의 핵심).
 const SBPPTX_FILTER_WIDEN_SCALE_MAX = 1.15;
-function sbpptxBuildFilterLeafSeparateTables(leafEls, baseX, baseY, scale, offsetX, offsetY, slideW, slideH) {
+function sbpptxBuildFilterLeafSeparateTables(leafEls, baseX, baseY, scale, offsetX, offsetY, slideW, slideH, dimAlpha) {
   const built = [];
+  const dimBg = dimAlpha != null ? sbpptxBlendHex('F8F9FA', 'FFFFFF', dimAlpha) : 'FFFFFF';
   // [2026-08-26 R40] 폭만 넓히면 표들이 원래 x좌표에 그대로 남아 다음 필터를 침범한다
   // (사용자 실측 제보 — "라인 전체" 아이콘이 잘리고 "조회" 버튼과 거의 붙음). 각 leaf가
   // 넓어진 만큼(elWidenExtraIn) 그 뒤에 오는 모든 leaf의 x좌표를 누적으로 밀어내는 순차
@@ -9335,7 +9602,12 @@ function sbpptxBuildFilterLeafSeparateTables(leafEls, baseX, baseY, scale, offse
     }
   }
   const SBPPTX_FILTER_WIDEN_SCALE = dynamicWidenScale;
+  // [2026-08-26] 셀렉트 박스 간 여백 5pt 고정(사용자 요청). 폭(w)은 그대로 두고, 연속된
+  // 셀렉트 박스끼리는 "이전 셀렉트 박스 오른쪽 끝 + 5pt"로 x를 재배치한다. 셀렉트가 아닌
+  // leaf(조회/등록 버튼 등)가 중간에 끼면 체인을 끊고 그 leaf의 원래 위치를 그대로 쓴다.
+  const SBPPTX_SELECT_GAP_IN = 5 / 72;
   let cumulativeShiftIn = 0;
+  let prevSelectRightIn = null;
   leafEls.forEach(el => {
     const spans = Array.from(el.querySelectorAll(':scope > span'));
     const fontFace = sbpptxFontName(window.getComputedStyle(el).fontFamily) || '맑은 고딕';
@@ -9352,31 +9624,35 @@ function sbpptxBuildFilterLeafSeparateTables(leafEls, baseX, baseY, scale, offse
       const elRect = el.getBoundingClientRect();
       const wOriginal = elRect.width * scale;
       const w = wOriginal * SBPPTX_FILTER_WIDEN_SCALE;
-      const x = offsetX + (elRect.left + window.scrollX - baseX) * scale + cumulativeShiftIn;
+      const x = prevSelectRightIn != null
+        ? prevSelectRightIn + SBPPTX_SELECT_GAP_IN
+        : offsetX + (elRect.left + window.scrollX - baseX) * scale + cumulativeShiftIn;
       const y = offsetY + (elRect.top + window.scrollY - baseY) * scale;
       const h = elRect.height * scale;
       cumulativeShiftIn += (w - wOriginal);
+      prevSelectRightIn = x + w;
       if (x < slideW + 0.05 && y < slideH + 0.05 && w >= 0.02) {
         const labelCs = window.getComputedStyle(spans[0]);
         const iconCs = window.getComputedStyle(spans[1]);
         const iconGapIn = Math.min(0.06, w * 0.08);
         const iconColIn = Math.min(w * 0.35, Math.max(0.12, spans[1].getBoundingClientRect().width * scale + 0.04));
         const labelColIn = Math.max(0.1, w - iconGapIn - iconColIn);
-        // [2026-08-26 R40] 사용자가 PPT에서 필터 라벨 폰트를 10pt로 고정한 것을 역반영
-        // (실측: 기존 계산값 9.36pt보다 큼). 표 폭을 넓힌 만큼 폰트도 키운 것이므로 시작
-        // 폰트 하한을 10pt로 올리되, sbpptxShrinkFontToFit이 넓어진 라벨 컬럼 폭에서
-        // 여전히 1줄에 들어가는지는 그대로 재검증한다(더 좁은 화면에서 축소가 필요하면
-        // 정상적으로 축소됨).
+        // [2026-08-26] 셀렉트 박스 라벨 텍스트 9pt, 화살표 10pt로 고정(사용자 요청 —
+        // 콘텐츠 영역 폰트 사이즈 조정). sbpptxShrinkFontToFit은 9pt에서도 라벨이 컬럼 폭에
+        // 안 들어가는 경우(좁은 화면)에만 추가로 축소한다. 라벨은 가운데 정렬(align:'center',
+        // valign:'middle')로 고정 — 사용자 요청.
         const labelFontPt = sbpptxShrinkFontToFit(
-          labelText, Math.max(10, parseFloat(labelCs.fontSize) * 0.72), fontFace, labelColIn
+          labelText, 9, fontFace, labelColIn
         );
-        const iconFontPt = Math.max(10, parseFloat(iconCs.fontSize) * 0.72);
+        const iconFontPt = 10;
         const padYIn = 2 * scale;
+        const selectTextColor = dimAlpha != null ? sbpptxBlendHex('F8F9FA', '333333', dimAlpha) : undefined;
+        const selectTextOpts = selectTextColor ? { color: selectTextColor } : {};
         built.push({
           rows: [[
-            { text: [{ text: labelText, options: {} }], options: { fontSize: labelFontPt, fontFace, wrap: false, align: 'left', valign: 'middle', fill: { color: 'FFFFFF' }, border: [{ type: 'none' }, { type: 'none' }, { type: 'none' }, { type: 'none' }] } },
-            { text: [{ text: '', options: {} }], options: { fill: { color: 'FFFFFF' }, border: [{ type: 'none' }, { type: 'none' }, { type: 'none' }, { type: 'none' }] } },
-            { text: [{ text: iconText, options: {} }], options: { fontSize: iconFontPt, fontFace, wrap: false, align: 'right', valign: 'middle', fill: { color: 'FFFFFF' }, border: [{ type: 'none' }, { type: 'none' }, { type: 'none' }, { type: 'none' }] } },
+            { text: [{ text: labelText, options: {} }], options: Object.assign({ fontSize: labelFontPt, fontFace, wrap: false, align: 'center', valign: 'middle', fill: { color: dimBg }, border: [{ type: 'none' }, { type: 'none' }, { type: 'none' }, { type: 'none' }] }, selectTextOpts) },
+            { text: [{ text: '', options: {} }], options: { fill: { color: dimBg }, border: [{ type: 'none' }, { type: 'none' }, { type: 'none' }, { type: 'none' }] } },
+            { text: [{ text: iconText, options: {} }], options: Object.assign({ fontSize: iconFontPt, fontFace, wrap: false, align: 'right', valign: 'middle', fill: { color: dimBg }, border: [{ type: 'none' }, { type: 'none' }, { type: 'none' }, { type: 'none' }] }, selectTextOpts) },
           ]],
           opts: { x, y, w, h, colW: [labelColIn, iconGapIn, iconColIn], rowH: [h], autoPage: false, margin: [padYIn, 0, padYIn, 0] },
         });
@@ -9384,6 +9660,7 @@ function sbpptxBuildFilterLeafSeparateTables(leafEls, baseX, baseY, scale, offse
     } else {
       // select 아닌 leaf(텍스트 입력 placeholder, "조회"/"+ 등록" 버튼 등)도 동일하게
       // 표 폭은 원본 그대로, 폰트만 1줄에 들어갈 때까지 줄인다.
+      prevSelectRightIn = null; // 셀렉트 박스 연속 체인을 끊는다(1pt 여백 재배치는 연속 셀렉트에만 적용).
       const text = sbpptxTextExcludingIndicators(el);
       if (!text) return;
       const cs = window.getComputedStyle(el);
@@ -9391,25 +9668,32 @@ function sbpptxBuildFilterLeafSeparateTables(leafEls, baseX, baseY, scale, offse
       // 폰트 판정 폭과 실제 렌더 폭을 어긋나게 만듦 — 2026-08-26 SCR-004 "+ 표준 작업명
       // 등록" 실측 발견) 여기서도 addTable 1행 1열을 직접 조립해 판정 폭(=표 폭)과 렌더
       // 폭을 일치시킨다.
-      // select box(위 분기)와 달리 이 분기(조회/CTA 버튼)는 순차 밀림(cumulativeShiftIn)을
-      // 적용하지 않고 원래 x좌표를 그대로 쓴다 — "조회" 버튼은 필터 그룹과 넉넉한
-      // spacer(원본 약 2.3in)로 떨어져 있어 필터가 넓어져도 겹치지 않는다(2026-08-26 실측
-      // 확인: 필터 5개가 전부 넓어져도 마지막 필터 오른쪽 끝과 조회 버튼 사이 여유 1.5in
-      // 이상 남음). 밀림을 적용하면 오히려 조회 버튼이 캔버스 밖으로 밀려나는 회귀가
-      // 있었다(1차 시도에서 발견).
+      // select box(위 분기)와 달리 이 분기(조회/CTA 버튼)는 원래 원본 x좌표를 그대로 썼다
+      // — SCR-001은 "조회" 버튼 앞에 넉넉한 spacer(약 2.3in)가 있어 셀렉트가 넓어져도
+      // 안 겹쳤다(2026-08-26 실측). 그러나 SCR-002는 셀렉트(공장/라인) 바로 뒤에 비셀렉트
+      // 텍스트 입력 3개(표준공정명 검색/순서/비고 검색)가 spacer 없이 연달아 붙어 있어,
+      // 앞선 셀렉트가 넓어진 만큼(cumulativeShiftIn) 그대로 두면 서로 겹친다(2026-08-26
+      // 사용자 제보 — "상단 검색 필터영역 개별 테이블간 간격"). cumulativeShiftIn을 x에
+      // 반영해 셀렉트 확장분만큼 함께 밀어내고, 이 leaf도 뒤따르는 leaf를 위해 누적값을
+      // 갱신한다(자기 자신은 넓히지 않으므로 폭 변화분은 0).
       const elRect = el.getBoundingClientRect();
-      const x = offsetX + (elRect.left + window.scrollX - baseX) * scale;
+      const x = offsetX + (elRect.left + window.scrollX - baseX) * scale + cumulativeShiftIn;
       const y = offsetY + (elRect.top + window.scrollY - baseY) * scale;
       const w = elRect.width * scale * SBPPTX_FILTER_WIDEN_SCALE;
       const h = elRect.height * scale;
       if (x < slideW + 0.05 && y < slideH + 0.05 && w >= 0.02) {
         const fontPt = sbpptxShrinkFontToFit(text, Math.max(6, parseFloat(cs.fontSize) * 0.72), fontFace, Math.max(0.1, w - 0.02));
         const align = cs.textAlign === 'left' ? 'left' : (cs.textAlign === 'right' ? 'right' : 'center');
-        const bg = sbpptxIsTransparent(cs.backgroundColor) ? 'FFFFFF' : (sbpptxRgbToHex(cs.backgroundColor) || 'FFFFFF');
-        const color = sbpptxRgbToHex(cs.color) || '333333';
+        let bg = sbpptxIsTransparent(cs.backgroundColor) ? 'FFFFFF' : (sbpptxRgbToHex(cs.backgroundColor) || 'FFFFFF');
+        let color = sbpptxRgbToHex(cs.color) || '333333';
         const bold = parseInt(cs.fontWeight, 10) >= 600;
         const hasBorder = parseFloat(cs.borderTopWidth) > 0;
-        const borderColor = hasBorder ? (sbpptxRgbToHex(cs.borderTopColor) || 'CCCCCC') : null;
+        let borderColor = hasBorder ? (sbpptxRgbToHex(cs.borderTopColor) || 'CCCCCC') : null;
+        if (dimAlpha != null) {
+          bg = sbpptxBlendHex('F8F9FA', bg, dimAlpha);
+          color = sbpptxBlendHex('F8F9FA', color, dimAlpha);
+          if (borderColor) borderColor = sbpptxBlendHex('F8F9FA', borderColor, dimAlpha);
+        }
         const padYIn = 2 * scale;
         built.push({
           rows: [[{
@@ -9469,7 +9753,7 @@ function sbpptxBuildKpiCardGroupTable(cardGroupEl, baseX, baseY, scale, offsetX,
 // 표 폭 == 텍스트 필요 폭이 되어 안전마진(1.35배)이 비례축소로 상쇄돼 텍스트가 잘린다
 // (2026-08-26 실측 발견 — "공정별 상세" 타이틀 잘림). 옆에 CTA 버튼이 있는 타이틀처럼
 // 넓힐 수 있는 한도가 있을 때, 그 한도(예: CTA 버튼 시작 x좌표까지)를 넘겨준다.
-function sbpptxBuildSectionTitleTable(titleEl, baseX, baseY, scale, offsetX, offsetY, slideW, slideH, maxWIn) {
+function sbpptxBuildSectionTitleTable(titleEl, baseX, baseY, scale, offsetX, offsetY, slideW, slideH, maxWIn, dimAlpha) {
   if (!titleEl) return null;
   // 표 타이틀(예: "요약 현황"/"공정별 상세")은 10pt, 옆 부가설명(안내문구)은 7pt로 고정
   // 통일한다(2026-08-26 사용자 요청 — 원본 실측 비례축소 대신 고정값 사용).
@@ -9478,12 +9762,15 @@ function sbpptxBuildSectionTitleTable(titleEl, baseX, baseY, scale, offsetX, off
   const titleTextOnly = subSpan
     ? Array.from(titleEl.childNodes).filter(n => n.nodeType === 3).map(n => n.textContent).join('').trim()
     : sbpptxTextExcludingIndicators(titleEl);
-  const richRuns = [{ text: titleTextOnly, options: { bold: true, fontSize: titleFontPt } }];
+  // dimAlpha 지정 시(팝업 딤 처리) 타이틀 기본색(333333 상당)과 부가설명(999999)도 블렌딩한다.
+  const titleColor = dimAlpha != null ? sbpptxBlendHex('F8F9FA', '333333', dimAlpha) : undefined;
+  const richRuns = [{ text: titleTextOnly, options: Object.assign({ bold: true, fontSize: titleFontPt }, titleColor ? { color: titleColor } : {}) }];
   if (subSpan) {
     const subFontPt = 7;
-    richRuns.push({ text: ' ' + subSpan.textContent.trim(), options: { bold: false, fontSize: subFontPt, color: '999999' } });
+    const subColor = dimAlpha != null ? sbpptxBlendHex('F8F9FA', '999999', dimAlpha) : '999999';
+    richRuns.push({ text: ' ' + subSpan.textContent.trim(), options: { bold: false, fontSize: subFontPt, color: subColor } });
   }
-  const built = sbpptxBuildInlineGroupTable(titleEl, [{ el: titleEl, align: 'left', richRuns: richRuns }], baseX, baseY, scale, offsetX, offsetY, slideW, slideH, maxWIn);
+  const built = sbpptxBuildInlineGroupTable(titleEl, [{ el: titleEl, align: 'left', richRuns: richRuns }], baseX, baseY, scale, offsetX, offsetY, slideW, slideH, maxWIn, dimAlpha);
   // [2026-08-26 R40] 사용자가 PPT에서 직접 타이틀 표 높이를 넓힌 것을 역반영(실측
   // 0.143in -> 0.198in, 약 1.385배) — 텍스트 상하 여백이 더 넉넉해 보이도록.
   if (built) {
@@ -9605,7 +9892,7 @@ function sbpptxBuildBadgeTable(badgeEl, baseX, baseY, scale, offsetX, offsetY, s
 // addTable로 그린다. sbpptxBuildProcessDetailTable(헤더 2행+rowspan 전용)과 구조가 달라 별도
 // 함수로 둔다 — colgroup % 폭 그대로 환산, 원본 셀 배경색(#eef2f7 강조 행 등)을 그대로 읽어
 // 반영한다(하드코딩 대신 computed style 사용 — 색상표가 바뀌어도 자동 반영).
-function sbpptxBuildSimpleDataTable(table, baseX, baseY, scale, offsetX, offsetY, slideW, slideH) {
+function sbpptxBuildSimpleDataTable(table, baseX, baseY, scale, offsetX, offsetY, slideW, slideH, dimAlpha) {
   const rect = table.getBoundingClientRect();
   if (rect.width < 0.5 || rect.height < 0.5) return null;
   const style = window.getComputedStyle(table);
@@ -9632,16 +9919,22 @@ function sbpptxBuildSimpleDataTable(table, baseX, baseY, scale, offsetX, offsetY
 
   const cellOptsFromEl = (el, isHeader) => {
     const cs = window.getComputedStyle(el);
-    const bg = sbpptxIsTransparent(cs.backgroundColor) ? 'FFFFFF' : (sbpptxRgbToHex(cs.backgroundColor) || 'FFFFFF');
-    const color = sbpptxRgbToHex(cs.color) || '343A40';
+    let bg = sbpptxIsTransparent(cs.backgroundColor) ? 'FFFFFF' : (sbpptxRgbToHex(cs.backgroundColor) || 'FFFFFF');
+    let color = sbpptxRgbToHex(cs.color) || '343A40';
+    let borderColor = 'CCCCCC';
+    if (dimAlpha != null) {
+      bg = sbpptxBlendHex('F8F9FA', bg, dimAlpha);
+      color = sbpptxBlendHex('F8F9FA', color, dimAlpha);
+      borderColor = sbpptxBlendHex('F8F9FA', borderColor, dimAlpha);
+    }
     const bold = isHeader || parseInt(cs.fontWeight, 10) >= 600;
     const align = cs.textAlign === 'left' ? 'left' : (cs.textAlign === 'right' ? 'right' : 'center');
     return {
       bold: bold, color: color, fontFace: fontFace, fontSize: isHeader ? HEADER_FONT_PT : BODY_FONT_PT,
       align: align, valign: 'middle', fill: { color: bg },
       border: [
-        { type: 'solid', color: 'CCCCCC', pt: 0.75 }, { type: 'solid', color: 'CCCCCC', pt: 0.75 },
-        { type: 'solid', color: 'CCCCCC', pt: 0.75 }, { type: 'solid', color: 'CCCCCC', pt: 0.75 },
+        { type: 'solid', color: borderColor, pt: 0.75 }, { type: 'solid', color: borderColor, pt: 0.75 },
+        { type: 'solid', color: borderColor, pt: 0.75 }, { type: 'solid', color: borderColor, pt: 0.75 },
       ],
     };
   };
