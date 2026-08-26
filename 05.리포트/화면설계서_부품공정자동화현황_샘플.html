@@ -7377,6 +7377,60 @@ async function downloadPPTX(e) {
         [s13MtrmTitleEl, s13MappingTable, s13CtaGroupEl].forEach(el => { if (el) skipEls.add(el); });
       }
 
+      // [2026-08-26 R39] SCR-014(카드그리드 화면) 전용. area1(제목 드롭다운+검색+조회+
+      // 수정+등록, "패턴 A"의 필터+CTA 한 줄과 동일 구조)만 addTable로 전환한다. area2
+      // (5열×2행 카드그리드, 재생아이콘+제목+조회수+메타정보 여러 줄)와 area3(페이지네이션
+      // 버튼)은 텍스트 편집 가치가 낮거나(카드 안 여러 줄 텍스트+이미지 아이콘 조합이라
+      // addTable 전환이 부적합) 이미 순수 도형(페이지 번호 버튼)이라 이번 확장 범위에서
+      // 제외 — 요청 범위(검색 필터 영역)를 스스로 넓히지 않는다는 원칙에 따름.
+      if (section.id === 'scr-014') {
+        const wf = section.querySelector('.wireframe-wrap');
+        const mainEl = wf ? wf.querySelector(':scope > div:nth-child(2) > div:nth-child(2)') : null;
+        const s14Area1 = mainEl ? mainEl.querySelector(':scope > div[data-area="1"]') : null;
+        const s14Area1Row = s14Area1 ? s14Area1.querySelector(':scope > div') : null;
+        builtFilterTables = sbpptxBuildFilterBarSeparateTables(s14Area1Row || s14Area1, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H);
+        if (s14Area1) skipEls.add(s14Area1);
+      }
+
+      // [2026-08-26 R39] MTRM-MAIN(메인 대시보드) 전용. data-area="1"(KPI 카드그룹 —
+      // "등록 로드맵 14건" 등 5개, SCR-006과 완전히 동일한 컴포넌트)만 addTable로 전환한다
+      // — 신규 헬퍼 없이 sbpptxBuildKpiCardGroupTable 그대로 재사용. data-area="2"(통합
+      // 로드맵 간트차트, position:absolute 진행률 바 커스텀 렌더)와 data-area="3"(생산기술
+      // Tech PR 카드그리드 + 최근 기술동향 리스트 2단 배치)는 표가 아닌 구조라 이번 확장
+      // 범위에서 제외.
+      if (section.id === 'mtrm-main') {
+        const wf = section.querySelector('.wireframe-wrap');
+        const mainEl = wf ? wf.querySelector(':scope > div:nth-child(2) > div:nth-child(2)') : null;
+        const mtrmArea1 = mainEl ? mainEl.querySelector(':scope > div[data-area="1"]') : null;
+        // SCR-006과 동일하게 area1 안에 카드그룹을 한 겹 더 감싸는 flex 컨테이너가 있다
+        // (area1의 직계 자식은 이 컨테이너 1개뿐) — area1을 그대로 넘기면
+        // sbpptxBuildKpiCardGroupTable이 area1 자체를 "카드 1개"로 오인해 첫/마지막 카드
+        // 텍스트만 라벨/값으로 잘못 파싱한다(2026-08-26 실측 발견 — 5개 카드 중 2개만
+        // 렌더링됨).
+        const mtrmCardGroupEl = mtrmArea1 ? mtrmArea1.querySelector(':scope > div') : null;
+        builtCardGroupTable = sbpptxBuildKpiCardGroupTable(mtrmCardGroupEl || mtrmArea1, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H);
+        if (mtrmArea1) skipEls.add(mtrmArea1);
+      }
+
+      // [2026-08-26 R39] SCR-008(간트차트 화면) 전용. data-area="1"(분과/기간 select 2개
+      // + 범례(색상 스와치, <span> — sbpptxBuildFilterBarSeparateTables가 ':scope > div'만
+      // 찾으므로 자동으로 대상에서 제외됨) + "요약본"/"전체보기" 버튼)만 필터바 분리 로직
+      // (R38)을 재사용해 addTable로 전환한다. data-area="2"(간트차트 본체, 분기별 헤더+
+      // 진행률 바+과제 상세 서브행이 혼합된 커스텀 렌더)는 표가 아니라 제외.
+      if (section.id === 'scr-008') {
+        const wf = section.querySelector('.wireframe-wrap');
+        const mainEl = wf ? wf.querySelector(':scope > div:nth-child(2) > div:nth-child(2)') : null;
+        const s8Area1 = mainEl ? mainEl.querySelector(':scope > div[data-area="1"]') : null;
+        const s8Row = s8Area1 ? s8Area1.querySelector(':scope > div') : null;
+        // area1 자체가 아니라 내부 row(선택/범례/버튼이 실제로 나열된 flex 컨테이너)를
+        // 넘겨야 sbpptxBuildFilterBarSeparateTables의 ':scope > div' 탐색이 select/버튼을
+        // 찾는다(area1의 직계 자식은 이 row 하나뿐이라 area1을 그대로 넘기면 못 찾음).
+        builtFilterTables = sbpptxBuildFilterBarSeparateTables(s8Row, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H);
+        // area1 전체가 아니라 row 안의 div(select/버튼)만 스킵 — 범례(<span>)는 addTable
+        // 대상이 아니므로 원본 그대로 남겨야 한다(스킵 가드에서 동일 로직으로 재확인).
+        if (s8Row) Array.from(s8Row.querySelectorAll(':scope > div')).forEach(el => skipEls.add(el));
+      }
+
       // 자동 이월(2026-08-24 사용자 요청 — 구조적 완전 해결): 오버플로우 큐가 남았는데
       // 다음 섹션이 이 화면의 -cont-N이 아니면(원본 HTML에 그 청크가 아예 없는 경우 —
       // 예: SCR-004/007/009/012/014는 12~13px 기준으로는 한 페이지에 다 들어가서
@@ -7685,6 +7739,30 @@ function sbpptxRenderElement(pptx, slide, el, baseX, baseY, scale, offsetX, offs
           formCardEl ? formCardEl.querySelector(':scope > div:last-child') : null, // 취소/등록 CTA
         ].filter(Boolean);
         if (s13Candidates.some(c => el === c || c.contains(el))) return;
+      }
+      // [2026-08-26 R39] SCR-014만: area1(필터+CTA)만 스킵 — 카드그리드/페이지네이션은
+      // 원본 도형 그대로 유지.
+      if (commonLayoutParent.id === 'scr-014') {
+        const mainEl = sidebarRow ? sidebarRow.querySelector(':scope > div:nth-child(2)') : null;
+        const s14Area1 = mainEl ? mainEl.querySelector(':scope > div[data-area="1"]') : null;
+        if (s14Area1 && (el === s14Area1 || s14Area1.contains(el))) return;
+      }
+      // [2026-08-26 R39] mtrm-main만: KPI 카드그룹(area1)만 스킵.
+      if (commonLayoutParent.id === 'mtrm-main') {
+        const mainEl = sidebarRow ? sidebarRow.querySelector(':scope > div:nth-child(2)') : null;
+        const mtrmArea1 = mainEl ? mainEl.querySelector(':scope > div[data-area="1"]') : null;
+        if (mtrmArea1 && (el === mtrmArea1 || mtrmArea1.contains(el))) return;
+      }
+      // [2026-08-26 R39] scr-008만: area1 안의 select/버튼(div)만 스킵 — 범례(<span>, 색상
+      // 스와치+텍스트)는 sbpptxBuildFilterBarSeparateTables가 ':scope > div'만 leaf로
+      // 잡으므로 addTable 대상이 아니다. area1 전체를 스킵하면 범례까지 사라지므로,
+      // row의 직계 자식 div들만 정확히 후보로 잡는다.
+      if (commonLayoutParent.id === 'scr-008') {
+        const mainEl = sidebarRow ? sidebarRow.querySelector(':scope > div:nth-child(2)') : null;
+        const s8Area1 = mainEl ? mainEl.querySelector(':scope > div[data-area="1"]') : null;
+        const s8Row = s8Area1 ? s8Area1.querySelector(':scope > div') : null;
+        const s8DivCandidates = s8Row ? Array.from(s8Row.querySelectorAll(':scope > div')) : [];
+        if (s8DivCandidates.some(c => el === c || c.contains(el))) return;
       }
     }
   }
