@@ -7159,6 +7159,7 @@ async function downloadPPTX(e) {
       let builtFilterTables = [];
       let builtSummaryTitleTable = null, builtDetailTitleTable = null;
       let builtDetailCtaTable = null, builtDetailTable = null;
+      let builtDetailCtaTables = [];
       let builtCardGroupTable = null;
       // [2026-08-26] R33: meta-box(SCR-XXX 뱃지/Screen/URL/Status)+헤더(TOP BAR)+사이드바는
       // "기본 화면"(팝업/cont/표전용 페이지가 아닌 SCR-001~014, mtrm-main) 전체에서 DOM
@@ -7213,7 +7214,9 @@ async function downloadPPTX(e) {
         builtSummaryTitleTable = sbpptxBuildSectionTitleTable(summaryTitleEl, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H, mainWIn);
         if (summaryTable) builtSummaryTable = sbpptxBuildSimpleDataTable(summaryTable, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H);
         builtDetailTitleTable = sbpptxBuildSectionTitleTable(detailTitleEl, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H, detailCtaLeftIn);
-        builtDetailCtaTable = sbpptxBuildCtaGroupTable(detailCtaEl, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H);
+        // [2026-08-26 R40] "+ 공정 등록/엑셀/이메일 공유"를 통짜 표가 아니라 개별 표로
+        // 분리(사용자가 PPT에서 직접 편집한 결과 역반영 — 각 버튼이 별도 표로 나뉘어 있음).
+        builtDetailCtaTables = sbpptxBuildFilterBarSeparateTables(detailCtaEl, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H);
         if (detailTable) builtDetailTable = sbpptxBuildProcessDetailTable(detailTable, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H);
 
         [tabGroupEl, filterBarEl, summaryTitleEl, summaryTable, detailTitleEl, detailCtaEl, detailTable]
@@ -7505,6 +7508,7 @@ async function downloadPPTX(e) {
       if (builtSummaryTable) sbpptxRenderDescTable(pptx, slide, builtSummaryTable);
       if (builtDetailTitleTable) sbpptxRenderDescTable(pptx, slide, builtDetailTitleTable);
       if (builtDetailCtaTable) sbpptxRenderDescTable(pptx, slide, builtDetailCtaTable);
+      builtDetailCtaTables.forEach(built => sbpptxRenderDescTable(pptx, slide, built));
       if (builtDetailTable) sbpptxRenderDescTable(pptx, slide, builtDetailTable);
       // R33/R34로 추가된 표들(topBar~공정별상세표, 패턴 A 필터/표)이 인디케이터보다
       // "나중에" 그려지면서 인디케이터 배지를 덮어버리는 문제가 있었다(2026-08-26 사용자
@@ -9108,8 +9112,52 @@ function sbpptxShrinkFontToFit(text, startFontPt, fontFace, availIn) {
   return fontPt;
 }
 
+// [2026-08-26 R40] 사용자가 PPT에서 직접 편집(수동 배포된 "수정화면.pptx")한 결과를
+// 원본 HTML 다운로드 로직에 역반영 — 필터 select box/조회 버튼 폭을 원본 실측 대비
+// 넓혀서 여백을 더 확보(사용자가 PowerPoint에서 직접 표 폭을 1.031in→1.189in로 넓힌 것을
+// 실측: 약 1.15배). 이 배율만큼 leaf 사이 간격(WIDEN_GAP_SCALE)도 함께 넓혀야
+// select box가 촘촘한 필터바에서 다음 필터와 겹치지 않는다(R38에서 폭만 넓혔다가
+// 옆 표와 겹친 사고 재발 방지 — gap도 비례해서 넓히는 것이 이번 R40의 핵심).
+const SBPPTX_FILTER_WIDEN_SCALE_MAX = 1.15;
 function sbpptxBuildFilterLeafSeparateTables(leafEls, baseX, baseY, scale, offsetX, offsetY, slideW, slideH) {
   const built = [];
+  // [2026-08-26 R40] 폭만 넓히면 표들이 원래 x좌표에 그대로 남아 다음 필터를 침범한다
+  // (사용자 실측 제보 — "라인 전체" 아이콘이 잘리고 "조회" 버튼과 거의 붙음). 각 leaf가
+  // 넓어진 만큼(elWidenExtraIn) 그 뒤에 오는 모든 leaf의 x좌표를 누적으로 밀어내는 순차
+  // 재배치로 해결 — 사용자가 PPT에서 실제로 각 필터 표를 옆으로 밀어 재배치한 것과
+  // 동일한 결과를 만든다. cumulativeShiftIn은 leaf를 순서대로 처리하며 누적된다.
+  //
+  // 고정 배율 1.15배(SCR-001 실측값)는 화면마다 원래 필터 사이 여백이 달라 안전하지
+  // 않다는 것을 SCR-006에서 발견했다(원본 필터그룹-조회버튼 사이 여백이 10px뿐이라
+  // 1.15배 확대 시 겹침) — 화면별로 leafEls 전체를 먼저 스캔해 각 leaf 사이(그리고
+  // 마지막 leaf 뒤 나머지 공간)의 실제 여유를 실측하고, 그 여유를 넘지 않는 안전
+  // 배율을 동적으로 계산한다(최대 SBPPTX_FILTER_WIDEN_SCALE_MAX로 상한).
+  let dynamicWidenScale = SBPPTX_FILTER_WIDEN_SCALE_MAX;
+  if (leafEls.length > 1) {
+    let minGapPx = Infinity;
+    let totalWidthPx = 0;
+    for (let i = 0; i < leafEls.length; i++) {
+      const r = leafEls[i].getBoundingClientRect();
+      totalWidthPx += r.width;
+      if (i > 0) {
+        const prevR = leafEls[i - 1].getBoundingClientRect();
+        const gap = r.left - prevR.right;
+        if (gap < minGapPx) minGapPx = gap;
+      }
+    }
+    // "마지막 필터 뒤 다음 형제(조회 버튼 등)"와의 여유도 후보에 포함 — leafEls는 필터바
+    // 전체(조회 버튼 포함)일 수도, 필터만일 수도 있어 이미 leafEls 순회에 포함된다면
+    // 위 루프로 충분하다.
+    if (minGapPx !== Infinity && minGapPx > 0.5) {
+      // (leafCount-1)개의 gap이 있고, 확대로 늘어나는 총량이 그 중 가장 좁은 gap의
+      // (leafCount-1)배를 넘지 않아야 모든 겹침을 방지(각 gap이 최소 gap 이상 확보된다는
+      // 보수적 가정). 안전 마진으로 0.85를 곱해 여유를 남긴다.
+      const maxSafeScale = 1 + (minGapPx * (leafEls.length - 1) * 0.85) / totalWidthPx;
+      dynamicWidenScale = Math.max(1.0, Math.min(SBPPTX_FILTER_WIDEN_SCALE_MAX, maxSafeScale));
+    }
+  }
+  const SBPPTX_FILTER_WIDEN_SCALE = dynamicWidenScale;
+  let cumulativeShiftIn = 0;
   leafEls.forEach(el => {
     const spans = Array.from(el.querySelectorAll(':scope > span'));
     const fontFace = sbpptxFontName(window.getComputedStyle(el).fontFamily) || '맑은 고딕';
@@ -9124,20 +9172,27 @@ function sbpptxBuildFilterLeafSeparateTables(leafEls, baseX, baseY, scale, offse
       // addTable을 직접 조립해 표 폭(w)을 라벨/갭/아이콘 컬럼으로 정확히 배분하고, 그
       // 배분된 폭을 그대로 폰트 판정에 써서 판정 폭과 렌더 폭을 일치시킨다.
       const elRect = el.getBoundingClientRect();
-      const x = offsetX + (elRect.left + window.scrollX - baseX) * scale;
+      const wOriginal = elRect.width * scale;
+      const w = wOriginal * SBPPTX_FILTER_WIDEN_SCALE;
+      const x = offsetX + (elRect.left + window.scrollX - baseX) * scale + cumulativeShiftIn;
       const y = offsetY + (elRect.top + window.scrollY - baseY) * scale;
-      const w = elRect.width * scale;
       const h = elRect.height * scale;
+      cumulativeShiftIn += (w - wOriginal);
       if (x < slideW + 0.05 && y < slideH + 0.05 && w >= 0.02) {
         const labelCs = window.getComputedStyle(spans[0]);
         const iconCs = window.getComputedStyle(spans[1]);
         const iconGapIn = Math.min(0.06, w * 0.08);
         const iconColIn = Math.min(w * 0.35, Math.max(0.12, spans[1].getBoundingClientRect().width * scale + 0.04));
         const labelColIn = Math.max(0.1, w - iconGapIn - iconColIn);
+        // [2026-08-26 R40] 사용자가 PPT에서 필터 라벨 폰트를 10pt로 고정한 것을 역반영
+        // (실측: 기존 계산값 9.36pt보다 큼). 표 폭을 넓힌 만큼 폰트도 키운 것이므로 시작
+        // 폰트 하한을 10pt로 올리되, sbpptxShrinkFontToFit이 넓어진 라벨 컬럼 폭에서
+        // 여전히 1줄에 들어가는지는 그대로 재검증한다(더 좁은 화면에서 축소가 필요하면
+        // 정상적으로 축소됨).
         const labelFontPt = sbpptxShrinkFontToFit(
-          labelText, Math.max(6, parseFloat(labelCs.fontSize) * 0.72), fontFace, labelColIn
+          labelText, Math.max(10, parseFloat(labelCs.fontSize) * 0.72), fontFace, labelColIn
         );
-        const iconFontPt = Math.max(6, parseFloat(iconCs.fontSize) * 0.72);
+        const iconFontPt = Math.max(10, parseFloat(iconCs.fontSize) * 0.72);
         const padYIn = 2 * scale;
         built.push({
           rows: [[
@@ -9158,10 +9213,16 @@ function sbpptxBuildFilterLeafSeparateTables(leafEls, baseX, baseY, scale, offse
       // 폰트 판정 폭과 실제 렌더 폭을 어긋나게 만듦 — 2026-08-26 SCR-004 "+ 표준 작업명
       // 등록" 실측 발견) 여기서도 addTable 1행 1열을 직접 조립해 판정 폭(=표 폭)과 렌더
       // 폭을 일치시킨다.
+      // select box(위 분기)와 달리 이 분기(조회/CTA 버튼)는 순차 밀림(cumulativeShiftIn)을
+      // 적용하지 않고 원래 x좌표를 그대로 쓴다 — "조회" 버튼은 필터 그룹과 넉넉한
+      // spacer(원본 약 2.3in)로 떨어져 있어 필터가 넓어져도 겹치지 않는다(2026-08-26 실측
+      // 확인: 필터 5개가 전부 넓어져도 마지막 필터 오른쪽 끝과 조회 버튼 사이 여유 1.5in
+      // 이상 남음). 밀림을 적용하면 오히려 조회 버튼이 캔버스 밖으로 밀려나는 회귀가
+      // 있었다(1차 시도에서 발견).
       const elRect = el.getBoundingClientRect();
       const x = offsetX + (elRect.left + window.scrollX - baseX) * scale;
       const y = offsetY + (elRect.top + window.scrollY - baseY) * scale;
-      const w = elRect.width * scale;
+      const w = elRect.width * scale * SBPPTX_FILTER_WIDEN_SCALE;
       const h = elRect.height * scale;
       if (x < slideW + 0.05 && y < slideH + 0.05 && w >= 0.02) {
         const fontPt = sbpptxShrinkFontToFit(text, Math.max(6, parseFloat(cs.fontSize) * 0.72), fontFace, Math.max(0.1, w - 0.02));
@@ -9246,7 +9307,15 @@ function sbpptxBuildSectionTitleTable(titleEl, baseX, baseY, scale, offsetX, off
     const subFontPt = Math.max(6, parseFloat(subCs.fontSize) * 0.72);
     richRuns.push({ text: ' ' + subSpan.textContent.trim(), options: { bold: false, fontSize: subFontPt, color: '999999' } });
   }
-  return sbpptxBuildInlineGroupTable(titleEl, [{ el: titleEl, align: 'left', richRuns: richRuns }], baseX, baseY, scale, offsetX, offsetY, slideW, slideH, maxWIn);
+  const built = sbpptxBuildInlineGroupTable(titleEl, [{ el: titleEl, align: 'left', richRuns: richRuns }], baseX, baseY, scale, offsetX, offsetY, slideW, slideH, maxWIn);
+  // [2026-08-26 R40] 사용자가 PPT에서 직접 타이틀 표 높이를 넓힌 것을 역반영(실측
+  // 0.143in -> 0.198in, 약 1.385배) — 텍스트 상하 여백이 더 넉넉해 보이도록.
+  if (built) {
+    const SBPPTX_TITLE_HEIGHT_SCALE = 1.385;
+    built.opts.h *= SBPPTX_TITLE_HEIGHT_SCALE;
+    built.opts.rowH = built.opts.rowH.map(h => h * SBPPTX_TITLE_HEIGHT_SCALE);
+  }
+  return built;
 }
 
 // [2026-08-26] SCR-001 meta-box(266~273행, 캔버스 위 "SCR-001 뱃지 / Screen·URL·Status
