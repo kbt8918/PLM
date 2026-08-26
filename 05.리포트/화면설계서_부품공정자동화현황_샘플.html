@@ -7218,6 +7218,25 @@ async function downloadPPTX(e) {
           .forEach(el => { if (el) skipEls.add(el); });
       }
 
+      // [2026-08-26 R34] "패턴 A" 화면(필터+CTA행 → 표wrap → 페이지네이션, data-area="1/2/3")
+      // 6개(scr-004/005/009/010/011/012)에 공통 확장. area1(필터+등록버튼 등 CTA가 섞여
+      // 있음)은 필터든 버튼이든 모두 "텍스트 가진 직계 자식 div"라 sbpptxBuildFilterBarTable을
+      // 그대로 재사용 가능(내부적으로 leaf 필터링 방식이 동일). 표(area2 안의 table)는
+      // rowspan/colspan 없는 단순 헤더 표라 sbpptxBuildSimpleDataTable 재사용.
+      const SBPPTX_PATTERN_A_SCREEN_IDS = ['scr-004', 'scr-005', 'scr-009', 'scr-010', 'scr-011', 'scr-012'];
+      if (SBPPTX_PATTERN_A_SCREEN_IDS.includes(section.id)) {
+        const wf = section.querySelector('.wireframe-wrap');
+        const mainEl = wf ? wf.querySelector(':scope > div:nth-child(2) > div:nth-child(2)') : null;
+        const area1 = mainEl ? mainEl.querySelector(':scope > div[data-area="1"]') : null;
+        const area2 = mainEl ? mainEl.querySelector(':scope > div[data-area="2"]') : null;
+        const patternATable = area2 ? area2.querySelector('table') : null;
+        // area1의 직계 자식 div(필터/버튼)만 leaf로 — area1 자체가 컨테이너.
+        const area1InnerRow = area1 ? area1.querySelector(':scope > div') : null;
+        builtFilterTable = sbpptxBuildFilterBarTable(area1InnerRow || area1, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H);
+        if (patternATable) builtSummaryTable = sbpptxBuildSimpleDataTable(patternATable, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H);
+        [area1, patternATable].forEach(el => { if (el) skipEls.add(el); });
+      }
+
       // 자동 이월(2026-08-24 사용자 요청 — 구조적 완전 해결): 오버플로우 큐가 남았는데
       // 다음 섹션이 이 화면의 -cont-N이 아니면(원본 HTML에 그 청크가 아예 없는 경우 —
       // 예: SCR-004/007/009/012/014는 12~13px 기준으로는 한 페이지에 다 들어가서
@@ -7291,12 +7310,13 @@ async function downloadPPTX(e) {
       if (builtDetailTitleTable) sbpptxRenderDescTable(pptx, slide, builtDetailTitleTable);
       if (builtDetailCtaTable) sbpptxRenderDescTable(pptx, slide, builtDetailCtaTable);
       if (builtDetailTable) sbpptxRenderDescTable(pptx, slide, builtDetailTable);
-      // SCR-001 전용 표들(위 topBar~detailTable)이 인디케이터보다 "나중에" 그려지면서
-      // 인디케이터 배지를 덮어버리는 문제가 있었다(2026-08-26 사용자 제보 — 인디케이터가
-      // 표 뒤에 숨음). 원래 2차 패스(인디케이터)가 desc-table류(3차 패스) 앞에 그려지는
-      // 순서 자체는 desc-table 쪽 회귀를 피하기 위해 그대로 두고, SCR-001의 인디케이터만
-      // 이 지점에서 한 번 더(맨 위 레이어로) 그린다.
-      if (section.id === 'scr-001') {
+      // R33/R34로 추가된 표들(topBar~공정별상세표, 패턴 A 필터/표)이 인디케이터보다
+      // "나중에" 그려지면서 인디케이터 배지를 덮어버리는 문제가 있었다(2026-08-26 사용자
+      // 제보 — 인디케이터가 표 뒤에 숨음). 원래 2차 패스(인디케이터)가 desc-table류(3차
+      // 패스) 앞에 그려지는 순서 자체는 desc-table 쪽 회귀를 피하기 위해 그대로 두고,
+      // 이번에 표로 전환한 "공통 화면 목록" 전체의 인디케이터만 이 지점에서 한 번 더(맨
+      // 위 레이어로) 그린다.
+      if (SBPPTX_COMMON_LAYOUT_SCREEN_IDS.includes(section.id)) {
         for (const el of elements) {
           if (skipEls.has(el)) continue;
           if (!el.classList || (!el.classList.contains('indicator') && !el.classList.contains('indicator-el'))) continue;
