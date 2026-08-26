@@ -6784,6 +6784,13 @@ async function downloadPPTX(e) {
     // 바람에 desc-table 폭이 화면마다 달라 보이는 문제 수정). 팝업 화면만 이 배율을 그대로
     // 적용하고(캔버스가 슬라이드 아래로 잘릴 수 있으나, desc-table 폭 일관성을 우선), 기본
     // 화면은 지금처럼 각자 최적 배율을 그대로 쓴다.
+    // 버그 수정(2026-08-26, SCR-001 팝업 addTable 확장 중 발견): 이 루프는 section 전체
+    // 높이(r.height, desc-wrap 포함)를 그대로 썼는데, scr-003은 Description 텍스트 분량이
+    // 많아 desc-wrap이 캔버스보다 부풀어(h=1424px, 다른 화면 대비 압도적 최대) scale이
+    // 비정상적으로 작게 잡혔다. 그 결과 baselineScale을 강제 적용받는 모든 팝업 화면(SCR-001/
+    // 002/006/012/014 팝업 등)이 필요 이상으로 작게 그려져 좌우에 큰 여백이 생겼다(SCR-003
+    // 3형제 전용으로만 있던 wireframe-wrap 기준 보정, 아래 SBPPTX_SCR003_FAMILY_IDS 블록을
+    // 이 루프에도 동일 적용해 해결).
     let baselineScale = Infinity;
     for (let i = 0; i < sections.length; i++) {
       const section = sections[i];
@@ -6791,7 +6798,13 @@ async function downloadPPTX(e) {
       if (section.id && section.id.includes('-popup-')) continue;
       const r = section.getBoundingClientRect();
       if (r.width < 10 || r.height < 10) continue;
-      const s = Math.min(SLIDE_W / r.width, SLIDE_H / r.height);
+      let hForScale = r.height;
+      const wfElBaseline = section.querySelector('.wireframe-wrap');
+      if (wfElBaseline) {
+        const wfBottomRel = wfElBaseline.getBoundingClientRect().bottom - r.top;
+        if (wfBottomRel >= 10) hForScale = wfBottomRel;
+      }
+      const s = Math.min(SLIDE_W / r.width, SLIDE_H / hForScale);
       if (s < baselineScale) baselineScale = s;
     }
     if (!isFinite(baselineScale)) baselineScale = null;
@@ -7211,6 +7224,7 @@ async function downloadPPTX(e) {
       let builtDetailCtaTable = null, builtDetailTable = null;
       let builtDetailCtaTables = [];
       let builtCardGroupTable = null;
+      let popupModalRelocation = null;
       // [2026-08-26] R33: meta-box(SCR-XXX 뱃지/Screen/URL/Status)+헤더(TOP BAR)+사이드바는
       // "기본 화면"(팝업/cont/표전용 페이지가 아닌 SCR-001~014, mtrm-main) 전체에서 DOM
       // 구조가 동일(모두 PNDES 표준 레이아웃)함을 실측 확인 후 공통 적용한다(사용자 요청 —
@@ -7218,6 +7232,7 @@ async function downloadPPTX(e) {
       // 화면마다 구조가 달라 이번 확장 범위에서 제외 — SCR-001만 계속 적용.
       const SBPPTX_COMMON_LAYOUT_SCREEN_IDS = [
         'scr-001', 'scr-001-cont-1', 'scr-001-cont-2',
+        'scr-001-popup-7-1', 'scr-001-popup-7-2', 'scr-001-popup-7-3',
         'scr-002', 'scr-003', 'scr-004', 'scr-005', 'mtrm-main',
         'scr-006', 'scr-007', 'scr-008', 'scr-009', 'scr-010', 'scr-011',
         'scr-012', 'scr-013', 'scr-014',
@@ -7229,11 +7244,50 @@ async function downloadPPTX(e) {
         builtBadgeTable = sbpptxBuildBadgeTable(badgeEl, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H);
         if (metaBoxEl) skipEls.add(metaBoxEl);
         const wf = section.querySelector('.wireframe-wrap');
-        const topBarEl = wf ? wf.querySelector(':scope > div:first-child') : null;
-        const sidebarEl = wf ? wf.querySelector(':scope > div:nth-child(2) > div:first-child') : null;
+        // 팝업 화면(-popup-7-N)은 wireframe-wrap 바로 아래에 TOP BAR/사이드바가 오지 않고,
+        // 그 사이에 .popup-backdrop(딤 처리된 배경 스냅샷)이 한 겹 더 감싸고 있다
+        // (2026-08-26 사용자 요청 — 팝업도 addTable 대상으로 배경까지 다른 화면과 동일하게
+        // 처리). layoutRoot를 이 한 겹 차이만큼 보정한다.
+        const layoutRoot = wf ? (wf.querySelector(':scope > .popup-backdrop') || wf) : null;
+        const topBarEl = layoutRoot ? layoutRoot.querySelector(':scope > div:first-child') : null;
+        const sidebarEl = layoutRoot ? layoutRoot.querySelector(':scope > div:nth-child(2) > div:first-child') : null;
         builtTopBarTable = sbpptxBuildTopBarTable(topBarEl, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H);
         builtSidebarTable = sbpptxBuildSidebarTable(sidebarEl, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H);
         [topBarEl, sidebarEl].forEach(el => { if (el) skipEls.add(el); });
+
+        // 팝업 화면(-popup-7-N) 전용: 모달 딤 오버레이(popup-backdrop의 형제, inset:0)와 그
+        // 안의 모달을, 화면 전체 중앙이 아니라 "컨텐츠 노출 영역"(TopBar·사이드바 제외한
+        // mainContent) 안에서만 딤 처리+중앙 정렬되도록 재배치한다(2026-08-26 사용자 요청 —
+        // "팝업 영역 모달은 컨텐츠 노출 영역에만 넣어줘"). 원래 오버레이는 wireframe-wrap
+        // 전체(TopBar/사이드바까지)를 덮어 딤 처리 범위가 다른 화면과 시각적으로 다르게
+        // 보였다. 오버레이/모달 서브트리는 1차 패스에서 skipEls로 걸러내고, 여기서 mainEl
+        // 좌표계로 좌표 delta를 적용해 별도로 렌더링한다.
+        popupModalRelocation = null;
+        const isPopupCommonLayoutScreen = section.id && section.id.includes('-popup-');
+        if (isPopupCommonLayoutScreen && layoutRoot && layoutRoot !== wf && sidebarEl) {
+          const mainEl = sidebarEl.nextElementSibling;
+          const overlayEl = Array.from(wf.children).find(c => c !== layoutRoot);
+          const modalEl = overlayEl ? overlayEl.firstElementChild : null;
+          if (mainEl && overlayEl && modalEl) {
+            const mainRect = mainEl.getBoundingClientRect();
+            const overlayRect = overlayEl.getBoundingClientRect();
+            // baseX/baseY를 (오버레이 원래 위치 - mainEl 위치)만큼 이동시키면, 모달의
+            // rect.left/top이 baseX/baseY를 기준으로 재계산되어 mainEl 좌표계로 옮겨진다.
+            // 오버레이 자신(딤 배경 사각형)은 이 방식으로 옮기면 크기(inset:0 기준 원래
+            // wireframe-wrap 전체 폭)가 그대로라 mainEl 밖까지 넘친다 — 오버레이는 렌더링
+            // 경로에서 제외하고, 아래에서 mainRect 크기 그대로 별도 addShape로 직접 그린다.
+            const shiftX = overlayRect.left - mainRect.left;
+            const shiftY = overlayRect.top - mainRect.top;
+            popupModalRelocation = {
+              overlayEl,
+              modalEl,
+              baseX: sx + shiftX,
+              baseY: sy + shiftY,
+              mainRect,
+            };
+            skipEls.add(overlayEl);
+          }
+        }
       }
       // SCR-001 + cont-1/cont-2(동일 캔버스 반복)만: MAIN CONTENT 내부(탭/필터/요약현황·
       // 공정별상세 타이틀/CTA/표)까지 확장. cont는 2p와 완전히 동일한 DOM 구조를 반복하므로
@@ -7510,26 +7564,34 @@ async function downloadPPTX(e) {
         }
       }
       // 1차 패스: 인디케이터(영역·요소)·.on-top 외 모든 요소
-      // .popup-backdrop(팝업 페이지의 딤 처리된 배경 스냅샷)은 HTML/PDF에서는 opacity:0.32로
-      // 흐려지고 그 위에 불투명 모달이 absolute로 덮여 시각적으로 안 보이지만, 이 PPT 변환은
-      // z-index/오버레이 관계를 반영하지 않고 모든 텍스트 리프를 평면적으로 좌표에 찍기 때문에
-      // 배경 텍스트와 모달 텍스트가 같은 좌표에 겹쳐 출력된다(2026-08-18 실측 확인: SCR-002/
-      // SCR-006/SCR-012/SCR-014 등 팝업 페이지 다수에서 배경 표 셀 텍스트와 모달 폼 필드 텍스트가
-      // 최대 100% 겹침). 배경 서브트리는 어차피 딤 처리용 장식이라 PPT에서도 통째로 건너뛴다.
+      // .popup-backdrop(팝업 페이지의 딤 처리된 배경 스냅샷)은 이제 렌더링 대상이다
+      // (2026-08-26 사용자 요청 — 다른 화면과 상단 영역/헤더/좌측 메뉴 비율을 맞추기 위해
+      // 배경을 함께 노출). 과거엔 배경 표 텍스트와 모달 텍스트가 같은 좌표에 겹쳐 보이는
+      // 문제(2026-08-18 실측: SCR-002/SCR-006/SCR-012/SCR-014 등) 때문에 배경 서브트리를
+      // 통째로 스킵했었는데, 이제 sbpptxRenderElement 안에서 배경 서브트리의 배경색/글자색을
+      // CSS opacity(0.32)만큼 흰 배경과 블렌딩해 옅게 그리고, DOM 순서상 배경 → 모달 딤
+      // 오버레이(rgba(20,20,20,0.45) 반투명 검정 도형) → 모달 순으로 그려 z-order로 겹침을
+      // 가린다(오버레이가 배경 텍스트 위를 덮어 흐리게 만듦). .popup-backdrop 자체 스킵은
+      // sbpptxRenderElement 안(popup-backdrop 딤 처리 블록 참고)에서 처리한다.
       for (const el of elements) {
         if (skipEls.has(el)) continue;
         if (el.classList && (el.classList.contains('indicator') || el.classList.contains('indicator-el') || el.classList.contains('on-top'))) continue;
-        if (el.closest && el.closest('.popup-backdrop')) continue;
+        // 모달 딤 오버레이/모달 서브트리는 이 좌표계(원래 화면 전체 중앙 기준)로 그리지
+        // 않고, 아래 4차 패스에서 mainEl(컨텐츠 영역) 좌표계로 이동시켜 그린다.
+        if (popupModalRelocation && popupModalRelocation.overlayEl.contains(el)) continue;
         sbpptxRenderElement(pptx, slide, el, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H, yOffsetMap, null, heightDeltaMap);
       }
       // 2차 패스: 인디케이터(영역·요소)·.on-top을 맨 위 레이어로. .indicator-el은 이제
       // 타겟 요소(버튼/탭/span) 내부에 중첩된 자식으로 배치되므로(요소 위치가 뷰포트/내보내기
       // 측정 폭에 무관하게 항상 타겟을 따라가도록), 문서 순서상 부모보다 먼저 나올 수 있어
       // 1차 패스에 섞이면 부모 도형에 가려질 수 있다 — 반드시 2차 패스로 분리한다.
+      // 배경(.popup-backdrop) 안의 인디케이터는 배경 자체가 딤 처리 장식이라 굳이 강조할
+      // 필요가 없으므로 이 패스에서도 계속 제외한다.
       for (const el of elements) {
         if (skipEls.has(el)) continue;
         if (!el.classList || (!el.classList.contains('indicator') && !el.classList.contains('indicator-el') && !el.classList.contains('on-top'))) continue;
         if (el.closest && el.closest('.popup-backdrop')) continue;
+        if (popupModalRelocation && popupModalRelocation.overlayEl.contains(el)) continue;
         sbpptxRenderElement(pptx, slide, el, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H, yOffsetMap, null, heightDeltaMap);
       }
       // 3차 패스: "Description" 타이틀과 desc-table을 addTable로 그린다. 반드시 1차 패스
@@ -7565,6 +7627,48 @@ async function downloadPPTX(e) {
           if (!el.classList || (!el.classList.contains('indicator') && !el.classList.contains('indicator-el'))) continue;
           if (el.closest && el.closest('.popup-backdrop')) continue;
           sbpptxRenderElement(pptx, slide, el, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H, yOffsetMap, null, heightDeltaMap);
+        }
+      }
+      // 팝업 화면(-popup-7-N) 전용: 모달 딤 배경 사각형을 mainEl(컨텐츠 노출 영역) 크기
+      // 그대로 직접 그리고, 모달 서브트리만 mainEl 좌표계로 이동시켜 그린다(위
+      // popupModalRelocation 계산부 주석 참고). TopBar/사이드바 addTable(3차 패스)보다
+      // 나중에 그려야 딤 배경·모달이 그 위에 자연스럽게 얹힌다.
+      if (popupModalRelocation) {
+        const { overlayEl, modalEl, baseX, baseY, mainRect } = popupModalRelocation;
+        // 오버레이 자신은 원래 CSS 배경색(rgba(20,20,20,0.45))을 mainRect 크기로 직접 그린다
+        // (오버레이를 좌표만 이동해 그리면 크기가 원래 폭 그대로라 mainEl 밖으로 넘친다).
+        const overlayStyle = window.getComputedStyle(overlayEl);
+        const overlayBgHex = sbpptxRgbToHex(overlayStyle.backgroundColor);
+        const overlayAlpha = sbpptxGetAlpha(overlayStyle.backgroundColor);
+        if (overlayBgHex && overlayAlpha !== null && overlayAlpha > 0) {
+          const dx = pageOffsetX + (mainRect.left + window.scrollX - sx) * scale;
+          const dy = pageOffsetY + (mainRect.top + window.scrollY - sy) * scale;
+          const dw = mainRect.width * scale;
+          const dh = mainRect.height * scale;
+          if (dw > 0.02 && dh > 0.02) {
+            try {
+              // 실제 CSS(opacity:0.32인 .popup-backdrop 위에 rgba(20,20,20,0.45) 오버레이가
+              // 한 번 더 덮이는 이중 반투명 효과)를 재현하려면, 아래 mainEl 콘텐츠(이미
+              // inPopupBackdrop 블렌딩으로 옅게 그려짐)가 비쳐야 한다. 고정 단색(fill.color만)
+              // 으로 그리면 색상과 무관하게 완전히 덮여 콘텐츠가 안 보인다 — fill.transparency로
+              // 실제 반투명 사각형을 그려 아래 콘텐츠가 비치게 한다.
+              slide.addShape(pptx.shapes.RECTANGLE, {
+                x: Math.max(0, dx), y: Math.max(0, dy),
+                w: Math.min(dw, SLIDE_W - dx), h: Math.min(dh, SLIDE_H - dy),
+                fill: { color: overlayBgHex, transparency: Math.round((1 - overlayAlpha) * 100) },
+                line: { type: 'none' },
+              });
+            } catch (err) { /* ignore */ }
+          }
+        }
+        const relocEls = [modalEl, ...modalEl.querySelectorAll('*')];
+        for (const el of relocEls) {
+          if (el.classList && (el.classList.contains('indicator') || el.classList.contains('indicator-el') || el.classList.contains('on-top'))) continue;
+          sbpptxRenderElement(pptx, slide, el, baseX, baseY, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H, yOffsetMap, null, heightDeltaMap);
+        }
+        for (const el of relocEls) {
+          if (!el.classList || (!el.classList.contains('indicator') && !el.classList.contains('indicator-el') && !el.classList.contains('on-top'))) continue;
+          sbpptxRenderElement(pptx, slide, el, baseX, baseY, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H, yOffsetMap, null, heightDeltaMap);
         }
       }
       // "다음 화면에 계속" 배너는 desc-table보다도 나중에(z-order 최상단) 그려야 desc-table의
@@ -7683,11 +7787,13 @@ function sbpptxRenderElement(pptx, slide, el, baseX, baseY, scale, offsetX, offs
   if (tag === 'svg' || tag === 'SVG' || tag === 'PATH' || tag === 'CIRCLE' || tag === 'LINE' || tag === 'RECT' || tag === 'POLYLINE' || tag === 'POLYGON') return;
   if (el.classList && (el.classList.contains('no-print') || el.classList.contains('sbpptx-hide'))) return;
   if (el.closest && (el.closest('.no-print') || el.closest('.sbpptx-hide'))) return;
-  // 팝업 페이지의 딤 처리된 배경 스냅샷(.popup-backdrop)은 장식용이며, 그 위에 덮인 모달과
-  // 같은 좌표를 차지해 PPT에서 텍스트가 겹쳐 보이므로 이 함수로 직접 들어오는 경로에서도
-  // 방어적으로 스킵한다(호출부의 elements 순회 필터와 이중 방어).
-  if (el.classList && el.classList.contains('popup-backdrop')) return;
-  if (el.closest && el.closest('.popup-backdrop')) return;
+  // 팝업 페이지의 딤 처리된 배경 스냅샷(.popup-backdrop)은 이제 렌더링하되(2026-08-26,
+  // 위 downloadPPTX() 1차 패스 주석 참고), 원본 CSS의 opacity:0.32를 재현하기 위해 배경색·
+  // 글자색을 흰 배경(F8F9FA, 슬라이드 배경과 동일)과 0.32 알파로 블렌딩해 옅게 그린다.
+  // 실제 배경-모달 겹침은 DOM 순서(배경 → 모달 딤 오버레이 rgba(20,20,20,0.45) → 모달)로
+  // z-order상 오버레이 도형이 배경 텍스트를 덮어 가리는 방식으로 방어한다.
+  const inPopupBackdrop = !!(el.closest && el.closest('.popup-backdrop'));
+  const POPUP_BACKDROP_DIM_ALPHA = 0.32;
   // .desc-table 자체(및 그 안의 모든 자손: tr/td/span 등)는 이 범용 도형+텍스트박스 경로가
   // 아니라 sbpptxRenderDescTable()의 네이티브 addTable 경로로 그린다(downloadPPTX() 참고).
   // 여기서 걸러내지 않으면 desc-table 내부 요소가 두 경로에서 중복으로 렌더링된다.
@@ -7723,6 +7829,7 @@ function sbpptxRenderElement(pptx, slide, el, baseX, baseY, scale, offsetX, offs
   // MAIN CONTENT 내부(탭/필터바/요약현황표/CTA/공정별상세표)까지 추가로 적용된다.
   const commonLayoutParent = el.closest && el.closest(
     '#scr-001, #scr-001-cont-1, #scr-001-cont-2, ' +
+    '#scr-001-popup-7-1, #scr-001-popup-7-2, #scr-001-popup-7-3, ' +
     '#scr-002, #scr-003, #scr-004, #scr-005, #mtrm-main, #scr-006, #scr-007, ' +
     '#scr-008, #scr-009, #scr-010, #scr-011, #scr-012, #scr-013, #scr-014'
   );
@@ -7733,9 +7840,13 @@ function sbpptxRenderElement(pptx, slide, el, baseX, baseY, scale, offsetX, offs
     if (commonMetaBox && (el === commonMetaBox || commonMetaBox.contains(el))) return;
     const wrap = commonLayoutParent.querySelector(':scope > .wireframe-wrap');
     if (wrap && el.closest('.wireframe-wrap') === wrap) {
-      const sidebarRow = wrap.querySelector(':scope > div:nth-child(2)');
+      // 팝업 화면(-popup-7-N)은 wireframe-wrap 바로 아래가 아니라 .popup-backdrop 한 겹
+      // 안에 topBar/sidebar가 있다(위 downloadPPTX() SBPPTX_COMMON_LAYOUT_SCREEN_IDS 블록과
+      // 동일한 보정, 2026-08-26).
+      const layoutRoot = wrap.querySelector(':scope > .popup-backdrop') || wrap;
+      const sidebarRow = layoutRoot.querySelector(':scope > div:nth-child(2)');
       const candidates = [
-        wrap.querySelector(':scope > div:first-child'), // topBar
+        layoutRoot.querySelector(':scope > div:first-child'), // topBar
         sidebarRow ? sidebarRow.querySelector(':scope > div:first-child') : null, // sidebar
       ].filter(Boolean);
       // 요소별 인디케이터(.indicator-el)는 topBar/sidebar 안(예: "홍길동 님"/"로그아웃" 옆
@@ -7955,8 +8066,14 @@ function sbpptxRenderElement(pptx, slide, el, baseX, baseY, scale, offsetX, offs
         : sbpptxRgbToHex(c);
     }
   }
+  // .popup-backdrop 딤 처리 재현: 배경 서브트리의 배경색은 흰색(F8F9FA)과 0.32 알파로
+  // 블렌딩해 옅게 그린다(원본 CSS opacity:0.32 재현).
+  if (inPopupBackdrop && bgHex) {
+    bgHex = sbpptxBlendHex('F8F9FA', bgHex, POPUP_BACKDROP_DIM_ALPHA);
+  }
   const bw = parseFloat(style.borderTopWidth) || 0;
-  const bColor = bw > 0 ? sbpptxRgbToHex(style.borderTopColor) : null;
+  let bColor = bw > 0 ? sbpptxRgbToHex(style.borderTopColor) : null;
+  if (inPopupBackdrop && bColor) bColor = sbpptxBlendHex('F8F9FA', bColor, POPUP_BACKDROP_DIM_ALPHA);
   const radiusPx = parseFloat(style.borderTopLeftRadius) || 0;
 
   if (bgHex || (bw > 0 && bColor)) {
@@ -8071,7 +8188,8 @@ function sbpptxRenderElement(pptx, slide, el, baseX, baseY, scale, offsetX, offs
       const formAncestorScale = sbpptxAncestorTransformScale(el);
       const formFontPx = (parseFloat(style.fontSize) || 13) * formAncestorScale;
       const fontPt = Math.max(4, Math.min(7, formFontPx * scale * 72));
-      const color = isPlaceholder ? '6C757D' : (sbpptxRgbToHex(style.color) || '212529');
+      let color = isPlaceholder ? '6C757D' : (sbpptxRgbToHex(style.color) || '212529');
+      if (inPopupBackdrop) color = sbpptxBlendHex('F8F9FA', color, POPUP_BACKDROP_DIM_ALPHA);
       const fontFace = sbpptxFontName(style.fontFamily);
       const padL = (parseFloat(style.paddingLeft) || 0) * scale;
       const padR = (parseFloat(style.paddingRight) || 0) * scale;
@@ -8121,7 +8239,8 @@ function sbpptxRenderElement(pptx, slide, el, baseX, baseY, scale, offsetX, offs
       const fontPt = isLargeText
         ? Math.max(8, Math.min(14, rawPt))
         : Math.max(4, Math.min(7, rawPt));
-      const color = sbpptxRgbToHex(style.color) || '212529';
+      let color = sbpptxRgbToHex(style.color) || '212529';
+      if (inPopupBackdrop) color = sbpptxBlendHex('F8F9FA', color, POPUP_BACKDROP_DIM_ALPHA);
       const fw = parseInt(style.fontWeight) || 400;
       const bold = fw >= 600;
       const italic = style.fontStyle === 'italic';
