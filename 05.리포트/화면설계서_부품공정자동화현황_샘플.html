@@ -7158,6 +7158,7 @@ async function downloadPPTX(e) {
       let builtTabTable = null, builtFilterTable = null, builtSummaryTable = null;
       let builtSummaryTitleTable = null, builtDetailTitleTable = null;
       let builtDetailCtaTable = null, builtDetailTable = null;
+      let builtCardGroupTable = null;
       // [2026-08-26] R33: meta-box(SCR-XXX 뱃지/Screen/URL/Status)+헤더(TOP BAR)+사이드바는
       // "기본 화면"(팝업/cont/표전용 페이지가 아닌 SCR-001~014, mtrm-main) 전체에서 DOM
       // 구조가 동일(모두 PNDES 표준 레이아웃)함을 실측 확인 후 공통 적용한다(사용자 요청 —
@@ -7237,6 +7238,72 @@ async function downloadPPTX(e) {
         [area1, patternATable].forEach(el => { if (el) skipEls.add(el); });
       }
 
+      // [2026-08-26 R35] "패턴 B" 화면(KPI 카드그룹 → 필터+CTA → 표wrap → 페이지네이션,
+      // data-area="1/2/3/4") — scr-006 전용(카드그룹은 신규 헬퍼
+      // sbpptxBuildKpiCardGroupTable(라벨+숫자 2줄 richRuns) 재사용).
+      if (section.id === 'scr-006') {
+        const wf = section.querySelector('.wireframe-wrap');
+        const mainEl = wf ? wf.querySelector(':scope > div:nth-child(2) > div:nth-child(2)') : null;
+        const bArea1 = mainEl ? mainEl.querySelector(':scope > div[data-area="1"]') : null;
+        const bArea2 = mainEl ? mainEl.querySelector(':scope > div[data-area="2"]') : null;
+        const bArea3 = mainEl ? mainEl.querySelector(':scope > div[data-area="3"]') : null;
+        // area1 내부: KPI 카드 그룹은 한 겹 더 감싸는 flex 컨테이너(직계 자식은 1개, 그
+        // 안에 카드들이 나열) — SCR-006 4542행 구조 참고.
+        const kpiCardGroupEl = bArea1 ? bArea1.querySelector(':scope > div') : null;
+        const bArea2InnerRow = bArea2 ? bArea2.querySelector(':scope > div') : null;
+        const patternBTable = bArea3 ? bArea3.querySelector('table') : null;
+        builtCardGroupTable = sbpptxBuildKpiCardGroupTable(kpiCardGroupEl || bArea1, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H);
+        builtFilterTable = sbpptxBuildFilterBarTable(bArea2InnerRow || bArea2, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H);
+        if (patternBTable) builtSummaryTable = sbpptxBuildSimpleDataTable(patternBTable, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H);
+        [bArea1, bArea2, patternBTable].forEach(el => { if (el) skipEls.add(el); });
+      }
+
+      // [2026-08-26 R35] "패턴 C" 화면(타이틀+CTA 한 줄 → 필터 → 표wrap → 페이지네이션,
+      // data-area="1/2/3/4") — scr-007 전용. area1은 카드그룹이 아니라 "타이틀(부가설명
+      // 포함) + CTA 버튼" 한 줄(space-between)이라 scr-001의 detailTitle/detailCta와 같은
+      // sbpptxBuildSectionTitleTable/sbpptxBuildCtaGroupTable 조합을 재사용한다(SCR-006과
+      // 달리 KPI 카드 헬퍼를 쓰면 안 됨 — 최초 시도에서 CTA 버튼 텍스트가 사라지는 버그 발견).
+      if (section.id === 'scr-007') {
+        const wf = section.querySelector('.wireframe-wrap');
+        const mainEl = wf ? wf.querySelector(':scope > div:nth-child(2) > div:nth-child(2)') : null;
+        const cArea1 = mainEl ? mainEl.querySelector(':scope > div[data-area="1"]') : null;
+        const cArea1Row = cArea1 ? cArea1.querySelector(':scope > div') : null;
+        // area1 구조는 <div>타이틀</div><div>부가설명</div> 두 자식을 감싼 div(cTitleWrap) +
+        // CTA 버튼 div, 한 줄 space-between(4899행 근처). scr-001 detailTitle과 달리 부가
+        // 설명이 <span>이 아니라 별도 <div>라 sbpptxBuildSectionTitleTable(직계 span 탐색)을
+        // 재사용할 수 없다 — cArea1Row 전체를 leaf 2개(타이틀블록 richRuns, CTA버튼)짜리
+        // 한 줄 표로 직접 구성한다(최초 시도에서 CTA 텍스트 소실 버그 발견 후 이 방식으로 수정).
+        const cTitleWrap = cArea1Row ? cArea1Row.querySelector(':scope > div:first-child') : null;
+        const cCtaEl = cArea1Row ? cArea1Row.querySelector(':scope > div:last-child') : null;
+        const cArea2 = mainEl ? mainEl.querySelector(':scope > div[data-area="2"]') : null;
+        const cArea3 = mainEl ? mainEl.querySelector(':scope > div[data-area="3"]') : null;
+        const cArea2InnerRow = cArea2 ? cArea2.querySelector(':scope > div') : null;
+        const patternCTable = cArea3 ? cArea3.querySelector('table') : null;
+        if (cArea1Row && cTitleWrap && cCtaEl) {
+          // 원본 HTML 실측(2026-08-26): titleWrap의 두 자식 div(타이틀/부가설명)가 실제로는
+          // 한 줄에 나란히 표시된다(row 높이 36px, breakLine으로 2줄 처리하면 필터바와
+          // 겹치는 버그 발생 — 최초 시도에서 발견). scr-001 섹션 타이틀과 달리 부가설명이
+          // <span>이 아니라 <div>이므로 sbpptxBuildSectionTitleTable을 그대로 못 쓰고, 여기서
+          // 공백으로 이어붙인 한 줄 richRuns를 직접 구성한다(breakLine 없이).
+          const cTitleMainEl = cTitleWrap.querySelector(':scope > div:first-child');
+          const cTitleSubEl = cTitleWrap.querySelector(':scope > div:last-child');
+          const titleRichRuns = [
+            { text: cTitleMainEl ? cTitleMainEl.textContent.trim() : '', options: { bold: true, fontSize: Math.max(6, 15 * 0.72) } },
+          ];
+          if (cTitleSubEl && cTitleSubEl !== cTitleMainEl) {
+            titleRichRuns.push({ text: ' ' + cTitleSubEl.textContent.trim(), options: { bold: false, fontSize: Math.max(6, 11 * 0.72), color: '999999' } });
+          }
+          builtSummaryTitleTable = sbpptxBuildInlineGroupTable(
+            cArea1Row,
+            [{ el: cTitleWrap, align: 'left', richRuns: titleRichRuns }, { el: cCtaEl, align: 'center' }],
+            sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H
+          );
+        }
+        builtFilterTable = sbpptxBuildFilterBarTable(cArea2InnerRow || cArea2, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H);
+        if (patternCTable) builtSummaryTable = sbpptxBuildSimpleDataTable(patternCTable, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H);
+        [cArea1, cArea2, patternCTable].forEach(el => { if (el) skipEls.add(el); });
+      }
+
       // 자동 이월(2026-08-24 사용자 요청 — 구조적 완전 해결): 오버플로우 큐가 남았는데
       // 다음 섹션이 이 화면의 -cont-N이 아니면(원본 HTML에 그 청크가 아예 없는 경우 —
       // 예: SCR-004/007/009/012/014는 12~13px 기준으로는 한 페이지에 다 들어가서
@@ -7304,6 +7371,7 @@ async function downloadPPTX(e) {
       if (builtTopBarTable) sbpptxRenderDescTable(pptx, slide, builtTopBarTable);
       if (builtSidebarTable) sbpptxRenderDescTable(pptx, slide, builtSidebarTable);
       if (builtTabTable) sbpptxRenderDescTable(pptx, slide, builtTabTable);
+      if (builtCardGroupTable) sbpptxRenderDescTable(pptx, slide, builtCardGroupTable);
       if (builtFilterTable) sbpptxRenderDescTable(pptx, slide, builtFilterTable);
       if (builtSummaryTitleTable) sbpptxRenderDescTable(pptx, slide, builtSummaryTitleTable);
       if (builtSummaryTable) sbpptxRenderDescTable(pptx, slide, builtSummaryTable);
@@ -7495,6 +7563,17 @@ function sbpptxRenderElement(pptx, slide, el, baseX, baseY, scale, offsetX, offs
         sidebarRow ? sidebarRow.querySelector(':scope > div:first-child') : null, // sidebar
       ].filter(Boolean);
       if (candidates.some(c => el === c || c.contains(el))) return;
+      // [2026-08-26 R35] 패턴 B(scr-006/scr-007): 카드그룹(area1)/필터(area2)/표(area3)도
+      // 추가로 스킵 — 원본 도형 경로와 가상 addTable 경로 중복 렌더링 방지. -cont-1 화면은
+      // 패턴 A와 동일 정책으로 이번 확장 대상에서 제외(section.id 정확 매칭만 사용).
+      if (commonLayoutParent.id === 'scr-006' || commonLayoutParent.id === 'scr-007') {
+        const mainEl = sidebarRow ? sidebarRow.querySelector(':scope > div:nth-child(2)') : null;
+        const bArea1 = mainEl ? mainEl.querySelector(':scope > div[data-area="1"]') : null;
+        const bArea2 = mainEl ? mainEl.querySelector(':scope > div[data-area="2"]') : null;
+        const bArea3Table = mainEl ? mainEl.querySelector(':scope > div[data-area="3"] table') : null;
+        const patternBCandidates = [bArea1, bArea2, bArea3Table].filter(Boolean);
+        if (patternBCandidates.some(c => el === c || c.contains(el))) return;
+      }
       // SCR-001만: MAIN CONTENT 내부(탭/필터바/요약현황표/CTA/공정별상세표)도 추가로 스킵.
       if (commonLayoutParent.id === 'scr-001') {
         const mainEl = sidebarRow ? sidebarRow.querySelector(':scope > div:nth-child(2)') : null;
@@ -8818,6 +8897,32 @@ function sbpptxBuildFilterBarTable(filterBarEl, baseX, baseY, scale, offsetX, of
 // 가상 표로 그린다. filterBarTable과 동일한 구조(직계 자식 div 각각이 버튼 1개)라 그대로 재사용.
 function sbpptxBuildCtaGroupTable(ctaGroupEl, baseX, baseY, scale, offsetX, offsetY, slideW, slideH) {
   return sbpptxBuildFilterBarTable(ctaGroupEl, baseX, baseY, scale, offsetX, offsetY, slideW, slideH);
+}
+
+// [2026-08-26 R35] KPI 요약 카드 그룹(SCR-006/SCR-007/MTRM-MAIN 등 "등록 로드맵 14건" 류,
+// 카드 각각이 <div>라벨</div><div>숫자</div> 2개 자식 div로 구성됨)을 가상 표로 그린다.
+// sbpptxBuildMetaBoxTable의 richRuns(라벨/값 2줄) 패턴을 그대로 재사용 — 카드 상단 컬러
+// 보더(border-top:3px solid #컬러)는 leaf 셀의 border-top으로 재현한다.
+function sbpptxBuildKpiCardGroupTable(cardGroupEl, baseX, baseY, scale, offsetX, offsetY, slideW, slideH) {
+  if (!cardGroupEl) return null;
+  const cards = Array.from(cardGroupEl.querySelectorAll(':scope > div'));
+  const leafDefs = [];
+  cards.forEach(card => {
+    const labelEl = card.querySelector(':scope > div:first-child');
+    const valueEl = card.querySelector(':scope > div:last-child');
+    if (!labelEl || !valueEl) return;
+    const labelCs = window.getComputedStyle(labelEl);
+    const valueCs = window.getComputedStyle(valueEl);
+    leafDefs.push({
+      el: card, align: 'left', widthScale: 1.15,
+      richRuns: [
+        { text: labelEl.textContent.trim(), options: { bold: false, fontSize: Math.max(6, parseFloat(labelCs.fontSize) * 0.72), color: '555555', breakLine: true } },
+        { text: valueEl.textContent.trim(), options: { bold: true, fontSize: Math.max(6, parseFloat(valueCs.fontSize) * 0.72), color: '333333' } },
+      ],
+    });
+  });
+  if (leafDefs.length === 0) return null;
+  return sbpptxBuildInlineGroupTable(cardGroupEl, leafDefs, baseX, baseY, scale, offsetX, offsetY, slideW, slideH);
 }
 
 // [2026-08-26] "요약 현황"/"공정별 상세" 섹션 타이틀(부가설명 span 포함, 한 덩어리 텍스트)을
