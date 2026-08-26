@@ -7304,6 +7304,53 @@ async function downloadPPTX(e) {
         [cArea1, cArea2, patternCTable].forEach(el => { if (el) skipEls.add(el); });
       }
 
+      // [2026-08-26 R36] SCR-003(data-area 없음, 탭+필터 뒤에 안내문구/경고배너가 끼어
+      // 있어 요약현황 타이틀이 nth-child(5)) 전용. scr-001의 탭/필터/섹션타이틀/표 헬퍼를
+      // 그대로 재사용하되 nth-child 인덱스만 다르다. "작업내용별 상세" 표는 2단 헤더
+      // (rowspan=2 7개 + colspan=2 1개)라 scr-001과 동일하게 sbpptxBuildProcessDetailTable을
+      // 재사용(이 함수는 thead 2행 구조를 colgroup 열 수 기준으로 일반화해 처리하므로 SCR-001
+      // 전용 13열 구조에 하드코딩돼 있지 않음 — theadRows.length!==2면 안전하게 null 반환).
+      // 두 표 모두 스크롤 컨테이너(overflow:auto; max-height:230px) 안에 있지만
+      // getBoundingClientRect()는 스크롤 클리핑과 무관하게 표 전체 실제 높이를 반환하므로,
+      // addTable 전환 시 스크롤로 가려졌던 행까지 전부 캔버스에 펼쳐져 그려진다(의도된 부작용
+      // — PPT에서는 스크롤이 없으므로 모든 데이터가 다 보이는 것이 오히려 맞다).
+      if (section.id === 'scr-003') {
+        const wf = section.querySelector('.wireframe-wrap');
+        const mainEl = wf ? wf.querySelector(':scope > div:nth-child(2) > div:nth-child(2)') : null;
+        const s3TabGroupEl = mainEl ? mainEl.querySelector(':scope > div:nth-child(1)') : null;
+        const s3FilterBarEl = mainEl ? mainEl.querySelector(':scope > div:nth-child(2)') : null;
+        const s3SummaryTitleEl = mainEl ? mainEl.querySelector(':scope > div:nth-child(5)') : null;
+        const s3SummaryTableWrap = mainEl ? mainEl.querySelector(':scope > div:nth-child(7)') : null;
+        const s3SummaryTable = s3SummaryTableWrap ? s3SummaryTableWrap.querySelector('table') : null;
+        const s3DetailTitleEl = mainEl ? mainEl.querySelector(':scope > div:nth-child(8)') : null;
+        const s3DetailTableWrap = mainEl ? mainEl.querySelector(':scope > div:nth-child(10)') : null;
+        const s3DetailTable = s3DetailTableWrap ? s3DetailTableWrap.querySelector('table') : null;
+        const s3MainWIn = mainEl ? mainEl.getBoundingClientRect().width * scale : null;
+
+        builtTabTable = sbpptxBuildTabGroupTable(s3TabGroupEl, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H);
+        // SCR-003 필터는 셀렉트 5개가 <div><div style="...">라벨</div></div> 이중 래핑이라
+        // (SCR-001/006/007 등은 스타일 있는 div가 바로 직계 자식) sbpptxBuildFilterBarTable을
+        // 그대로 쓰면 leaf가 스타일 없는 외곽 wrapper가 되어 상속된 기본 폰트(16px)로 커지는
+        // 버그가 생긴다(2026-08-26 실측 발견 — "제품군 전체"가 원본보다 크게 겹쳐 보임).
+        // 외곽 div에 실제 스타일 있는 자식이 1개 있으면 그 자식을, 없으면(조회 버튼처럼
+        // 스타일이 바로 있는 경우) 자기 자신을 leaf로 쓴다.
+        const s3FilterLeafEls = s3FilterBarEl
+          ? Array.from(s3FilterBarEl.querySelectorAll(':scope > div'))
+              .map(outer => outer.querySelector(':scope > div') || outer)
+              .filter(el => sbpptxTextExcludingIndicators(el))
+          : [];
+        builtFilterTable = s3FilterLeafEls.length
+          ? sbpptxBuildInlineGroupTable(s3FilterBarEl, s3FilterLeafEls, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H)
+          : null;
+        builtSummaryTitleTable = sbpptxBuildSectionTitleTable(s3SummaryTitleEl, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H, s3MainWIn);
+        if (s3SummaryTable) builtSummaryTable = sbpptxBuildSimpleDataTable(s3SummaryTable, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H);
+        builtDetailTitleTable = sbpptxBuildSectionTitleTable(s3DetailTitleEl, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H, s3MainWIn);
+        if (s3DetailTable) builtDetailTable = sbpptxBuildProcessDetailTable(s3DetailTable, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H);
+
+        [s3TabGroupEl, s3FilterBarEl, s3SummaryTitleEl, s3SummaryTable, s3DetailTitleEl, s3DetailTable]
+          .forEach(el => { if (el) skipEls.add(el); });
+      }
+
       // 자동 이월(2026-08-24 사용자 요청 — 구조적 완전 해결): 오버플로우 큐가 남았는데
       // 다음 섹션이 이 화면의 -cont-N이 아니면(원본 HTML에 그 청크가 아예 없는 경우 —
       // 예: SCR-004/007/009/012/014는 12~13px 기준으로는 한 페이지에 다 들어가서
@@ -7585,6 +7632,19 @@ function sbpptxRenderElement(pptx, slide, el, baseX, baseY, scale, offsetX, offs
           (() => { if (!mainEl) return null; const ts = mainEl.querySelectorAll('table'); return ts.length ? ts[ts.length - 1] : null; })(), // 공정별 상세 table
         ].filter(Boolean);
         if (mainCandidates.some(c => el === c || c.contains(el))) return;
+      }
+      // [2026-08-26 R36] SCR-003만: 탭(1)/필터바(2)/요약현황표(7 안 table)/작업내용별상세표
+      // (11 안 table)도 추가로 스킵 — nth-child 인덱스가 scr-001과 다르다(안내문구/경고배너가
+      // 3/4에 끼어 있어 타이틀이 5부터 시작).
+      if (commonLayoutParent.id === 'scr-003') {
+        const mainEl = sidebarRow ? sidebarRow.querySelector(':scope > div:nth-child(2)') : null;
+        const s3Candidates = [
+          mainEl ? mainEl.querySelector(':scope > div:nth-child(1)') : null, // tabs
+          mainEl ? mainEl.querySelector(':scope > div:nth-child(2)') : null, // filter bar
+          mainEl ? mainEl.querySelector(':scope > div:nth-child(7) table') : null, // 요약현황 table
+          mainEl ? mainEl.querySelector(':scope > div:nth-child(10) table') : null, // 작업내용별 상세 table
+        ].filter(Boolean);
+        if (s3Candidates.some(c => el === c || c.contains(el))) return;
       }
     }
   }
