@@ -7158,15 +7158,32 @@ async function downloadPPTX(e) {
       let builtTabTable = null, builtFilterTable = null, builtSummaryTable = null;
       let builtSummaryTitleTable = null, builtDetailTitleTable = null;
       let builtDetailCtaTable = null, builtDetailTable = null;
-      if (section.id === 'scr-001') {
+      // [2026-08-26] R33: meta-box(SCR-XXX 뱃지/Screen/URL/Status)+헤더(TOP BAR)+사이드바는
+      // "기본 화면"(팝업/cont/표전용 페이지가 아닌 SCR-001~014, mtrm-main) 전체에서 DOM
+      // 구조가 동일(모두 PNDES 표준 레이아웃)함을 실측 확인 후 공통 적용한다(사용자 요청 —
+      // "원본파일 전체 화면에도 동일하게"). MAIN CONTENT 내부(탭/필터/타이틀/CTA/표)는
+      // 화면마다 구조가 달라 이번 확장 범위에서 제외 — SCR-001만 계속 적용.
+      const SBPPTX_COMMON_LAYOUT_SCREEN_IDS = [
+        'scr-001', 'scr-002', 'scr-003', 'scr-004', 'scr-005', 'mtrm-main',
+        'scr-006', 'scr-007', 'scr-008', 'scr-009', 'scr-010', 'scr-011',
+        'scr-012', 'scr-013', 'scr-014',
+      ];
+      if (SBPPTX_COMMON_LAYOUT_SCREEN_IDS.includes(section.id)) {
         const metaBoxEl = section.querySelector(':scope > .meta-box');
         const badgeEl = metaBoxEl ? metaBoxEl.querySelector('.screen-id-badge') : null;
         builtMetaBoxTable = sbpptxBuildMetaBoxTable(metaBoxEl, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H);
         builtBadgeTable = sbpptxBuildBadgeTable(badgeEl, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H);
         if (metaBoxEl) skipEls.add(metaBoxEl);
         const wf = section.querySelector('.wireframe-wrap');
-        const topBarEl = wf.querySelector(':scope > div:first-child');
-        const sidebarEl = wf.querySelector(':scope > div:nth-child(2) > div:first-child');
+        const topBarEl = wf ? wf.querySelector(':scope > div:first-child') : null;
+        const sidebarEl = wf ? wf.querySelector(':scope > div:nth-child(2) > div:first-child') : null;
+        builtTopBarTable = sbpptxBuildTopBarTable(topBarEl, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H);
+        builtSidebarTable = sbpptxBuildSidebarTable(sidebarEl, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H);
+        [topBarEl, sidebarEl].forEach(el => { if (el) skipEls.add(el); });
+      }
+      // SCR-001만: MAIN CONTENT 내부(탭/필터/요약현황·공정별상세 타이틀/CTA/표)까지 확장.
+      if (section.id === 'scr-001') {
+        const wf = section.querySelector('.wireframe-wrap');
         const mainEl = wf.querySelector(':scope > div:nth-child(2) > div:nth-child(2)');
         const tabGroupEl = mainEl ? mainEl.querySelector(':scope > div:nth-child(1)') : null;
         const filterBarEl = mainEl ? mainEl.querySelector(':scope > div:nth-child(2)') : null;
@@ -7181,8 +7198,6 @@ async function downloadPPTX(e) {
         const detailTableWrap = mainEl ? mainEl.querySelector(':scope > div:nth-child(7)') : null;
         const detailTable = detailTableWrap ? detailTableWrap.querySelector('table') : null;
 
-        builtTopBarTable = sbpptxBuildTopBarTable(topBarEl, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H);
-        builtSidebarTable = sbpptxBuildSidebarTable(sidebarEl, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H);
         builtTabTable = sbpptxBuildTabGroupTable(tabGroupEl, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H);
         builtFilterTable = sbpptxBuildFilterBarTable(filterBarEl, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H);
         // 타이틀 표 폭을 텍스트 실측 폭보다 넓게 잡아야 안전마진이 비례축소로 상쇄되지
@@ -7199,7 +7214,7 @@ async function downloadPPTX(e) {
         builtDetailCtaTable = sbpptxBuildCtaGroupTable(detailCtaEl, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H);
         if (detailTable) builtDetailTable = sbpptxBuildProcessDetailTable(detailTable, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H);
 
-        [topBarEl, sidebarEl, tabGroupEl, filterBarEl, summaryTitleEl, summaryTable, detailTitleEl, detailCtaEl, detailTable]
+        [tabGroupEl, filterBarEl, summaryTitleEl, summaryTable, detailTitleEl, detailCtaEl, detailTable]
           .forEach(el => { if (el) skipEls.add(el); });
       }
 
@@ -7440,29 +7455,38 @@ function sbpptxRenderElement(pptx, slide, el, baseX, baseY, scale, offsetX, offs
   // id로 한정해, 다른 화면의 일반 표(요약 현황 등)까지 걸러지지 않게 한다.
   const inProcessDetailSection = el.closest && (el.closest('#scr-001-table') || el.closest('#scr-001-table-2'));
   if (inProcessDetailSection && el.closest('table')) return;
-  // [2026-08-26] SCR-001(2p)의 헤더/사이드바/탭/필터바/요약현황표/CTA/공정별상세표는 각각
-  // sbpptxBuild*Table()의 가상 addTable 경로로 그린다. downloadPPTX()에서 찾은 요소들과
-  // 동일한 셀렉터로 다시 찾아 그 자손인지 판별 — SCR-001만 대상이므로 다른 화면(2p 이외)에는
-  // 영향 없다.
-  if (el.closest && el.closest('#scr-001')) {
-    // meta-box(캔버스 위 "SCR-001 뱃지/Screen·URL·Status" 영역)는 wireframe-wrap 밖의
+  // [2026-08-26 R33] "기본 화면"(SBPPTX_COMMON_LAYOUT_SCREEN_IDS, downloadPPTX() 참고) 전체의
+  // meta-box/헤더/사이드바는 sbpptxBuild*Table()의 가상 addTable 경로로 그린다. SCR-001만
+  // MAIN CONTENT 내부(탭/필터바/요약현황표/CTA/공정별상세표)까지 추가로 적용된다.
+  const commonLayoutParent = el.closest && el.closest(
+    '#scr-001, #scr-002, #scr-003, #scr-004, #scr-005, #mtrm-main, #scr-006, #scr-007, ' +
+    '#scr-008, #scr-009, #scr-010, #scr-011, #scr-012, #scr-013, #scr-014'
+  );
+  if (commonLayoutParent) {
+    // meta-box(캔버스 위 "SCR-XXX 뱃지/Screen·URL·Status" 영역)는 wireframe-wrap 밖의
     // 형제 요소라 아래 wrap 스코프 블록과 별개로 처리한다.
-    const metaBox = el.closest('#scr-001 > .meta-box');
-    if (metaBox) return;
-    const wrap = el.closest('#scr-001 > .wireframe-wrap');
-    if (wrap) {
+    const commonMetaBox = commonLayoutParent.querySelector(':scope > .meta-box');
+    if (commonMetaBox && (el === commonMetaBox || commonMetaBox.contains(el))) return;
+    const wrap = commonLayoutParent.querySelector(':scope > .wireframe-wrap');
+    if (wrap && el.closest('.wireframe-wrap') === wrap) {
       const sidebarRow = wrap.querySelector(':scope > div:nth-child(2)');
-      const mainEl = sidebarRow ? sidebarRow.querySelector(':scope > div:nth-child(2)') : null;
       const candidates = [
         wrap.querySelector(':scope > div:first-child'), // topBar
         sidebarRow ? sidebarRow.querySelector(':scope > div:first-child') : null, // sidebar
-        mainEl ? mainEl.querySelector(':scope > div:nth-child(1)') : null, // tabs
-        mainEl ? mainEl.querySelector(':scope > div:nth-child(2)') : null, // filter bar
-        mainEl ? mainEl.querySelector(':scope > div:nth-child(4) table') : null, // 요약현황 table
-        mainEl ? (mainEl.querySelector(':scope > div:nth-child(5) > div:last-child')) : null, // detail CTA
-        (() => { if (!mainEl) return null; const ts = mainEl.querySelectorAll('table'); return ts.length ? ts[ts.length - 1] : null; })(), // 공정별 상세 table
       ].filter(Boolean);
       if (candidates.some(c => el === c || c.contains(el))) return;
+      // SCR-001만: MAIN CONTENT 내부(탭/필터바/요약현황표/CTA/공정별상세표)도 추가로 스킵.
+      if (commonLayoutParent.id === 'scr-001') {
+        const mainEl = sidebarRow ? sidebarRow.querySelector(':scope > div:nth-child(2)') : null;
+        const mainCandidates = [
+          mainEl ? mainEl.querySelector(':scope > div:nth-child(1)') : null, // tabs
+          mainEl ? mainEl.querySelector(':scope > div:nth-child(2)') : null, // filter bar
+          mainEl ? mainEl.querySelector(':scope > div:nth-child(4) table') : null, // 요약현황 table
+          mainEl ? (mainEl.querySelector(':scope > div:nth-child(5) > div:last-child')) : null, // detail CTA
+          (() => { if (!mainEl) return null; const ts = mainEl.querySelectorAll('table'); return ts.length ? ts[ts.length - 1] : null; })(), // 공정별 상세 table
+        ].filter(Boolean);
+        if (mainCandidates.some(c => el === c || c.contains(el))) return;
+      }
     }
   }
 
@@ -8861,18 +8885,28 @@ function sbpptxBuildBadgeTable(badgeEl, baseX, baseY, scale, offsetX, offsetY, s
 
   const cs = window.getComputedStyle(badgeEl);
   const fontFace = sbpptxFontName(cs.fontFamily) || '맑은 고딕';
-  // 원본 뱃지는 폭 전체(100%)에 텍스트가 딱 맞게 패딩돼 있었는데, 표 전체 폭(w)을 그대로
-  // 두고 중앙만 텍스트 영역으로 쓰면 원래 필요 폭보다 좁아져 줄바꿈될 수 있다(2026-08-26
-  // 실측 — 2:6:2·0.62배일 때 정상, 텍스트가 작다는 피드백으로 비율을 1:8:1로 넓히고
-  // 그만큼(60%→80%) 폰트도 다시 키운다(0.62 × 80/60 ≈ 0.83배).
-  const fontPt = Math.max(6, parseFloat(cs.fontSize) * 0.72 * 0.83);
   const bg = sbpptxIsTransparent(cs.backgroundColor) ? 'E9ECEF' : (sbpptxRgbToHex(cs.backgroundColor) || 'E9ECEF');
   const color = sbpptxRgbToHex(cs.color) || '495057';
   const text = sbpptxTextExcludingIndicators(badgeEl);
 
   // 표 전체 폭(w)은 원본 뱃지 영역 그대로 유지한다(2026-08-26 사용자 명시 — "전체 영역은
-  // 변동되면 안 돼"). 비율 1:8:1(사용자 요청)로 중앙을 넓혀 폰트를 더 키울 수 있게 한다.
-  const colWidthsIn = [w * 0.1, w * 0.8, w * 0.1];
+  // 변동되면 안 돼"). 우측 셀(3열) 공백을 최소화해 중앙에 폭을 더 배분한다(2026-08-26
+  // 사용자 요청 — "제일 우측 셀에 공백이 있으니 공백을 줄여서 텍스트 크기 맞추면").
+  const colWidthsIn = [w * 0.05, w * 0.9, w * 0.05];
+  // 원본 뱃지는 좌우 고정 패딩(12px×2)+텍스트로 폭이 정해지는데, 뱃지별로 텍스트 길이가
+  // 다르면(예: "SCR-001" 7자 vs "MTRM-MAIN" 9자) 패딩이 차지하는 비율도 달라져, 고정
+  // 배율 하나로는 짧은 뱃지엔 맞아도 긴 뱃지는 줄바꿈될 수 있다(2026-08-26 실측 —
+  // "MTRM-MAIN"이 2줄로 잘림, "SCR-001"/"SCR-014"는 정상). 실제 사용 가능 폭(중앙 80% -
+  // 패딩)에서 sbpptxMeasureWrappedLineCount로 1줄에 들어가는지 확인하고, 안 들어가면
+  // 들어갈 때까지 폰트를 단계적으로 줄인다 — 모든 화면 공통 확장(R33)에서 뱃지 텍스트
+  // 길이가 제각각이라 고정 배율 대신 이 방어 로직이 필요해졌다.
+  const centerAvailIn = colWidthsIn[1] - 0.08; // 중앙 셀 좌우 여백 추정치 제외
+  let fontPt = Math.max(6, parseFloat(cs.fontSize) * 0.72 * 0.83);
+  for (let i = 0; i < 6; i++) {
+    const lines = sbpptxMeasureWrappedLineCount([{ text: text, options: { bold: true } }], fontPt, fontFace, centerAvailIn);
+    if (lines <= 1) break;
+    fontPt = Math.max(6, fontPt * 0.9);
+  }
   const whiteCellOpts = {
     fontFace: fontFace, fontSize: fontPt, align: 'center', valign: 'middle',
     fill: { color: 'FFFFFF' },
