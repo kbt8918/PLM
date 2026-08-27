@@ -7224,6 +7224,7 @@ async function downloadPPTX(e) {
       let builtDetailCtaTable = null, builtDetailTable = null;
       let builtDetailCtaTables = [];
       let builtCardGroupTable = null;
+      let builtScr009AreaLeafResult = { tables: [], skipEls: [] };
       let popupModalRelocation = null;
       // [2026-08-26] R33: meta-box(SCR-XXX 뱃지/Screen/URL/Status)+헤더(TOP BAR)+사이드바는
       // "기본 화면"(팝업/cont/표전용 페이지가 아닌 SCR-001~014, mtrm-main) 전체에서 DOM
@@ -7238,8 +7239,13 @@ async function downloadPPTX(e) {
         'mtrm-main', 'mtrm-main-cont-1', 'mtrm-main-popup-trenddetail',
         'scr-006', 'scr-006-cont-1', 'scr-006-popup-register', 'scr-006-popup-history',
         'scr-007', 'scr-007-popup-register',
-        'scr-008', 'scr-008-popup-detail', 'scr-009', 'scr-010', 'scr-011',
-        'scr-012', 'scr-013', 'scr-014',
+        'scr-008', 'scr-008-popup-detail',
+        'scr-009', 'scr-009-popup-inquiry', 'scr-009-popup-techprdetail',
+        'scr-010', 'scr-010-popup-register',
+        'scr-011', 'scr-011-popup-register',
+        'scr-012', 'scr-012-popup-register', 'scr-012-popup-delete',
+        'scr-013', 'scr-014', 'scr-014-selectmode', 'scr-014-popup-trendedit',
+        'scr-014-detail', 'scr-014-popup-register',
       ];
       // scr-003 계열은 Description 오버플로우로 자동 생성되는 가상 cont 섹션(scr-003-cont-2 등,
       // cloneNode(true)로 원본 구조 그대로 복제됨)까지 포함해야 한다 — 고정 배열에 없는 id라서
@@ -7502,8 +7508,12 @@ async function downloadPPTX(e) {
       // 사용자 요청 — "SCR-001 작업방식과 동일하게"). 팝업은 wireframe-wrap 바로 아래가
       // 아니라 .popup-backdrop 한 겹 더 안에 MAIN CONTENT가 있다(SCR-001 팝업과 동일 보정).
       const SBPPTX_PATTERN_A_SCREEN_IDS = [
-        'scr-004', 'scr-005', 'scr-009', 'scr-010', 'scr-011', 'scr-012',
+        'scr-004', 'scr-005',
         'scr-002', 'scr-002-cont-1', 'scr-002-popup-stdprocess', 'scr-002-popup-delete',
+        'scr-009', 'scr-009-popup-inquiry', 'scr-009-popup-techprdetail',
+        'scr-010', 'scr-010-popup-register',
+        'scr-011', 'scr-011-popup-register',
+        'scr-012', 'scr-012-popup-register', 'scr-012-popup-delete',
       ];
       if (SBPPTX_PATTERN_A_SCREEN_IDS.includes(section.id)) {
         const wf = section.querySelector('.wireframe-wrap');
@@ -7533,6 +7543,16 @@ async function downloadPPTX(e) {
             yOffsetMap.set(area3, tableDeltaIn);
             area3.querySelectorAll('*').forEach(child => yOffsetMap.set(child, tableDeltaIn));
           }
+        }
+        // [2026-08-27] SCR-009(원본+popup-inquiry+popup-techprdetail)만: area2가 표가 아니라
+        // Tech PR 카드그리드(썸네일/뱃지/제목/메타 조합)라 위 patternATable이 null이라 스킵된다
+        // (SCR-014와 달리 사용자가 카드그리드도 addTable 확장 대상에 포함하기로 확정,
+        // AskUserQuestion). MTRM-MAIN area3(Tech PR 카드+기술동향 리스트)에 이미 쓰인
+        // sbpptxBuildAreaTextLeafTables를 그대로 재사용 — 카드 썸네일/아이콘처럼 텍스트 없는
+        // 배경 도형은 자동으로 대상에서 제외되고 원본 폴백이 계속 그린다.
+        if (['scr-009', 'scr-009-popup-inquiry', 'scr-009-popup-techprdetail'].includes(section.id) && area2 && !patternATable) {
+          builtScr009AreaLeafResult = sbpptxBuildAreaTextLeafTables(area2, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H, patternADimAlpha);
+          builtScr009AreaLeafResult.skipEls.forEach(el => skipEls.add(el));
         }
       }
 
@@ -7686,17 +7706,20 @@ async function downloadPPTX(e) {
       // sbpptxRenderElement() 안의 대응 스킵 블록(commonLayoutParent.id === 'scr-003')을
       // 함께 제거했다.
 
-      // [2026-08-26 R37] SCR-013(폼 화면) 전용. MAIN CONTENT 직계 자식이 폼 카드 컨테이너
-      // 1개뿐이고 그 안에 data-area="1"(과제명/담당자/계획등록일 입력 필드, 값이 항상 빈
-      // placeholder라 addTable 전환 실익이 낮음 — 원본 도형 그대로 유지)과 data-area="2"
-      // (mTRM 연동 영역: 타이틀+select+"자동 매핑 결과" 표) 및 취소/등록 CTA가 있다. 표
-      // 콘텐츠 편집 가치가 있는 "mTRM 연동 영역" 타이틀/표/CTA만 addTable로 전환하고, 폼
-      // 필드(area1)는 스킵 대상에서 제외해 원본 그대로 둔다(범위를 표/타이틀/CTA로 한정 —
-      // 화면설계서 원칙 "요청 범위를 스스로 넓히지 않는다"에 따라 필요한 만큼만 전환).
+      // [2026-08-26 R37, 2026-08-27 확장] SCR-013(폼 화면) 전용. MAIN CONTENT 직계 자식이
+      // 폼 카드 컨테이너 1개뿐이고 그 안에 data-area="1"(과제명/담당자/계획등록일 입력
+      // 필드)과 data-area="2"(mTRM 연동 영역: 타이틀+select+"자동 매핑 결과" 표) 및 취소/
+      // 등록 CTA가 있다. "mTRM 연동 영역" 타이틀/표/CTA는 R37에서 이미 addTable로 전환됨.
+      // area1(라벨+빈 입력창)은 값이 항상 빈 placeholder지만, 사용자 요청으로 라벨/
+      // placeholder 텍스트만 텍스트 리프 헬퍼(sbpptxBuildAreaTextLeafTables, MTRM-MAIN
+      // area2/3·SCR-008 area2와 동일 원리)로 addTable 전환한다 — 입력창 테두리 사각형(텍스트
+      // 없는 배경 도형)은 자동으로 대상에서 제외되고 원본 폴백이 계속 그린다.
+      let builtScr013AreaLeafResult = { tables: [], skipEls: [] };
       if (section.id === 'scr-013') {
         const wf = section.querySelector('.wireframe-wrap');
         const mainEl = wf ? wf.querySelector(':scope > div:nth-child(2) > div:nth-child(2)') : null;
         const formCardEl = mainEl ? mainEl.querySelector(':scope > div') : null;
+        const s13Area1 = formCardEl ? formCardEl.querySelector(':scope > div[data-area="1"]') : null;
         const s13Area2 = formCardEl ? formCardEl.querySelector(':scope > div[data-area="2"]') : null;
         const s13MtrmTitleEl = s13Area2 ? s13Area2.querySelector(':scope > div:first-child') : null;
         const s13MappingTable = s13Area2 ? s13Area2.querySelector('table') : null;
@@ -7709,8 +7732,10 @@ async function downloadPPTX(e) {
         builtSummaryTitleTable = sbpptxBuildSectionTitleTable(s13MtrmTitleEl, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H, s13MainWIn);
         if (s13MappingTable) builtSummaryTable = sbpptxBuildSimpleDataTable(s13MappingTable, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H);
         builtDetailCtaTable = sbpptxBuildCtaGroupTable(s13CtaGroupEl, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H);
+        builtScr013AreaLeafResult = sbpptxBuildAreaTextLeafTables(s13Area1, sx, sy, scale, pageOffsetX, pageOffsetY, SLIDE_W, SLIDE_H);
 
         [s13MtrmTitleEl, s13MappingTable, s13CtaGroupEl].forEach(el => { if (el) skipEls.add(el); });
+        builtScr013AreaLeafResult.skipEls.forEach(el => skipEls.add(el));
       }
 
       // [2026-08-26 R39] SCR-014(카드그리드 화면) 전용. area1(제목 드롭다운+검색+조회+
@@ -7892,6 +7917,8 @@ async function downloadPPTX(e) {
       builtMtrmCardTables.forEach(built => sbpptxRenderDescTable(pptx, slide, built));
       builtMtrmAreaLeafResult.tables.forEach(built => sbpptxRenderDescTable(pptx, slide, built));
       builtScr008AreaLeafResult.tables.forEach(built => sbpptxRenderDescTable(pptx, slide, built));
+      builtScr009AreaLeafResult.tables.forEach(built => sbpptxRenderDescTable(pptx, slide, built));
+      builtScr013AreaLeafResult.tables.forEach(built => sbpptxRenderDescTable(pptx, slide, built));
       builtScr006CardTables.forEach(built => sbpptxRenderDescTable(pptx, slide, built));
       if (builtFilterTable) sbpptxRenderDescTable(pptx, slide, builtFilterTable);
       builtFilterTables.forEach(built => sbpptxRenderDescTable(pptx, slide, built));
@@ -8136,7 +8163,13 @@ function sbpptxRenderElement(pptx, slide, el, baseX, baseY, scale, offsetX, offs
     '#mtrm-main, #mtrm-main-cont-1, #mtrm-main-popup-trenddetail, ' +
     '#scr-006, #scr-006-cont-1, #scr-006-popup-register, #scr-006-popup-history, ' +
     '#scr-007, #scr-007-popup-register, ' +
-    '#scr-008, #scr-008-popup-detail, #scr-009, #scr-010, #scr-011, #scr-012, #scr-013, #scr-014'
+    '#scr-008, #scr-008-popup-detail, ' +
+    '#scr-009, #scr-009-popup-inquiry, #scr-009-popup-techprdetail, ' +
+    '#scr-010, #scr-010-popup-register, ' +
+    '#scr-011, #scr-011-popup-register, ' +
+    '#scr-012, #scr-012-popup-register, #scr-012-popup-delete, ' +
+    '#scr-013, #scr-014, #scr-014-selectmode, #scr-014-popup-trendedit, ' +
+    '#scr-014-detail, #scr-014-popup-register'
   )) || (el.closest && el.closest('.screen-section[id^="scr-003-cont-"]'));
   if (commonLayoutParent) {
     // meta-box(캔버스 위 "SCR-XXX 뱃지/Screen·URL·Status" 영역)는 wireframe-wrap 밖의
@@ -8188,8 +8221,12 @@ function sbpptxRenderElement(pptx, slide, el, baseX, baseY, scale, offsetX, offs
       // 기존에 있던 도형과 텍스트가 하단에 깔려있다"). 위 패턴 B와 동일하게 c.contains(el)
       // 방식으로 자손까지 확실히 스킵해야 한다. scr-004/005/009~012는 지금까지 이 결함이
       // 드러나지 않았을 뿐 동일하게 잠재해 있었을 수 있으니 함께 적용한다.
-      if (['scr-004', 'scr-005', 'scr-009', 'scr-010', 'scr-011', 'scr-012',
-           'scr-002', 'scr-002-cont-1', 'scr-002-popup-stdprocess', 'scr-002-popup-delete'].includes(commonLayoutParent.id)) {
+      if (['scr-004', 'scr-005',
+           'scr-002', 'scr-002-cont-1', 'scr-002-popup-stdprocess', 'scr-002-popup-delete',
+           'scr-009', 'scr-009-popup-inquiry', 'scr-009-popup-techprdetail',
+           'scr-010', 'scr-010-popup-register',
+           'scr-011', 'scr-011-popup-register',
+           'scr-012', 'scr-012-popup-register', 'scr-012-popup-delete'].includes(commonLayoutParent.id)) {
         const mainEl = sidebarRow ? sidebarRow.querySelector(':scope > div:nth-child(2)') : null;
         const aArea1 = mainEl ? mainEl.querySelector(':scope > div[data-area="1"]') : null;
         const aArea2Table = mainEl ? mainEl.querySelector(':scope > div[data-area="2"] table') : null;
@@ -8203,6 +8240,13 @@ function sbpptxRenderElement(pptx, slide, el, baseX, baseY, scale, offsetX, offs
         const isIndicatorSelfA = el.classList && el.classList.contains('indicator-el');
         const isIndicatorAncestorA = el.closest && el.closest('.indicator-el');
         if (!isIndicatorSelfA && !isIndicatorAncestorA && patternACandidates.some(c => el === c || c.contains(el))) return;
+        // SCR-009(원본+팝업2종)만: area2가 표가 아니라 Tech PR 카드그리드라 위
+        // patternACandidates(aArea2Table)에 안 걸린다 — MTRM-MAIN area2/3과 동일하게 텍스트
+        // 리프만 스킵(sbpptxIsTextLeaf 판정), 카드 썸네일/아이콘 등 배경 도형은 원본 폴백 유지.
+        if (['scr-009', 'scr-009-popup-inquiry', 'scr-009-popup-techprdetail'].includes(commonLayoutParent.id) && !isIndicatorSelfA && !isIndicatorAncestorA) {
+          const aArea2 = mainEl ? mainEl.querySelector(':scope > div[data-area="2"]') : null;
+          if (aArea2 && aArea2.contains(el) && sbpptxIsTextLeaf(el)) return;
+        }
       }
       // SCR-001 + cont-1/cont-2(동일 캔버스 반복) + 팝업 3종(7,8,9p)만: MAIN CONTENT 내부
       // (탭/필터바/요약현황표/CTA/공정별상세표)도 추가로 스킵. cont는 2p와 동일한 DOM 구조를
@@ -8253,8 +8297,11 @@ function sbpptxRenderElement(pptx, slide, el, baseX, baseY, scale, offsetX, offs
         const isIndicatorAncestor2 = el.closest && el.closest('.indicator-el');
         if (!isIndicatorSelf2 && !isIndicatorAncestor2 && s3Candidates2.some(c => el === c || c.contains(el))) return;
       }
-      // [2026-08-26 R37] SCR-013만: mTRM 연동 영역 타이틀/자동 매핑 결과 표/CTA 버튼그룹만
-      // 스킵 — 폼 필드(area1)는 addTable 대상이 아니므로 원본 도형 그대로 유지.
+      // [2026-08-26 R37, 2026-08-27 확장] SCR-013만: mTRM 연동 영역 타이틀/자동 매핑 결과
+      // 표/CTA 버튼그룹 스킵(R37)에 더해, area1(폼 필드 라벨/placeholder)도 텍스트 리프만
+      // 스킵(sbpptxIsTextLeaf 판정) — 입력창 테두리 사각형(텍스트 없는 배경 도형)은 원본
+      // 폴백이 계속 그린다. 인디케이터(.indicator-el)는 예외로 항상 통과(SCR-002 패턴A/
+      // SCR-006 패턴B에서 이 예외를 빠뜨려 인디케이터가 사라졌던 재발 사고를 처음부터 반영).
       if (commonLayoutParent.id === 'scr-013') {
         const mainEl = sidebarRow ? sidebarRow.querySelector(':scope > div:nth-child(2)') : null;
         const formCardEl = mainEl ? mainEl.querySelector(':scope > div') : null;
@@ -8265,6 +8312,12 @@ function sbpptxRenderElement(pptx, slide, el, baseX, baseY, scale, offsetX, offs
           formCardEl ? formCardEl.querySelector(':scope > div:last-child') : null, // 취소/등록 CTA
         ].filter(Boolean);
         if (s13Candidates.some(c => el === c || c.contains(el))) return;
+        const isIndicatorSelf13 = el.classList && el.classList.contains('indicator-el');
+        const isIndicatorAncestor13 = el.closest && el.closest('.indicator-el');
+        if (!isIndicatorSelf13 && !isIndicatorAncestor13) {
+          const s13Area1 = formCardEl ? formCardEl.querySelector(':scope > div[data-area="1"]') : null;
+          if (s13Area1 && s13Area1.contains(el) && sbpptxIsTextLeaf(el)) return;
+        }
       }
       // [2026-08-26 R39] SCR-014만: area1(필터+CTA)만 스킵 — 카드그리드/페이지네이션은
       // 원본 도형 그대로 유지.
