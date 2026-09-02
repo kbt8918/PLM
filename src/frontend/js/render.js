@@ -83,38 +83,11 @@
     return '<td' + (cls.length ? ' class="' + cls.join(' ') + '"' : '') + '>' + content + '</td>';
   }
 
-  function renderKpiCards(list) {
-    return '<div class="kpi-grid">' + list.map(function (k) {
-      var colorStyle = k.kind === 'success' ? 'color:var(--badge-success-text)' : k.kind === 'danger' ? 'color:var(--badge-danger-text)' : k.kind === 'info' ? 'color:var(--badge-info-text)' : '';
-      return '<div class="kpi-card"><div class="kpi-value" style="' + colorStyle + '">' + esc(k.value) + '</div><div class="kpi-label">' + esc(k.label) + '</div></div>';
-    }).join('') + '</div>';
-  }
-
-  function renderLinkGrid(links) {
-    return '<div class="link-grid">' + links.map(function (l) {
-      return '<div class="link-card" data-action="select-screen" data-screen-id="' + l.screenId + '">' +
-        '<div class="link-card-title">' + esc(l.label) + '</div>' +
-        '<div class="link-card-desc">' + esc(l.desc) + '</div>' +
-      '</div>';
-    }).join('') + '</div>';
-  }
-
   function renderCardGrid(cards) {
     return '<div class="card-grid">' + cards + '</div>';
   }
 
-  function rateColor(v) {
-    return v >= 70 ? 'var(--color-auto-text)' : v >= 40 ? 'var(--badge-warning-text)' : 'var(--badge-danger-text)';
-  }
-
   // ---------- GNB (좌측 메뉴) ----------
-
-  // FEATURE_FLAGS.showFlowMapInNav가 false(기본값)면 FLOW-MAP은 GNB에서 숨깁니다.
-  // 화면설계서(sb-creator-kbt) 캡처 등 필요 시에는 ?showFlowMap=1로 런타임에 노출할 수 있습니다.
-  function isNavItemVisible(id) {
-    if (id === 'FLOW-MAP') return !!global.PNDES.FEATURE_FLAGS.showFlowMapInNav;
-    return true;
-  }
 
   // SCR-006(통합 로드맵)처럼 하위 메뉴가 있는 항목은 화살표 클릭 시 펼침/접힘(state.navSubOpen)
   function renderGnbSide(currentScreen, navSubOpen) {
@@ -125,7 +98,7 @@
 
     var html = '';
     global.PNDES.NAV.forEach(function (group) {
-      var items = group.items.filter(isNavItemVisible).filter(function (id) { return !childIds[id]; });
+      var items = group.items.filter(function (id) { return !childIds[id]; });
       if (!items.length) return;
       html += '<div class="gnb-group"><div class="gnb-group-title">' + esc(group.title) + '</div>';
       items.forEach(function (id) {
@@ -169,299 +142,6 @@
       '</div>' +
       '<div class="gnb-top-right">' +
         '<span>홍길동 님</span><span class="sep">|</span><a href="#" data-action="logout">로그아웃</a>' +
-      '</div>'
-    );
-  }
-
-  // ---------- FLOW-MAP ----------
-
-  function flowNodePreview(kind) {
-    if (kind === 'dashboard') {
-      return (
-        '<div style="display:flex;gap:4px;margin-bottom:4px">' +
-          '<div style="flex:1;height:16px;background:var(--color-border);border-radius:2px"></div>' +
-          '<div style="flex:1;height:16px;background:var(--color-border);border-radius:2px"></div>' +
-          '<div style="flex:1;height:16px;background:var(--color-border);border-radius:2px"></div>' +
-        '</div>' +
-        '<div style="display:flex;align-items:flex-end;gap:3px;height:28px">' +
-          '<div style="width:8px;height:60%;background:var(--color-primary);border-radius:1px"></div>' +
-          '<div style="width:8px;height:90%;background:var(--color-primary);border-radius:1px"></div>' +
-          '<div style="width:8px;height:40%;background:var(--color-primary);border-radius:1px"></div>' +
-          '<div style="width:8px;height:70%;background:var(--color-primary);border-radius:1px"></div>' +
-        '</div>'
-      );
-    }
-    if (kind === 'table') {
-      return (
-        '<div style="height:8px;background:#DEE2E6;border-radius:2px"></div>' +
-        '<div style="height:5px;width:85%;background:var(--color-border);border-radius:2px"></div>' +
-        '<div style="height:5px;width:70%;background:var(--color-border);border-radius:2px"></div>' +
-        '<div style="height:5px;width:90%;background:var(--color-border);border-radius:2px"></div>' +
-        '<div style="height:5px;width:60%;background:var(--color-border);border-radius:2px"></div>'
-      );
-    }
-    if (kind === 'cards') {
-      return (
-        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;height:100%">' +
-          '<div style="background:var(--color-border);border-radius:2px"></div>' +
-          '<div style="background:var(--color-border);border-radius:2px"></div>' +
-          '<div style="background:var(--color-border);border-radius:2px"></div>' +
-          '<div style="background:var(--color-border);border-radius:2px"></div>' +
-        '</div>'
-      );
-    }
-    if (kind === 'gantt') {
-      return (
-        '<div style="height:8px;width:60%;background:var(--gantt-top-progress);border-radius:2px;margin-bottom:6px"></div>' +
-        '<div style="height:8px;width:80%;margin-left:14px;background:var(--gantt-top-pending);border-radius:2px;margin-bottom:6px"></div>' +
-        '<div style="height:8px;width:45%;margin-left:28px;background:var(--gantt-sub-progress);border-radius:2px"></div>'
-      );
-    }
-    if (kind === 'form') {
-      return (
-        '<div style="height:6px;width:100%;background:var(--color-border);border-radius:2px"></div>' +
-        '<div style="height:6px;width:100%;background:var(--color-border);border-radius:2px"></div>' +
-        '<div style="height:6px;width:100%;background:var(--color-border);border-radius:2px"></div>' +
-        '<div style="align-self:flex-end;width:36%;height:10px;background:var(--color-primary);border-radius:2px;margin-top:4px"></div>'
-      );
-    }
-    return '';
-  }
-
-  function renderFlowRow(ids) {
-    var nodes = ids.map(function (id) {
-      var meta = SCREENS[id];
-      var kind = global.PNDES.FLOW_KIND[id];
-      return (
-        '<div class="flow-node">' +
-          '<div class="flow-node-card" data-action="select-screen" data-screen-id="' + id + '">' +
-            '<div class="flow-node-preview">' + flowNodePreview(kind) + '</div>' +
-            '<div class="flow-node-foot">' +
-              '<div class="flow-node-id">' + id + '</div>' +
-              '<div class="flow-node-label">' + esc(meta.name) + '</div>' +
-            '</div>' +
-          '</div>' +
-        '</div>'
-      );
-    }).join('');
-    return '<div class="flow-row">' + nodes + '</div>';
-  }
-
-  function renderFLOWMAP() {
-    return (
-      '<div data-screen-label="FLOW-MAP 전체 프로세스 흐름도">' +
-        '<div class="section-title" style="margin-bottom:4px">공정 자동화 현황 흐름</div>' +
-        '<div class="screen-subtitle">생기 업무담당자 · 공장/라인 현장담당자</div>' +
-        renderFlowRow(global.PNDES.FLOW_AUTO_IDS) +
-        '<div class="section-title" style="margin-bottom:4px">중장기 방향성 공유 흐름</div>' +
-        '<div class="screen-subtitle">생기 업무담당자 · 분과 담당자/의사결정자</div>' +
-        renderFlowRow(global.PNDES.FLOW_MTRM_IDS) +
-      '</div>'
-    );
-  }
-
-  // ---------- DASH-AUTO ----------
-  // 근거: Claude Design PNDES Portal Prototype.dc.html — DASH-AUTO는 SCR-001/003의 9~5개 라인 전체가 아니라
-  // 요약된 별도 mock 값(dashAutoRateBars/overallRate)을 사용합니다(디자인 원본 그대로 포팅, 라이브 계산 아님).
-
-  function renderDashAutoMatrixBar() {
-    // 근거: 디자인 원본은 "현재 상태(4건)"가 아니라 확대전개계획 매트릭스 전체 셀(4행 x 8열)을 순회하며
-    // 라벨에 '자동'이 포함되면 자동, '협의'/'가능'이 포함되면 수동(추진필요)으로 집계합니다.
-    var autoCount = 0, manualCount = 0;
-    var KIND_LABEL = {
-      auto: '자동', na: '미해당',
-    };
-    D.scr001ProcessDetail.forEach(function (row) {
-      Object.keys(row.cells).forEach(function (colId) {
-        var cell = row.cells[colId];
-        if (cell.kind === 'auto') { autoCount++; return; }
-        if (cell.kind === 'na') { return; }
-        // possible/agree/agreeUnrecoverable/review 모두 "협의" 또는 "가능" 문구를 포함하는 추진필요 항목
-        manualCount++;
-      });
-    });
-    var total = autoCount + manualCount;
-    var autoPct = Math.round((autoCount / total) * 100);
-    var manualPct = Math.round((manualCount / total) * 100);
-    var bar = '<div class="matrix-bar">' +
-      '<div class="matrix-bar-seg" style="width:' + autoPct + '%;background:var(--color-auto-text)"></div>' +
-      '<div class="matrix-bar-seg" style="width:' + manualPct + '%;background:var(--color-manual-text)"></div>' +
-    '</div>';
-    var legend = '<div class="matrix-legend">' +
-      '<div class="matrix-legend-item"><span class="legend-dot" style="background:var(--color-auto-text)"></span><span>자동 ' + autoCount + '건 (' + autoPct + '%)</span></div>' +
-      '<div class="matrix-legend-item"><span class="legend-dot" style="background:var(--color-manual-text)"></span><span>수동 ' + manualCount + '건 (' + manualPct + '%)</span></div>' +
-    '</div>';
-    return { html: bar + legend, total: total };
-  }
-
-  // 근거: 디자인 원본 moduleAutoBars — scr003LineDefs(5개 라인)의 autoTotal("자동/총공정")로부터 계산.
-  function computeModuleAutoBars() {
-    return D.scr003LineDefs.map(function (l) {
-      var parts = l.autoTotal.split('/').map(function (n) { return parseInt(n, 10); });
-      var pct = Math.round((parts[0] / parts[1]) * 100);
-      return { label: l.label.replace('[BP] ', ''), pct: pct, ratio: l.autoTotal };
-    });
-  }
-
-  // 근거: 디자인 원본 moduleDirectStaff = 21 + 10 + 8 + 4 + 8 (scr003SummaryRows '조립 인원 (직접)' 행의 5개 값 합)
-  function computeModuleDirectStaff() {
-    var row = D.scr003SummaryRows.filter(function (r) { return r.label === '조립 인원 (직접)'; })[0];
-    var sum = 0;
-    row.cells.forEach(function (v) { sum += parseInt(v, 10) || 0; });
-    return sum;
-  }
-
-  function renderExpansionRoadmapPanel() {
-    var cards = D.scr001Expansion.map(function (e) {
-      var statusKind = e.status === '진행중' ? 'info' : 'neutral';
-      return (
-        '<div>' +
-          '<div class="expansion-card-head">' +
-            '<span class="expansion-card-line">' + esc(e.line) + '</span>' +
-            badge(e.status, statusKind) +
-          '</div>' +
-          '<div class="expansion-card-track-row">' +
-            '<div class="rate-bar-track"><div class="rate-bar-fill" style="width:' + e.pct + '%;background:var(--color-primary)"></div></div>' +
-            '<span class="expansion-card-pct">' + e.pct + '%</span>' +
-          '</div>' +
-          '<div class="expansion-card-target">목표 완료: ' + esc(e.target) + '</div>' +
-        '</div>'
-      );
-    }).join('');
-    return (
-      '<div class="panel" style="flex:1">' +
-        '<div class="panel-head-row">' +
-          '<div class="panel-title" style="margin-bottom:0">중장기 확대 전개 로드맵</div>' +
-          '<a href="#" class="panel-link" data-action="select-screen" data-screen-id="SCR-001">상세 보기 &rsaquo;</a>' +
-        '</div>' +
-        '<div class="card-grid">' + cards + '</div>' +
-      '</div>'
-    );
-  }
-
-  function renderDASHAUTO() {
-    var rateBarsData = D.dashAutoRateBars;
-    var overallRate = D.overallRate;
-    var moduleBarsData = computeModuleAutoBars();
-    var moduleDirectStaff = computeModuleDirectStaff();
-
-    var rateBars = rateBarsData.map(function (r) {
-      return '<div class="rate-bar-row">' +
-        '<div class="rate-bar-label' + (r.emphasis ? ' emphasis' : '') + '">' + esc(r.label) + '</div>' +
-        '<div class="rate-bar-track"><div class="rate-bar-fill" style="width:' + r.value + '%;background:' + rateColor(r.value) + '"></div></div>' +
-        '<div class="rate-bar-value" style="color:' + rateColor(r.value) + '">' + r.value + '%</div>' +
-      '</div>';
-    }).join('');
-
-    var moduleBars = moduleBarsData.map(function (r) {
-      return '<div class="rate-bar-row">' +
-        '<div class="rate-bar-label">' + esc(r.label) + '</div>' +
-        '<div class="rate-bar-track"><div class="rate-bar-fill" style="width:' + r.pct + '%;background:' + rateColor(r.pct) + '"></div></div>' +
-        '<div class="rate-bar-value" style="color:' + rateColor(r.pct) + '">' + esc(r.ratio) + '</div>' +
-      '</div>';
-    }).join('');
-
-    var matrixBar = renderDashAutoMatrixBar();
-
-    var logs = D.scr005Rows.slice(0, 3).map(function (log) {
-      var kind = log.resultKind === 'success' ? 'success' : 'danger';
-      return '<div class="log-row"><span class="time">' + esc(log.time) + '</span><span>' + esc(log.ifId) + '</span>' + badge(log.result, kind) + '</div>';
-    }).join('');
-
-    return (
-      '<div data-screen-label="DASH-AUTO 공정 자동화 현황 통합 대시보드">' +
-        '<div class="section-title">요약 지표</div>' +
-        renderKpiCards(D.dashAutoKpis) +
-        '<div class="panel-row">' +
-          '<div class="panel" style="flex:1">' +
-            '<div class="panel-head-row">' +
-              '<div class="panel-title" style="margin-bottom:0">부품 공정 — 공장/라인별 자동화율</div>' +
-              '<a href="#" class="panel-link" data-action="select-screen" data-screen-id="SCR-001">부품 공정 &rsaquo;</a>' +
-            '</div>' + rateBars +
-          '</div>' +
-          '<div class="panel" style="flex:1">' +
-            '<div class="panel-head-row">' +
-              '<div class="panel-title" style="margin-bottom:0">모듈 공정 — 차종별 자동공정/총공정</div>' +
-              '<a href="#" class="panel-link" data-action="select-screen" data-screen-id="SCR-003">모듈 공정 &rsaquo;</a>' +
-            '</div>' + moduleBars +
-          '</div>' +
-          '<div class="panel donut-wrap" style="flex:0.6">' +
-            '<div class="panel-title" style="align-self:flex-start">전체 자동화율</div>' +
-            '<div class="donut" style="background:conic-gradient(var(--color-primary) 0% ' + overallRate + '%, var(--color-table-head-bg) ' + overallRate + '% 100%)">' +
-              '<div class="donut-inner"><div class="val">' + overallRate + '%</div><div class="lbl">자동화</div></div>' +
-            '</div>' +
-            '<div style="font-size:11px;color:var(--color-text-faint);text-align:center">모듈 조립 직접인원 합계 ' + moduleDirectStaff + '명</div>' +
-          '</div>' +
-        '</div>' +
-        '<div class="panel-row">' +
-          '<div class="panel" style="flex:1">' +
-            '<div class="panel-title">공정별 상세 매트릭스 — 자동/수동 비율 (' + matrixBar.total + '건)</div>' +
-            matrixBar.html +
-          '</div>' +
-          '<div class="panel" style="flex:1">' +
-            '<div class="panel-title">최근 I/F 실행결과</div>' + logs +
-          '</div>' +
-        '</div>' +
-        '<div class="panel-row">' +
-          renderExpansionRoadmapPanel() +
-        '</div>' +
-        '<div class="section-title">바로가기</div>' +
-        renderLinkGrid(D.dashAutoLinks) +
-      '</div>'
-    );
-  }
-
-  // ---------- DASH-MTRM ----------
-
-  function renderMiniGantt() {
-    var quarters = D.ganttQuarters.map(function (q) { return '<div class="mini-gantt-quarter-cell">' + esc(q) + '</div>'; }).join('');
-    var rows = D.ganttRowsFull.filter(function (r) { return r.top; }).map(function (r) {
-      return '<div class="mini-gantt-row">' +
-        '<div class="mini-gantt-row-label">' + esc(r.label) + '</div>' +
-        '<div class="mini-gantt-track"><div class="gantt-bar ' + r.barClass + '" style="left:' + r.left + '%;width:' + r.width + '%"></div></div>' +
-      '</div>';
-    }).join('');
-    return (
-      '<div class="panel" style="margin-bottom:var(--sp-xl);padding:0">' +
-        '<div style="display:flex;align-items:center;justify-content:space-between;padding:20px 20px 16px">' +
-          '<div class="panel-title" style="margin-bottom:0">통합 로드맵 간트 미리보기</div>' +
-          '<a href="#" data-action="go-to-gantt">전체 보기 &rsaquo;</a>' +
-        '</div>' +
-        '<div class="mini-gantt-head"><div class="mini-gantt-label-col">로드맵</div><div class="mini-gantt-quarters">' + quarters + '</div></div>' +
-        rows +
-        '<div style="height:16px"></div>' +
-      '</div>'
-    );
-  }
-
-  function renderDASHMTRM() {
-    var progress = D.roadmapProgress.map(function (r) {
-      return '<div class="roadmap-progress-item">' +
-        '<div class="roadmap-progress-head"><span class="roadmap-progress-name">' + esc(r.name) + '</span>' + badge(r.status, r.statusKind) + '</div>' +
-        '<div class="roadmap-progress-bottom">' +
-          '<div class="rate-bar-track"><div class="rate-bar-fill" style="width:' + r.pct + '%;background:var(--color-primary)"></div></div>' +
-          '<span class="roadmap-progress-pct">' + r.pct + '%</span>' +
-        '</div>' +
-      '</div>';
-    }).join('');
-
-    var trendPreview = D.trendsData.slice(0, 3).map(function (t, i) {
-      return '<div class="log-row" style="cursor:pointer" data-action="trend-detail" data-index="' + i + '">' +
-        '<span>' + esc(t.title) + '</span><span style="color:var(--color-text-faint)">' + esc(t.date) + ' · 조회 ' + t.views + '</span>' +
-      '</div>';
-    }).join('');
-
-    return (
-      '<div data-screen-label="DASH-MTRM 중장기 방향성 공유 통합 대시보드">' +
-        '<div class="section-title">요약 지표</div>' +
-        renderKpiCards(D.dashMtrmKpis) +
-        renderMiniGantt() +
-        '<div class="panel-row">' +
-          '<div class="panel" style="flex:1"><div class="panel-title">로드맵 진행률</div>' + progress + '</div>' +
-          '<div class="panel" style="flex:1"><div class="panel-title">최근 기술동향</div>' + trendPreview + '</div>' +
-        '</div>' +
-        '<div class="section-title">바로가기</div>' +
-        renderLinkGrid(D.dashMtrmLinks) +
       '</div>'
     );
   }
@@ -803,8 +483,8 @@
 
   // ---------- SCR-004 모듈 표준 작업명 관리 ----------
 
-  // 근거: isModuleTask — 필터(공정유형/작업명 검색/사용현황/등록일) + 우측 표준 작업명 등록 버튼,
-  // 목록 NO(내림차순)/표준 작업명/공정유형/사용현황(연동모듈수, 파란 글씨)/등록일/관리(삭제), 24건 페이지네이션.
+  // 근거: isModuleTask — 필터(공정유형/작업명 검색/등록자/등록일) + 우측 표준 작업명 등록 버튼,
+  // 목록 NO(내림차순)/표준 작업명/공정유형/등록자/등록일/관리(수정·삭제), 24건 페이지네이션.
   function renderSCR004(state) {
     var filtered = D.scr004Rows;
     var pageSize = 10;
@@ -816,9 +496,10 @@
       var no = filtered.length - ((page - 1) * pageSize + i);
       return '<tr>' + td(no, null, 'muted') +
         '<td style="font-weight:600">' + esc(r.name) + '</td>' + td(esc(r.type)) +
-        '<td class="al-r" style="color:var(--color-primary);font-weight:600">' + r.usage + '</td>' +
+        td(esc(r.registeredBy)) +
         td(esc(r.registered), null, 'muted') +
-        td('<button type="button" class="btn-link-danger" data-action="open-modal" data-modal-id="deleteConfirm">삭제</button>', 'center') +
+        td('<button type="button" class="btn-link" data-action="open-modal" data-modal-id="stdTaskRegister">수정</button> ' +
+           '<button type="button" class="btn-link-danger" data-action="open-modal" data-modal-id="deleteConfirm">삭제</button>', 'center') +
       '</tr>';
     }).join('');
     return (
@@ -826,7 +507,7 @@
         '<div class="filter-bar">' +
           '<select style="height:32px;min-width:130px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>전체 공정유형</option><option>조립</option><option>배선</option><option>검사</option></select>' +
           '<input placeholder="표준 작업명 검색" style="height:32px;min-width:160px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 10px" />' +
-          '<input placeholder="사용현황(연동모듈수)" style="height:32px;min-width:150px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 10px" />' +
+          '<input placeholder="등록자" style="height:32px;min-width:120px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 10px" />' +
           '<input type="date" style="height:32px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;cursor:pointer" />' +
           '<button type="button" class="btn btn-primary" data-action="run-search">조회</button>' +
           '<div class="filter-spacer"></div>' +
@@ -834,7 +515,7 @@
         '</div>' +
         '<div class="panel" style="padding:0">' +
         renderTable([
-          { label: 'NO' }, { label: '표준 작업명' }, { label: '공정유형' }, { label: '사용현황(연동모듈수)', align: 'right' }, { label: '등록일' }, { label: '관리', align: 'center' },
+          { label: 'NO' }, { label: '표준 작업명' }, { label: '공정유형' }, { label: '등록자' }, { label: '등록일' }, { label: '관리', align: 'center' },
         ], rows, { pad12: true }) +
         renderPagination(filtered.length, page, pageSize, 'taskPage') +
         '</div>' +
@@ -1592,9 +1273,6 @@
   // ---------- 화면 라우팅 테이블 ----------
 
   var SCREEN_RENDERERS = {
-    'FLOW-MAP': renderFLOWMAP,
-    'DASH-AUTO': renderDASHAUTO,
-    'DASH-MTRM': renderDASHMTRM,
     'SCR-001': renderSCR001,
     'SCR-002': renderSCR002,
     'SCR-003': renderSCR003,

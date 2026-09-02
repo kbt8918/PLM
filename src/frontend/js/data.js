@@ -7,9 +7,6 @@
   'use strict';
 
   var SCREENS = {
-    'FLOW-MAP': { group: '가이드', name: '전체 프로세스 흐름도', admin: false },
-    'DASH-AUTO': { group: '공정 자동화 현황', name: '통합 대시보드', admin: false },
-    'DASH-MTRM': { group: '중장기 방향성 공유', name: '통합 대시보드', admin: false },
     'SCR-001': { group: '공정 자동화 현황', name: '부품 공정 자동화 현황', admin: false },
     'SCR-002': { group: '공정 자동화 현황', name: '표준공정 마스터 관리', admin: true },
     'SCR-003': { group: '공정 자동화 현황', name: '모듈 공정 자동화 현황', admin: false },
@@ -28,32 +25,14 @@
   };
 
   // 근거: design_handoff_pndes_portal 최종 스크린샷 기준 실제 좌측 메뉴 순서는
-  // 공정 자동화 현황:[SCR-001~005], 중장기 방향성 공유:[MTRM-MAIN, SCR-006(하위:SCR-007/008), SCR-009~014]이며
-  // DASH-AUTO/DASH-MTRM(통합 대시보드)은 최종 내비게이션에서 제외됩니다(사용자 확인 화면 캡처 기준).
+  // 공정 자동화 현황:[SCR-001~005], 중장기 방향성 공유:[MTRM-MAIN, SCR-006(하위:SCR-007/008), SCR-009~014]
   var NAV = [
-    { title: '가이드', items: ['FLOW-MAP'] },
     { title: '공정 자동화 현황', items: ['SCR-001', 'SCR-002', 'SCR-003', 'SCR-004', 'SCR-005'] },
     { title: '중장기 방향성 공유', items: ['MTRM-MAIN', 'SCR-006', 'SCR-007', 'SCR-008', 'SCR-009', 'SCR-010', 'SCR-011', 'SCR-012', 'SCR-013', 'SCR-014'] },
   ];
 
   // SCR-006(통합 로드맵)의 하위 메뉴: 우측 화살표 클릭 시 펼침/접힘 (state: navSubOpen, 기본 펼침)
   var NAV_CHILDREN = { 'SCR-006': ['SCR-007', 'SCR-008'] };
-
-  // FLOW-MAP(전체 프로세스 흐름도)은 실 운영 화면에서는 노출하지 않고, 화면설계서(sb-creator-kbt)
-  // 캡처 등 필요 시에만 노출합니다. app.js가 URL 쿼리스트링(?showFlowMap=1)을 보고 런타임에
-  // FEATURE_FLAGS.showFlowMapInNav를 true로 덮어씁니다(기본값은 항상 false = 비노출).
-  var FEATURE_FLAGS = {
-    showFlowMapInNav: false,
-  };
-
-  // FLOW-MAP에서 각 화면의 미리보기 종류(dashboard/table/gantt/cards/form)
-  var FLOW_KIND = {
-    'DASH-AUTO': 'dashboard', 'SCR-001': 'table', 'SCR-002': 'table', 'SCR-003': 'table', 'SCR-004': 'table', 'SCR-005': 'table',
-    'DASH-MTRM': 'dashboard', 'SCR-006': 'table', 'SCR-007': 'table', 'SCR-008': 'gantt', 'SCR-009': 'cards', 'SCR-010': 'table',
-    'SCR-011': 'table', 'SCR-012': 'table', 'SCR-013': 'form', 'SCR-014': 'cards',
-  };
-  var FLOW_AUTO_IDS = ['DASH-AUTO', 'SCR-001', 'SCR-002', 'SCR-003', 'SCR-004', 'SCR-005'];
-  var FLOW_MTRM_IDS = ['DASH-MTRM', 'SCR-006', 'SCR-007', 'SCR-008', 'SCR-009', 'SCR-010', 'SCR-011', 'SCR-012', 'SCR-013', 'SCR-014'];
 
   // ---- SCR-001 ----
   // 근거: design_handoff_생기포털/source/부품 공정 자동화 현황.dc.html(최종 확정본) — 필터바는 라벨 없이
@@ -311,12 +290,13 @@
   var scr004Rows = (function () {
     var names = ['볼트 체결', '와이어링', '용접', '검사', '도장', '이송', '조립', '포장', '세척', '라벨링', '프레스', '체결확인'];
     var types = ['조립', '배선', '용접', '검사', '도장', '물류'];
+    var registrants = ['홍길동', '김철수', '이영희', '박민수', '최지훈'];
     var rows = [];
     for (var i = 0; i < 24; i++) {
       rows.push({
         name: names[i % names.length] + (i >= names.length ? ' ' + (Math.floor(i / names.length) + 1) : ''),
         type: types[i % types.length],
-        usage: (i % 12) + 1,
+        registeredBy: registrants[i % registrants.length],
         registered: '2026-' + String((i % 12) + 1).padStart(2, '0') + '-' + String((i % 27) + 1).padStart(2, '0'),
       });
     }
@@ -413,16 +393,6 @@
     rows.forEach(function (r) { r.statusKind = STATUS_KIND[r.status]; });
     return rows;
   })();
-
-  // ---- SCR-008 간트 ----
-  var ganttQuarters = ['26.Q1', 'Q2', 'Q3', 'Q4', '27.Q1', 'Q2', 'Q3', 'Q4', '28.Q1', 'Q2', 'Q3', 'Q4'];
-  var ganttRowsFull = [
-    { label: '차체 자동화 로드맵', indent: 12, top: true, left: 0, width: 25, barClass: 'gantt-bar-progress-top', modal: 'ganttDetail' },
-    { label: 'ㄴ 용접 로봇 도입', indent: 28, top: false, left: 2, width: 8, barClass: 'gantt-bar-progress-sub', modal: 'ganttDetail' },
-    { label: 'ㄴ 검사공정 자동화', indent: 28, top: false, left: 4, width: 10, barClass: 'gantt-bar-progress-sub', modal: 'ganttDetail' },
-    { label: '조립 자동화 로드맵', indent: 12, top: true, left: 8, width: 33, barClass: 'gantt-bar-pending-top', modal: 'ganttDetail' },
-    { label: 'ㄴ 코봇 도입', indent: 28, top: false, left: 9, width: 12, barClass: 'gantt-bar-progress-sub', modal: 'ganttDetail' },
-  ];
 
   // ---- SCR-008 통합 로드맵 차트 (계층형 간트: 로드맵 막대 + 하위 상세과제 아코디언) ----
   // 근거: design_handoff_생기포털/source/부품 공정 자동화 현황.dc.html state.chartTasks/QUARTERS —
@@ -571,63 +541,6 @@
     { title: '로봇 기술동향 O', views: 184, date: '2026-07-29', dept: '기획팀', owner: '한**', tag: '로봇', content: '검사 분야 로봇 관련 최신 동향과 적용 사례를 정리한 자료입니다.' },
   ];
 
-  // ---- 대시보드 KPI / 바로가기 ----
-  var dashAutoKpis = [
-    { label: '전체 자동화율', value: '65%', kind: 'success' },
-    { label: '부품공정 자동화율', value: '65%', kind: '' },
-    { label: '모듈공정 자동화율', value: '68%', kind: '' },
-    { label: '등록 표준공정', value: '3건', kind: '' },
-    { label: 'I/F 최근 실패', value: '1건', kind: 'danger' },
-  ];
-  var dashAutoLinks = [
-    { label: '부품 공정 자동화 현황', desc: '공장/라인별 자동화 현황 조회', screenId: 'SCR-001' },
-    { label: '표준공정 마스터 관리', desc: '표준공정 등록/관리', screenId: 'SCR-002' },
-    { label: '모듈 공정 자동화 현황', desc: '모듈 공정 자동화 비교', screenId: 'SCR-003' },
-    { label: '모듈 표준 작업명 관리', desc: '표준 작업명 등록/관리', screenId: 'SCR-004' },
-    { label: 'I/F 실행결과 관리', desc: '배치 연동 실행 이력', screenId: 'SCR-005' },
-  ];
-
-  // 신규: 중장기 확대 전개 로드맵 (DASH-AUTO 대시보드 카드형 요약, 근거: Claude Design PNDES Portal Prototype.dc.html)
-  var scr001Expansion = [
-    { line: 'A공장 1라인', target: "'27년", pct: 80, status: '진행중' },
-    { line: 'A공장 2라인', target: "'29년", pct: 45, status: '진행중' },
-    { line: 'B공장 1라인', target: "'28년", pct: 30, status: '계획' },
-    { line: '종합', target: "'30년", pct: 55, status: '진행중' },
-  ];
-
-  var dashMtrmKpis = [
-    { label: '등록 로드맵', value: '2건', kind: '' },
-    { label: '진행중 상세과제', value: '1건', kind: 'info' },
-    { label: '예정 협의체', value: '1건', kind: '' },
-    { label: 'Tech PR 자료', value: '4건', kind: '' },
-    { label: '등록 기술동향', value: '4건', kind: '' },
-  ];
-  var dashMtrmLinks = [
-    { label: '통합 로드맵 관리', desc: '분과별 통합 로드맵', screenId: 'SCR-006' },
-    { label: '상세과제 로드맵 관리', desc: '로드맵별 상세과제', screenId: 'SCR-007' },
-    { label: 'mTRM 통합 로드맵 대시보드', desc: '간트차트 조회', screenId: 'SCR-008' },
-    { label: '생산기술 Tech PR', desc: '과제별 자료 그리드', screenId: 'SCR-009' },
-    { label: 'Tech PR 관리자', desc: '자료 등록/관리', screenId: 'SCR-010' },
-    { label: 'mTRM 협의체 관리', desc: '협의체 등록/메일발송', screenId: 'SCR-011' },
-    { label: 'mTRM 관리', desc: 'mTRM 등록/관리', screenId: 'SCR-012' },
-    { label: '기술과제 계획 등록', desc: 'mTRM 연동 영역', screenId: 'SCR-013' },
-    { label: '기술동향', desc: '글로벌 트렌드/신기술', screenId: 'SCR-014' },
-  ];
-
-  // 근거: Claude Design PNDES Portal Prototype.dc.html dashAutoRateBars/overallRate — DASH-AUTO의
-  // "부품 공정 — 공장/라인별 자동화율" 패널은 SCR-001의 9개 라인 전체가 아니라 요약된 3개 행(A공장 1/2라인 + 종합계)만 표시합니다.
-  var dashAutoRateBars = [
-    { label: 'A공장 1라인', value: 70 },
-    { label: 'A공장 2라인', value: 58 },
-    { label: '종합계', value: 65, emphasis: true },
-  ];
-  var overallRate = 65;
-
-  var roadmapProgress = [
-    { name: '차체 자동화 로드맵', status: '진행중', statusKind: 'info', pct: 60 },
-    { name: '조립 자동화 로드맵', status: '승인대기', statusKind: 'warning', pct: 25 },
-  ];
-
   // ---- 등록/수정 모달 필드 정의 ----
   var MODALS = {
     registerProcess: { title: '공정 등록', confirm: '등록', size: 640, successMessage: '새 공정이 성공적으로 등록되었습니다.', fields: [
@@ -735,10 +648,6 @@
   global.PNDES.SCREENS = SCREENS;
   global.PNDES.NAV = NAV;
   global.PNDES.NAV_CHILDREN = NAV_CHILDREN;
-  global.PNDES.FEATURE_FLAGS = FEATURE_FLAGS;
-  global.PNDES.FLOW_KIND = FLOW_KIND;
-  global.PNDES.FLOW_AUTO_IDS = FLOW_AUTO_IDS;
-  global.PNDES.FLOW_MTRM_IDS = FLOW_MTRM_IDS;
   global.PNDES.TECH_PR_TYPE = TECH_PR_TYPE;
   global.PNDES.data = {
     scr001Filters: scr001Filters, scr001FilterPlaceholders: scr001FilterPlaceholders,
@@ -752,7 +661,6 @@
     scr005Rows: scr005Rows,
     scr006Rows: scr006Rows, roadmapOptions: roadmapOptions,
     taskRoadmapList: taskRoadmapList, taskRoadmapFilterRoadmaps: taskRoadmapFilterRoadmaps,
-    ganttQuarters: ganttQuarters, ganttRowsFull: ganttRowsFull,
     chartQuarters: chartQuarters, chartTasks: chartTasks,
     techPrCards: techPrCards,
     scr010Rows: scr010Rows,
@@ -760,10 +668,6 @@
     scr012Rows: scr012Rows,
     roadmapMappings: ROADMAP_MAPPINGS,
     trendsData: trendsData,
-    dashAutoKpis: dashAutoKpis, dashAutoLinks: dashAutoLinks, scr001Expansion: scr001Expansion,
-    dashAutoRateBars: dashAutoRateBars, overallRate: overallRate,
-    dashMtrmKpis: dashMtrmKpis, dashMtrmLinks: dashMtrmLinks,
-    roadmapProgress: roadmapProgress,
   };
   global.PNDES.MODALS = MODALS;
 })(window);
