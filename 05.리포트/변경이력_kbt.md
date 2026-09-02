@@ -249,3 +249,122 @@ flowchart TD
 - PDF 페이지 수 불일치: expected=48, actual=49(APPENDIX 예외Case 표가 인쇄 시 3페이지로 분리)
 
 SCR-013 자체는 Playwright 스크린샷으로 변경 후 상태(셀렉트 "선택" 표시, 매핑 결과 표 안내 문구만 노출)를 시각 확인했습니다.
+
+---
+
+## 10. 6차 세션 반영 — SCR-004 모듈 표준 작업명 관리 "사용현황"→"등록자" 전환 (2026-09-02)
+
+### 10.1 변경 배경
+
+"모듈 표준 작업명 관리 화면 프론트 화면 바꿨는데 산출물도 갱신해줘" 요청에 따라 `git diff`로 워킹트리의 `src/frontend/js/data.js`, `src/frontend/js/render.js` 변경분을 확인했습니다.
+
+### 10.2 코드 레벨 변경 요약
+
+- `data.js` `scr004Rows`: 각 행의 `usage`(연동모듈수, 0~12 정수) 필드를 삭제하고 `registeredBy`(등록자, 5명 순환 배정) 필드를 신규 추가
+- `render.js` `renderSCR004()`:
+  - 목록 컬럼 "사용현황(연동모듈수)"(파란 글씨 우측정렬 숫자) → "등록자"(텍스트) 컬럼으로 교체
+  - 필터바의 "사용현황(연동모듈수)" 입력창 → "등록자" 입력창으로 교체
+  - "관리" 컬럼에 **"수정" 버튼 신규 추가** — 기존 "+ 표준 작업명 등록" 버튼과 동일한 `data-modal-id="stdTaskRegister"` 모달을 재사용(신규 모달 아님)하며, 기존 "삭제" 버튼(`btn-link-danger`)과 형제 클래스인 `btn-link`(둘 다 `src/frontend/css/common.css`에 기존부터 정의된 공통 스타일) 사용
+
+### 10.3 성격 판단
+
+Step 0 분류 기준으로 **(a) 순수 UI/표기 변경에 가까운 (b) 화면 표현 확장**으로 판단했습니다: DB 스키마상 `CREATED_BY`(등록자) 컬럼은 최초 설계 시점부터 이미 존재했고(`데이터베이스설계서_kbt.md` 3.4절), 신규 "수정" 기능도 기존 등록 모달을 재사용하는 것이라 신규 F-ID/I-F/DB 테이블은 필요 없다고 판단했습니다. 다만 F-007(모듈 표준 작업명 등록/삭제)의 처리 범위 자체가 "등록/삭제"에서 "등록/수정/삭제"로 넓어지는 것이라 **root를 화면설계서_kbt.md(#9)로 하되, F-007 정의 변경이 상위 문서(#8 정보구조도, #6 기능명세서)에도 영향을 준다**고 보아 업스트림까지 소급했습니다(2026-08-08 SCR-001 계열 확장 시의 소급 방식과 동일 원칙).
+
+사용자에게 두 가지를 사전 확인했습니다:
+- TB_STD_TASK_NM에 등록자 컬럼 추가 여부 → 확인 결과 `CREATED_BY`가 이미 존재해 신규 컬럼은 불필요했으나, "수정" 처리 자체가 신규이므로 수정 이력 추적용 `UPDATED_BY`/`UPDATED_DTTM` 컬럼을 신규 반영하기로 판단
+- 테스트시나리오에 신규 TC(수정 시나리오) 추가 여부 → 추가하기로 확정(TC-059)
+
+### 10.4 문서 갱신 — Document Chain 영향 범위
+
+```mermaid
+flowchart TD
+    D9["#9 화면설계서_kbt.md (root)<br/>v1.5→v1.6-kbt"] --> D8["#8 정보구조도_kbt.md<br/>v1.2→v1.3-kbt"]
+    D9 --> D6["#6 기능명세서_kbt.md<br/>v1.2→v1.3-kbt"]
+    D6 --> D12["#12 데이터베이스설계서_kbt.md<br/>v1.2→v1.3-kbt"]
+    D6 --> D15["#15 테스트시나리오_kbt.md<br/>v1.2→v1.3-kbt"]
+    D6 --> D11["#11 시스템정의서_kbt.md<br/>변경없음 확인, v1.2→v1.3-kbt"]
+    D6 --> D7["#7 API스펙_kbt.md<br/>변경없음 확인, v1.2→v1.3-kbt"]
+    D9 --> D10["#10 인프라아키텍처_kbt.md<br/>변경없음 확인, v1.2→v1.3-kbt"]
+    D9 --> D13["#13 디자인스타일가이드_kbt.md<br/>변경없음 확인, v1.3→v1.4-kbt"]
+```
+
+| 파일 | 변경 내용 |
+|---|---|
+| `02.기획문서/화면설계서_kbt.md` (v1.5→v1.6-kbt) | 헤더 "변경 이력(2026-09-02, 6차)" 추가, SCR-004 레이아웃 ASCII(필터바·목록 컬럼)와 UI 컴포넌트 표를 "등록자" 컬럼/필터, "수정" 버튼 반영으로 수정 |
+| `02.기획문서/정보구조도_kbt.md` (v1.2→v1.3-kbt) | 4절 화면-기능 매핑 표의 F-007 설명 "모듈 표준 작업명 등록/삭제" → "등록/수정/삭제" 정정 |
+| `02.기획문서/기능명세서_kbt.md` (v1.2→v1.3-kbt) | F-007 기능명·입력·처리를 "등록/수정/삭제"로 확장(중복 체크 시 자기 자신 제외 문구 추가) |
+| `03.구현문서/데이터베이스설계서_kbt.md` (v1.2→v1.3-kbt) | 3.4절 TB_STD_TASK_NM에 `UPDATED_BY`/`UPDATED_DTTM` 컬럼 신규(F-007 수정 처리 대응), `CREATED_BY`는 기존 컬럼 재사용(신규 아님)으로 명시, 관련 기능 서술 갱신 |
+| `04.검수문서/테스트시나리오_kbt.md` (v1.2→v1.3-kbt) | TC-013 기대결과에 등록자/등록일 노출 문구 보강, **TC-059(모듈 표준 작업명 수정) 신규 추가**(총 59건) |
+| `03.구현문서/시스템정의서_kbt.md` (v1.2→v1.3-kbt) | 헤더에 "변경 없음 확인" 이력 추가(기존 표준작업명 모듈 Controller/Service/DAO 범위 내 처리, 신규 모듈/API 없음) |
+| `02.기획문서/API스펙_kbt.md` (v1.2→v1.3-kbt) | 헤더에 "변경 없음 확인" 이력 추가(외부 I/F 영향 없음) |
+| `03.구현문서/인프라아키텍처_kbt.md` (v1.2→v1.3-kbt) | 헤더에 "변경 없음 확인" 이력 추가(인프라 구성/용량/배포 영향 없음) |
+| `03.구현문서/디자인스타일가이드_kbt.md` (v1.3→v1.4-kbt) | 헤더에 "변경 없음 확인" 이력 추가(`.btn-link`는 기존 정의된 공통 스타일 재사용, 신규 컴포넌트 없음) |
+
+### 10.5 영향 없음 확인 (범위 밖)
+
+- `03.구현문서/시스템정의서_kbt.md`, `02.기획문서/API스펙_kbt.md`, `03.구현문서/인프라아키텍처_kbt.md`, `03.구현문서/디자인스타일가이드_kbt.md`: 위 표대로 헤더에 "변경 없음"만 명시하고 본문 실질 내용은 수정하지 않음
+
+### 10.6 검증
+
+각 `_kbt.md` 파일의 마크다운 코드펜스(백틱 3개) 짝수 여부를 확인했습니다.
+
+---
+
+## 11. 7차 세션 반영 — FLOW-MAP/DASH-AUTO/DASH-MTRM 3개 화면 프론트+산출물 동시 삭제 (2026-09-02)
+
+### 11.1 변경 배경
+
+"화면 목록에서 Flow-map과 dash-auto 화면은 프론트에서도 삭제처리 해주고 산출물에서도 삭제처리해줘" → (작업 중) "DASH-MTRM 이 화면도 프론트와 화면설계서에서도 삭제처리 해주고 영향도 파악해서 반영해줘" 요청에 따라, 3개 화면(FLOW-MAP·DASH-AUTO·DASH-MTRM)을 프론트 코드(`src/frontend`)와 공식 kbt 산출물 세트 양쪽에서 함께 삭제했습니다. 착수 전 각 화면이 다른 함수/CSS 클래스와 공유하는 부분이 있는지 grep으로 하나하나 확인한 뒤(재사용 여부에 따라 삭제 범위를 다르게 적용), 프론트 삭제 → Playwright 실 렌더링 검증 → 산출물 소급 반영 순으로 진행했습니다.
+
+### 11.2 코드 레벨 변경 요약
+
+| 파일 | 삭제 내용 |
+|---|---|
+| `src/frontend/js/render.js` | `renderFLOWMAP`/`renderFlowRow`/`flowNodePreview`(FLOW-MAP), `renderDASHAUTO`/`renderDashAutoMatrixBar`/`computeModuleAutoBars`/`computeModuleDirectStaff`/`renderExpansionRoadmapPanel`(DASH-AUTO), `renderDASHMTRM`/`renderMiniGantt`(DASH-MTRM) 함수 전체 삭제. `isNavItemVisible`(FLOW-MAP 노출 분기) 및 `SCREEN_RENDERERS` 라우팅 3건 제거. 파생으로 미사용이 된 `rateColor`/`renderKpiCards`/`renderLinkGrid` 헬퍼 함수도 함께 정리(원래부터 미사용이던 `renderCardGrid`는 이번 삭제와 무관하므로 유지) |
+| `src/frontend/js/data.js` | `SCREENS`의 FLOW-MAP/DASH-AUTO/DASH-MTRM 3개 항목, `NAV`의 "가이드" 그룹, `NAV_CHILDREN`과 무관한 `FLOW_KIND`/`FLOW_AUTO_IDS`/`FLOW_MTRM_IDS`/`FEATURE_FLAGS`(showFlowMapInNav) 전체, `dashAutoKpis`/`dashAutoLinks`/`scr001Expansion`/`dashAutoRateBars`/`overallRate`(DASH-AUTO 전용), `dashMtrmKpis`/`dashMtrmLinks`/`roadmapProgress`/`ganttQuarters`/`ganttRowsFull`(DASH-MTRM 전용) 삭제, exports 블록 정리 |
+| `src/frontend/js/app.js` | `?showFlowMap=1` 쿼리스트링 처리 로직 삭제, `currentScreen` 초기값 주석에서 "DASH-AUTO" 언급 제거 |
+| `src/frontend/css/common.css` | `.flow-node*`/`.flow-row`(FLOW-MAP), `.expansion-card-*`/`.donut*`/`.matrix-*`/`.rate-bar-label`/`.rate-bar-value`(DASH-AUTO), `.mini-gantt-*`/`.roadmap-progress-*`(DASH-MTRM), `.link-grid`/`.link-card*`/`.kpi-label`(세 화면이 공유하던 헬퍼 함수 삭제로 파생 미사용) 삭제. `.panel-head-row`/`.panel-link`/`.rate-bar-track`/`.rate-bar-fill`/`.legend-dot`/`.log-row`/`.kpi-grid`/`.kpi-card`/`.kpi-value`는 MTRM-MAIN·SCR-006·SCR-008 등 다른 화면이 재사용 중이라 **유지**. `.gantt-header-row`/`.gantt-label-col`/`.gantt-quarters`/`.gantt-row*`/`.gantt-track`/`.gantt-bar*` 6개 클래스는 render.js 어디서도 참조되지 않는 것을 확인했으나, 이번 삭제 이전부터 죽어있던 코드로 판단되어(SCR-008이 별도 `gantt-table` 체계로 재구현된 결과로 추정) 요청 범위 밖으로 보고 **건드리지 않음** |
+
+### 11.3 검증
+
+`webapp-testing` 스킬로 로컬 서버(`python -m http.server`) + Playwright(headless Chromium)를 띄워 확인:
+- 기본 진입화면(SCR-001) 정상 렌더링, 콘솔/페이지 에러 없음
+- 좌측 GNB에 "통합 대시보드"/FLOW-MAP 텍스트 0건
+- `?screen=DASH-AUTO`(삭제된 화면 ID) 접근 시 정상적으로 SCR-001로 폴백(에러 없음)
+- `?screen=SCR-003`, `?screen=SCR-006`, `?screen=MTRM-MAIN` 정상 렌더링
+- `?showFlowMap=1`(기능 제거됨) 접근 시에도 에러 없이 기본 화면 로드
+전 항목 콘솔/페이지 에러 0건 확인. `node --check`로 3개 JS 파일 문법 검증도 통과.
+
+### 11.4 문서 갱신 — Document Chain 영향 범위
+
+**범위 판단**: root는 `화면설계서_kbt.md`(#9)이며, 화면 목록·사이트맵·화면-기능 매핑에 영향을 주므로 상위(#8 정보구조도, #6 기능명세서)까지 소급했습니다(2026-08-08 SCR-001 계열 확장과 동일 원칙). #6의 하위 전체(#7 API스펙, #11 시스템정의서, #12 데이터베이스설계서, #15 테스트시나리오)도 함께 점검했습니다. 3개 화면 모두 (a) GNB 비노출·URL 직접 접근 전용이었고 (b) 신규 F-ID 없이 기존 화면 데이터를 재사용하기만 했으므로, 재사용 대상 F-ID(F-001/005/009/010/011/016/019)나 DB 테이블 자체에는 영향이 없습니다 — 오직 "재사용하는 쪽"의 서술만 정리 대상이었습니다.
+
+```mermaid
+flowchart TD
+    D9["#9 화면설계서_kbt.md (root)<br/>v1.6→v1.7-kbt<br/>화면목록/1.1절/2절 3화면 삭제/3.5~3.6절 정리"] --> D8["#8 정보구조도_kbt.md<br/>v1.3→v1.4-kbt<br/>사이트맵/매핑표/권한표 정리"]
+    D9 --> D6["#6 기능명세서_kbt.md<br/>v1.3→v1.4-kbt<br/>F-001/005/009/010/011/016/019 관련화면 정리"]
+    D6 --> D12["#12 데이터베이스설계서_kbt.md<br/>v1.3→v1.4-kbt<br/>변경없음 확인"]
+    D6 --> D15["#15 테스트시나리오_kbt.md<br/>v1.3→v1.4-kbt<br/>TC-049/050/051/052/054 결번"]
+    D6 --> D11["#11 시스템정의서_kbt.md<br/>v1.3→v1.4-kbt<br/>대시보드 모듈 MTRM-MAIN 전용 축소"]
+    D6 --> D7["#7 API스펙_kbt.md<br/>v1.3→v1.4-kbt<br/>변경없음 확인"]
+    D9 --> D10["#10 인프라아키텍처_kbt.md<br/>v1.3→v1.4-kbt<br/>변경없음 확인"]
+    D9 --> D13["#13 디자인스타일가이드_kbt.md<br/>v1.4→v1.5-kbt<br/>5.9~5.11절 축소/삭제"]
+```
+
+| 파일 | 변경 내용 |
+|---|---|
+| `02.기획문서/화면설계서_kbt.md` (v1.6→v1.7-kbt) | 화면 목록 표에서 3개 행 삭제(15개 화면으로 축소), 1.1절 "GNB 제외 화면" 행 삭제, 2절에서 FLOW-MAP·DASH-AUTO 절 전체 삭제(DASH-MTRM 절도 삭제, MTRM-MAIN 절 서두 문구 정정), SCR-003의 "DASH-AUTO 연동" 문단 정리, 3.5절(대시보드 패널 헤더 패턴) 대상을 MTRM-MAIN으로 재정의, 3.6절(확장 카드형 진행률, DASH-AUTO 전용) 전체 삭제 → 이후 "관리자 화면 구분 규칙"이 3.6절로 번호 조정 |
+| `02.기획문서/정보구조도_kbt.md` (v1.3→v1.4-kbt) | 1장 사이트맵 mermaid에서 FLOWMAP/DASHAUTO/DASHMTRM 노드·엣지·dash 스타일 제거, 3장 화면-기능 매핑 표에서 3개 행 삭제, 4.1절 접근권한 표에서 3개 행 삭제, 4.2절 내비게이션 원칙에서 관련 서술 제거 후 kbt 7차 안내 행 추가 |
+| `02.기획문서/기능명세서_kbt.md` (v1.3→v1.4-kbt) | F-001/F-005/F-009/F-010/F-011/F-016/F-019 "관련 화면"란에서 DASH-AUTO/DASH-MTRM 재사용 병기 제거(MTRM-MAIN 병기는 유지) |
+| `03.구현문서/데이터베이스설계서_kbt.md` (v1.3→v1.4-kbt) | 헤더에 "변경 없음 확인" 이력 추가(재사용 테이블 전부 원본 화면에서 계속 사용) |
+| `04.검수문서/테스트시나리오_kbt.md` (v1.3→v1.4-kbt) | TC-049·050·051·052·054 5건을 결번(삭제) 처리(TC-ID 번호는 재사용하지 않음), 1장 테스트 범위 표 갱신, 유효 TC 54건으로 조정 |
+| `03.구현문서/시스템정의서_kbt.md` (v1.3→v1.4-kbt) | 3절 "대시보드 모듈" 행을 MTRM-MAIN 전용으로 축소(모듈 자체는 삭제하지 않음 — MTRM-MAIN이 계속 사용), 4절 디렉토리 구조 주석 갱신 |
+| `02.기획문서/API스펙_kbt.md` (v1.3→v1.4-kbt) | 헤더에 "변경 없음 확인" 이력 추가(신규 I/F 없었으므로 삭제 영향도 없음) |
+| `03.구현문서/인프라아키텍처_kbt.md` (v1.3→v1.4-kbt) | 헤더에 "변경 없음 확인" 이력 추가(순수 조회 화면이었으므로 인프라 영향 없음) |
+| `03.구현문서/디자인스타일가이드_kbt.md` (v1.4→v1.5-kbt) | 5.9절(KPI 카드) 축소(`.kpi-label`만 삭제 확인, `.kpi-grid`류는 SCR-006 재사용으로 유지), 5.10절(대시보드 패널 헤더) 대상을 MTRM-MAIN으로 재정의, 5.11절(확장 카드형 진행률, DASH-AUTO 전용) "삭제됨"으로 표기 |
+
+모든 문서 근거 문서/참고 문서 경로의 "FLOW-MAP·DASH-AUTO·DASH-MTRM·MTRM-MAIN 포함 총 18개 화면"도 "MTRM-MAIN 포함 15개 화면, kbt 7차부터 3개 제외"로 일괄 정정했습니다.
+
+### 11.5 검증
+
+각 `_kbt.md` 파일의 마크다운 코드펜스(백틱 3개) 짝수 여부를 확인했습니다.

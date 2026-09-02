@@ -243,7 +243,6 @@ table.data-table.sticky-head thead tr:nth-child(2) th { position: sticky; top: 3
 .kpi-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--sp-md); margin-bottom: var(--sp-xl); }
 .kpi-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 8px; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); padding: 16px; }
 .kpi-value { font-size: 24px; font-weight: 700; line-height: 30px; }
-.kpi-label { font-size: 13px; color: var(--color-text-muted); margin-top: 6px; }
 
 .panel { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 8px; padding: 20px; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); }
 .panel-row { display: flex; gap: var(--sp-md); margin-bottom: var(--sp-xl); }
@@ -251,39 +250,14 @@ table.data-table.sticky-head thead tr:nth-child(2) th { position: sticky; top: 3
 .panel-head-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--sp-md); }
 .panel-link { font-size: 12px; font-weight: 600; color: var(--color-primary); text-decoration: none; }
 
-.expansion-card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--sp-sm); }
-.expansion-card-line { font-size: 13px; font-weight: 600; }
-.expansion-card-track-row { display: flex; align-items: center; gap: var(--sp-sm); margin-bottom: 6px; }
-.expansion-card-pct { font-size: 12px; color: var(--color-text-muted); width: 34px; text-align: right; flex-shrink: 0; }
-.expansion-card-target { font-size: 11px; color: var(--color-text-faint); }
-
-.rate-bar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
-.rate-bar-label { font-size: 13px; color: var(--color-text-sub); width: 132px; flex-shrink: 0; }
-.rate-bar-label.emphasis { font-weight: 600; }
 .rate-bar-track { flex: 1; height: 10px; background: var(--color-table-head-bg); border-radius: 5px; overflow: hidden; }
 .rate-bar-fill { height: 100%; border-radius: 5px; }
-.rate-bar-value { font-size: 13px; font-weight: 600; width: 40px; text-align: right; flex-shrink: 0; }
 
-.donut-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--sp-md); }
-.donut { width: 120px; height: 120px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.donut-inner { width: 86px; height: 86px; border-radius: 50%; background: var(--color-surface); display: flex; flex-direction: column; align-items: center; justify-content: center; }
-.donut-inner .val { font-size: 24px; font-weight: 700; color: var(--color-primary); }
-.donut-inner .lbl { font-size: 11px; color: var(--color-text-faint); }
-
-.matrix-bar { display: flex; height: 16px; border-radius: 8px; overflow: hidden; margin-bottom: 10px; }
-.matrix-bar-seg { height: 100%; }
-.matrix-legend { display: flex; gap: 20px; }
-.matrix-legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--color-text-sub); }
 .legend-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
 
 .log-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--color-table-row-border); font-size: 12px; }
 .log-row .time { color: var(--color-text-muted); }
 
-.link-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-md); }
-.link-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); padding: 20px; cursor: pointer; }
-.link-card:hover { border-color: var(--color-primary); }
-.link-card-title { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
-.link-card-desc { font-size: 12px; color: var(--color-text-faint); }
 
 /* ---------- Gantt 간트차트 (design-style-guide.md 5.8) ---------- */
 .gantt-toolbar {
@@ -304,21 +278,6 @@ table.data-table.sticky-head thead tr:nth-child(2) th { position: sticky; top: 3
 .gantt-bar-progress-top { background: var(--gantt-top-progress); }
 .gantt-bar-pending-top { background: var(--gantt-top-pending); }
 .gantt-bar-progress-sub { background: var(--gantt-sub-progress); }
-
-/* mini gantt preview (DASH-MTRM) */
-.mini-gantt-head { display: flex; background: var(--color-table-head-bg); border-radius: var(--radius) var(--radius) 0 0; }
-.mini-gantt-label-col { width: 160px; flex-shrink: 0; padding: 6px 12px; font-size: 11px; color: var(--color-text-muted); font-weight: 600; }
-.mini-gantt-quarters { flex: 1; display: flex; }
-.mini-gantt-quarter-cell { flex: 1; text-align: center; padding: 6px 2px; font-size: 10px; color: var(--color-text-faint); border-left: 1px solid var(--color-border); }
-.mini-gantt-row { display: flex; align-items: center; min-height: 32px; border-bottom: 1px solid var(--color-table-row-border); }
-.mini-gantt-row-label { width: 160px; flex-shrink: 0; padding: 0 12px; font-size: 12px; font-weight: 600; }
-.mini-gantt-track { flex: 1; position: relative; height: 16px; margin: 6px 0; }
-
-.roadmap-progress-item { margin-bottom: var(--sp-md); }
-.roadmap-progress-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
-.roadmap-progress-name { font-size: 13px; font-weight: 500; }
-.roadmap-progress-bottom { display: flex; align-items: center; gap: 10px; }
-.roadmap-progress-pct { font-size: 12px; color: var(--color-text-muted); width: 32px; text-align: right; }
 
 /* ---------- 카드형 그리드 (design-style-guide.md 5.7) ---------- */
 .card-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-lg); }
@@ -416,15 +375,6 @@ table.data-table.sticky-head thead tr:nth-child(2) th { position: sticky; top: 3
   display: flex; align-items: center; justify-content: center; font-family: monospace; font-size: 12px; color: var(--color-text-faint);
 }
 
-/* ---------- FLOW-MAP 노드 카드 ---------- */
-.flow-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-sm); margin-bottom: var(--sp-xl); }
-.flow-node { display: flex; align-items: center; gap: var(--sp-sm); }
-.flow-node-card { width: 150px; cursor: pointer; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); overflow: hidden; }
-.flow-node-preview { height: 70px; background: var(--color-bg); padding: var(--sp-sm); display: flex; flex-direction: column; gap: var(--sp-xs); }
-.flow-node-foot { padding: 8px 10px; border-top: 1px solid var(--color-border); }
-.flow-node-id { font-size: 10px; color: var(--color-text-faint); margin-bottom: 2px; }
-.flow-node-label { font-size: 12px; font-weight: 600; line-height: 15px; }
-
 /* ---------- 토스트 알림 (design_handoff_생기포털 README "조회 완료 시 화면 우상단 토스트" 공통 동작) ---------- */
 #toast-root { position: fixed; z-index: 200; inset: auto; bottom: 24px; right: 24px; pointer-events: none; }
 .toast {
@@ -436,4 +386,3 @@ table.data-table.sticky-head thead tr:nth-child(2) th { position: sticky; top: 3
 /* ---------- 동영상 모달 재생 아이콘(SCR-001/SCR-003 공용 자동화 설비 동영상 팝업) ---------- */
 .video-play-icon { font-style: normal; font-size: 44px; color: var(--badge-danger-text); line-height: 1; animation: video-play-pulse 1.4s ease-in-out infinite; }
 @keyframes video-play-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-.flow-node-card:hover { border-color: var(--color-primary); }

@@ -8,12 +8,6 @@
 
   var render = global.PNDES.render;
 
-  // FLOW-MAP(전체 프로세스 흐름도)은 기본적으로 GNB에서 숨깁니다. 화면설계서(sb-creator-kbt)
-  // 캡처처럼 필요할 때만 URL에 ?showFlowMap=1을 붙이면 해당 세션에서만 노출됩니다.
-  if (/[?&]showFlowMap=1(&|$)/.test(global.location.search)) {
-    global.PNDES.FEATURE_FLAGS.showFlowMapInNav = true;
-  }
-
   // Figma 변환(html.to.design 등) 캡처처럼 화면별 개별 URL 진입이 필요할 때만 사용.
   // 예: index.html?screen=SCR-006 — 유효한 SCR-ID가 아니면 기본 진입 화면(SCR-001)을 유지.
   var screenParamMatch = /[?&]screen=(SCR-\d{3}|MTRM-MAIN)(&|$)/.exec(global.location.search);
@@ -41,7 +35,7 @@
   }
 
   var state = $.extend({
-    currentScreen: initialScreen, // 근거: design_handoff_생기포털/source/부품 공정 자동화 현황.dc.html activeView 기본값 'part-auto' — 최초 진입 화면은 통합 대시보드(DASH-AUTO)가 아니라 부품 공정 자동화 현황(SCR-001)
+    currentScreen: initialScreen, // 근거: design_handoff_생기포털/source/부품 공정 자동화 현황.dc.html activeView 기본값 'part-auto' — 최초 진입 화면은 부품 공정 자동화 현황(SCR-001)
     activeModal: initialModal,
     chartMode: 'summary', // SCR-008 통합 로드맵 차트 요약본/전체보기 토글
     expandedChartRoadmaps: [], // SCR-008에서 아코디언으로 펼쳐진 로드맵명 목록(여러 개 동시 펼침 유지)
