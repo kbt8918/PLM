@@ -1232,6 +1232,22 @@ def check_popup_indicator_inheritance(html_path):
     return {"ok": len(mismatches) == 0, "mismatches": mismatches, "no_trigger_number": no_trigger_number}
 
 
+def check_tab_section_consistency(html_path):
+    """R46 — 탭 버튼과 실제 섹션의 짝이 맞는지 확인한다.
+    사고 이력(2026-10-13): 화면 가족을 "다음 섹션 앞"에 다시 넣는 과정에서 SCR-014 섹션들이 `<!-- ==== APPENDIX ==== -->` 주석과
+    부록 섹션 사이에 놓였고, 이어서 실행한 build_appendix.remove_existing_appendix()가 "APPENDIX 주석 ~ JAVASCRIPT 주석" 구간을
+    통째로 지우면서 그 섹션 5개가 조용히 사라졌다(탭 버튼만 남음, JS 에러 없음, check_dom_order의 섹션 수만 줄어듦).
+    탭이 가리키는 섹션이 없거나(dead_tabs), 탭 없는 일반 섹션(tabless — .pdf-only-page는 원래 탭이 없으므로 제외)이 있으면 실패."""
+    text = pathlib.Path(html_path).read_text(encoding="utf-8")
+    body = text.split("async function downloadPPTX")[0]
+    secs = _re.findall(r'<div id="([^"]+)" class="screen-section([^"]*)"', body)
+    ids = {i for i, _ in secs}
+    tabs = set(_re.findall(r"showScreen\('([^']+)',this\)", body))
+    dead = sorted(tabs - ids)
+    tabless = sorted(i for i, cls in secs if i not in tabs and "pdf-only-page" not in cls)
+    return {"ok": not dead and not tabless, "dead_tabs": dead, "tabless_sections": tabless}
+
+
 def check_all_regressions(html_path, page):
     """R1~R8, R13(+ 정보성 R12)을 한 번에 실행하고 통합 결과를 반환한다. page는 이미
     html_path를 goto()해서 로드가 끝난 Playwright Page 객체여야 한다(check_dom_order 등과
@@ -1260,10 +1276,11 @@ def check_all_regressions(html_path, page):
     r20_bad = [p for p in r20 if not p.get("within_tolerance", True) or p.get("error")]
     r21 = check_area_indicator_distance(page)
     r22 = check_popup_indicator_inheritance(html_path)
+    r46 = check_tab_section_consistency(html_path)
     ok = (r1["ok"] and (len(r2) == 0) and r3["ok"] and (len(r4) == 0) and r5["ok"]
           and (len(r6) == 0) and (len(r7) == 0) and r8["ok"] and (len(r13) == 0)
           and r14a["ok"] and r14b["ok"] and r16["ok"] and r19["ok"] and (len(r20_bad) == 0)
-          and (len(r21) == 0) and r22["ok"])
+          and (len(r21) == 0) and r22["ok"] and r46["ok"])
     return {
         "ok": ok,
         "R1_colgroup_widths": r1,
@@ -1286,6 +1303,7 @@ def check_all_regressions(html_path, page):
         "R20_pptx_phantom_overflow_pages": r20,
         "R21_area_indicator_distance": r21,
         "R22_popup_indicator_inheritance": r22,
+        "R46_tab_section_consistency": r46,
     }
 
 
@@ -1396,6 +1414,13 @@ def print_regression_report(result):
         lines.append(f"    - {p['popup_id']}: trigger에서 기대값={p['expected_from_trigger']}, 캔버스 배지={p['canvas_badge']}, Description NO={p['desc_no']} — 트리거 번호로 통일할 것")
     for p in r22["no_trigger_number"]:
         lines.append(f"    - (판별불가) {p['popup_id']}: trigger=\"{p['trigger_text']}\" 캔버스={p['canvas_badge']} desc={p['desc_no']} — 상위 화면 Description과 대조해 사람이 확인할 것")
+
+    r46 = result.get("R46_tab_section_consistency", {"ok": True, "dead_tabs": [], "tabless_sections": []})
+    lines.append(f"  R46 탭-섹션 짝 불일치: dead_tabs={len(r46['dead_tabs'])} tabless={len(r46['tabless_sections'])} ok={r46['ok']}")
+    for i in r46["dead_tabs"]:
+        lines.append(f"    - 탭만 있고 섹션 없음: {i}")
+    for i in r46["tabless_sections"]:
+        lines.append(f"    - 섹션만 있고 탭 없음: {i}")
 
     lines.append(f"  => 전체 ok={result['ok']}")
     report = "\n".join(lines)
