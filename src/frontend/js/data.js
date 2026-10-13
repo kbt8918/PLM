@@ -1,38 +1,10 @@
 /*
- * PNDES 신규 메뉴 mock 데이터
- * 근거: Claude Design 프로토타입(PNDES Portal Prototype.dc.html)의 mock 데이터를 1:1 포팅.
+ * PNDES 신규 메뉴 mock 데이터 (SCR-001~014 업무 화면 전용)
+ * 화면 메타/GNB 구조는 js/config.js, 포털 홈(todo-main) mock은 js/mock/todo-main.js 참고.
  * 실 연동 시 부품/모듈 공정배치 원천 데이터, mTRM 로드맵 API 등으로 교체됩니다.
  */
 (function (global) {
   'use strict';
-
-  var SCREENS = {
-    'SCR-001': { group: '공정 자동화 현황', name: '부품 공정 자동화 현황', admin: false },
-    'SCR-002': { group: '공정 자동화 현황', name: '표준공정 마스터 관리', admin: true },
-    'SCR-003': { group: '공정 자동화 현황', name: '모듈 공정 자동화 현황', admin: false },
-    'SCR-004': { group: '공정 자동화 현황', name: '모듈 표준 작업명 관리', admin: true },
-    'SCR-005': { group: '공정 자동화 현황', name: 'I/F 실행결과 관리', admin: true },
-    'SCR-006': { group: '중장기 방향성 공유', name: '통합 로드맵', admin: false },
-    'SCR-007': { group: '중장기 방향성 공유', name: '상세과제 로드맵 관리', admin: false },
-    'SCR-008': { group: '중장기 방향성 공유', name: '통합 로드맵 차트', admin: false },
-    'SCR-009': { group: '중장기 방향성 공유', name: '생산기술 Tech PR', admin: false },
-    'SCR-010': { group: '중장기 방향성 공유', name: '생산기술 Tech PR 관리자', admin: true },
-    'SCR-011': { group: '중장기 방향성 공유', name: 'mTRM 협의체', admin: true },
-    'SCR-012': { group: '중장기 방향성 공유', name: 'mTRM 관리', admin: true },
-    'SCR-013': { group: '중장기 방향성 공유', name: '기술과제 관리', admin: false },
-    'SCR-014': { group: '중장기 방향성 공유', name: '기술동향', admin: false },
-    'MTRM-MAIN': { group: '중장기 방향성 공유', name: '메인 대시보드', admin: false },
-  };
-
-  // 근거: design_handoff_pndes_portal 최종 스크린샷 기준 실제 좌측 메뉴 순서는
-  // 공정 자동화 현황:[SCR-001~005], 중장기 방향성 공유:[MTRM-MAIN, SCR-006(하위:SCR-007/008), SCR-009~014]
-  var NAV = [
-    { title: '공정 자동화 현황', items: ['SCR-001', 'SCR-002', 'SCR-003', 'SCR-004', 'SCR-005'] },
-    { title: '중장기 방향성 공유', items: ['MTRM-MAIN', 'SCR-006', 'SCR-007', 'SCR-008', 'SCR-009', 'SCR-010', 'SCR-011', 'SCR-012', 'SCR-013', 'SCR-014'] },
-  ];
-
-  // SCR-006(통합 로드맵)의 하위 메뉴: 우측 화살표 클릭 시 펼침/접힘 (state: navSubOpen, 기본 펼침)
-  var NAV_CHILDREN = { 'SCR-006': ['SCR-007', 'SCR-008'] };
 
   // ---- SCR-001 ----
   // 근거: design_handoff_생기포털/source/부품 공정 자동화 현황.dc.html(최종 확정본) — 필터바는 라벨 없이
@@ -268,40 +240,7 @@
   // ---- SCR-002 ----
   // 근거: design_handoff_생기포털/source/부품 공정 자동화 현황.dc.html state.masterList 생성 로직을 그대로 이식(30건).
   // NO는 화면에서 내림차순(최신 등록이 위)으로 계산되므로 렌더링 시점에 filtered.length - index로 매긴다.
-  var scr002Rows = (function () {
-    var names = ['용접', '조립', '검사', '도장', '프레스', '이송', '체결', '포장', '세척', '라벨링'];
-    var factories = ['A공장', 'B공장'];
-    var lines = ['1라인', '2라인', '3라인'];
-    var rows = [];
-    for (var i = 0; i < 30; i++) {
-      rows.push({
-        factory: factories[i % factories.length],
-        line: lines[i % lines.length],
-        name: names[i % names.length] + (i >= names.length ? ' ' + (Math.floor(i / names.length) + 1) : ''),
-        seq: String((i % 10 + 1) * 10),
-        desc: i % 7 === 0 ? '신규 라인' : '',
-      });
-    }
-    return rows;
-  })();
-
-  // ---- SCR-004 ----
-  // 근거: 위 소스 state.taskList 생성 로직 이식(24건).
-  var scr004Rows = (function () {
-    var names = ['볼트 체결', '와이어링', '용접', '검사', '도장', '이송', '조립', '포장', '세척', '라벨링', '프레스', '체결확인'];
-    var types = ['조립', '배선', '용접', '검사', '도장', '물류'];
-    var registrants = ['홍길동', '김철수', '이영희', '박민수', '최지훈'];
-    var rows = [];
-    for (var i = 0; i < 24; i++) {
-      rows.push({
-        name: names[i % names.length] + (i >= names.length ? ' ' + (Math.floor(i / names.length) + 1) : ''),
-        type: types[i % types.length],
-        registeredBy: registrants[i % registrants.length],
-        registered: '2026-' + String((i % 12) + 1).padStart(2, '0') + '-' + String((i % 27) + 1).padStart(2, '0'),
-      });
-    }
-    return rows;
-  })();
+  // (SCR-002/004 mock은 js/mock/scr002.js, js/mock/scr004.js로 분리됨)
 
   // ---- SCR-005 ----
   // 근거: 위 소스 state.ifList 생성 로직 이식(23건).
@@ -325,33 +264,8 @@
     return rows;
   })();
 
-  // ---- SCR-006 ----
-  // 근거: 위 소스 state.roadmapList 생성 로직 이식(14건: 기본 5건 + 확장 9건).
-  var STATUS_KIND = { 진행중: 'info', 계획: 'warning', 반려: 'danger', 보류: 'neutral' };
-  var scr006Rows = (function () {
-    var base = [
-      { section: '차체', name: '차체 자동화 로드맵', period: '2026.01~2026.12', task: '용접 자동화', status: '진행중' },
-      { section: '조립', name: '조립 자동화 로드맵', period: '2026.04~2027.06', task: '코봇 도입', status: '계획' },
-      { section: '도장', name: '도장 자동화 로드맵', period: '2026.01~2026.09', task: '도장 로봇 재검토', status: '반려' },
-      { section: '엔진', name: '엔진 자동화 로드맵', period: '2026.10~2027.09', task: '조립라인 자동화', status: '보류' },
-      { section: '물류', name: '물류/반송 자동화 로드맵', period: '2027.01~2027.12', task: '물류 반송 표준화', status: '계획' },
-    ];
-    var depts = ['차체', '조립', '도장', '엔진', '물류', '검사', '배선', '냉각'];
-    var statuses = ['진행중', '계획', '반려', '보류'];
-    var rows = base.slice();
-    for (var i = 5; i < 14; i++) {
-      var dept = depts[i % depts.length];
-      rows.push({
-        section: dept,
-        name: dept + ' 자동화 로드맵 ' + (Math.floor(i / depts.length) + 1),
-        period: '202' + (6 + (i % 3)) + '.0' + ((i % 9) + 1) + '~20' + (29 + (i % 2)) + '.12',
-        task: '확대전개 검토',
-        status: statuses[i % statuses.length],
-      });
-    }
-    rows.forEach(function (r) { r.statusKind = STATUS_KIND[r.status]; });
-    return rows;
-  })();
+  // ---- MTRM-MAIN 통합 로드맵 목록 (mock은 js/mock/mtrm-main.js로 분리됨) ----
+  var scr006Rows = global.PNDES.mock.mtrmMain.roadmapList;
   var roadmapOptions = [
     { id: 'body', label: '차체 자동화 로드맵' },
     { id: 'assembly', label: '조립 자동화 로드맵' },
@@ -361,38 +275,8 @@
   // 근거: design_handoff_생기포털/source/부품 공정 자동화 현황.dc.html isRoadmapMgmt — 상세과제 로드맵 관리는
   // (구버전처럼) 통합 로드맵별 탭이 아니라, "통합 로드맵/담당자/기간/진행상태" 드롭다운으로 필터링하는
   // 단일 목록(16건)이다. state.taskRoadmapList 생성 로직을 그대로 이식.
-  var taskRoadmapFilterRoadmaps = ['차체 자동화 로드맵', '조립 자동화 로드맵', '물류/반송 자동화 표준화', 'AI 비전 검사 시스템 도입'];
-  var taskRoadmapList = (function () {
-    var base = [
-      { name: '용접 로봇 도입', owner: '홍**', period: '2026.03~2026.09', status: '진행중', roadmap: '차체 자동화 로드맵' },
-      { name: '검사공정 자동화', owner: '김**', period: '2026.06~2027.02', status: '계획', roadmap: '조립 자동화 로드맵' },
-      { name: '엔진 조립라인 자동화', owner: '최**', period: '2026.10~2027.06', status: '진행중', roadmap: '엔진 자동화 로드맵' },
-      { name: 'ECU S/W 다운 자동화', owner: '정**', period: '2027.01~2027.09', status: '보류', roadmap: '엔진 자동화 로드맵' },
-      { name: '차체 세부과제(28.Q4 종료 예시)', owner: '박**', period: '2026.10~2028.12', status: '계획', roadmap: '차체 자동화 로드맵' },
-    ];
-    var windows = {
-      '차체 자동화 로드맵': ['2026.01', '2026.12'],
-      '조립 자동화 로드맵': ['2026.04', '2027.06'],
-      '도장 자동화 로드맵': ['2026.01', '2026.09'],
-      '엔진 자동화 로드맵': ['2026.10', '2027.09'],
-    };
-    var roadmaps = Object.keys(windows);
-    var owners = ['홍**', '김**', '이**', '박**', '최**', '정**'];
-    var statuses = ['진행중', '계획', '반려', '보류'];
-    var rows = base.slice();
-    for (var i = 4; i < 16; i++) {
-      var rm = roadmaps[i % roadmaps.length];
-      rows.push({
-        name: rm.replace(' 자동화 로드맵', '') + ' 세부과제 ' + (i - 3),
-        owner: owners[i % owners.length],
-        period: windows[rm][0] + '~' + windows[rm][1],
-        status: statuses[i % statuses.length],
-        roadmap: rm,
-      });
-    }
-    rows.forEach(function (r) { r.statusKind = STATUS_KIND[r.status]; });
-    return rows;
-  })();
+  var taskRoadmapList = global.PNDES.mock.scr007.rows; // mock은 js/mock/scr007.js로 분리됨
+  var taskRoadmapFilterRoadmaps = global.PNDES.mock.scr007.filterRoadmaps;
 
   // ---- SCR-008 통합 로드맵 차트 (계층형 간트: 로드맵 막대 + 하위 상세과제 아코디언) ----
   // 근거: design_handoff_생기포털/source/부품 공정 자동화 현황.dc.html state.chartTasks/QUARTERS —
@@ -405,113 +289,15 @@
     { id: 4, category: 'AI 비전 검사 시스템 도입', manager: '최지능 선임', progress: 90, status: '완료임박', colStart: 2, colSpan: 3, startQ: '26.Q2', endQ: '26.Q4' },
   ];
 
-  // ---- SCR-009 ----
-  // 근거: design_handoff_생기포털/source/부품 공정 자동화 현황.dc.html TECH_PR_ITEMS(15건)를 그대로 이식.
-  // 자료 유형(type)별로 카드 썸네일과 상세 오버레이(techPrDetail) 콘텐츠가 달라집니다:
-  // video(동영상)/file(파일)/text(텍스트)/multi(복합자료).
-  var techPrCards = [
-    { title: '용접 로봇 도입', section: '차체', type: 'video', date: '2026-07-01', owner: '홍**',
-      desc: '차체 용접공정에 6축 로봇을 도입한 사례입니다. 기존 수작업 대비 용접 품질 편차를 크게 줄였습니다.' },
-    { title: '검사 AI 적용', section: '검사', type: 'file', date: '2026-07-03', owner: '김**',
-      fileName: '검사AI_적용사례.pdf', fileSize: '2.4MB' },
-    { title: '코봇 활용 사례', section: '조립', type: 'video', date: '2026-07-05', owner: '이**',
-      desc: '조립 공정에 협동로봇(코봇)을 도입해 작업자 부담을 줄인 사례입니다.' },
-    { title: '배선 자동화', section: '배선', type: 'text', date: '2026-07-08', owner: '박**',
-      body: '배선 자동화 적용 배경과 효과를 정리한 기술 노트입니다. 기존 수작업 배선 공정 대비 불량률을 40% 감소시켰으며, 1일 처리 물량은 1.6배 증가했습니다. 향후 타 라인 확대 적용을 검토 중입니다.' },
-    { title: '냉각 시스템 개선', section: '냉각', type: 'multi', date: '2026-07-10', owner: '최**',
-      items: [
-        { type: 'video', desc: '냉각수 순환 자동화 적용 전/후 비교 영상입니다.' },
-        { type: 'file', fileName: '냉각시스템_개선보고서.pdf', fileSize: '1.1MB' },
-        { type: 'text', body: '냉각 효율을 15% 개선하고 설비 정지시간을 줄인 사례입니다. 관련 부품 표준화도 함께 진행했습니다.' },
-      ] },
-    { title: '물류 반송 자동화', section: '배선', type: 'text', date: '2026-07-17', owner: '정**',
-      body: '물류 반송 자동화 적용 배경과 기대 효과를 정리한 기술 노트입니다.' },
-    { title: '도어 조립 자동화', section: '냉각', type: 'video', date: '2026-07-18', owner: '유**',
-      desc: '냉각 공정에 자동화 설비를 도입한 사례를 담은 영상입니다.' },
-    { title: '섀시 검사 고도화', section: '물류', type: 'file', date: '2026-07-19', owner: '한**',
-      fileName: '섀시 검사 고도화_보고서.pdf', fileSize: '1.8MB' },
-    { title: '도장 로봇 튜닝', section: '도어', type: 'text', date: '2026-07-20', owner: '조**',
-      body: '도장 로봇 튜닝 적용 배경과 기대 효과를 정리한 기술 노트입니다.' },
-    { title: '비전 검사 확대', section: '섀시', type: 'video', date: '2026-07-21', owner: '임**',
-      desc: '섀시 공정에 자동화 설비를 도입한 사례를 담은 영상입니다.' },
-    { title: '파워트레인 조립 개선', section: '차체', type: 'file', date: '2026-07-22', owner: '홍**',
-      fileName: '파워트레인 조립 개선_보고서.pdf', fileSize: '1.8MB' },
-    { title: '프레스 라인 무인화', section: '조립', type: 'text', date: '2026-07-23', owner: '김**',
-      body: '프레스 라인 무인화 적용 배경과 기대 효과를 정리한 기술 노트입니다.' },
-    { title: '용접 비드 검사 AI', section: '도장', type: 'video', date: '2026-07-24', owner: '이**',
-      desc: '도장 공정에 자동화 설비를 도입한 사례를 담은 영상입니다.' },
-    { title: '조립 토크 관리 자동화', section: '엔진', type: 'file', date: '2026-07-25', owner: '박**',
-      fileName: '조립 토크 관리 자동화_보고서.pdf', fileSize: '1.8MB' },
-    { title: '부품 이송 로봇 도입', section: '검사', type: 'text', date: '2026-07-26', owner: '최**',
-      body: '부품 이송 로봇 도입 적용 배경과 기대 효과를 정리한 기술 노트입니다.' },
-  ];
+  // ---- SCR-009 (mock은 js/mock/scr009.js로 분리됨) ----
+  var techPrCards = global.PNDES.mock.scr009.detailItems;
+  var TECH_PR_TYPE = global.PNDES.mock.scr009.typeInfo;
 
-  // 카드 유형별 배지 색상 (design-style-guide.md 3.3 확장 — 복합자료: 보라 #6B46C1/#F1EAFB)
-  var TECH_PR_TYPE = {
-    video: { label: '동영상', color: '#1A56DB', bg: '#E9F0FD' },
-    file: { label: '파일', color: '#B45309', bg: '#FDEEDC' },
-    text: { label: '텍스트', color: '#157A3D', bg: '#EAF7EE' },
-    multi: { label: '복합자료', color: '#6B46C1', bg: '#F1EAFB' },
-  };
+  // ---- SCR-010 (mock은 js/mock/scr010.js로 분리됨 — v3 기준 재구현으로 구 자료목록 mock은 제거) ----
 
-  // ---- SCR-010 ----
-  // 근거: 위 소스 state.techPrAdminList 생성 로직 이식(15건).
-  var scr010Rows = (function () {
-    var rows = [{ title: '용접 로봇 도입', task: '용접 자동화', owner: '홍**', attachment: '동영상 1건', registered: '2026-07-01' }];
-    var tasks = ['용접 자동화', '검사 자동화', '조립 자동화', '도장 자동화', '물류 자동화'];
-    var owners = ['홍**', '김**', '이**', '박**', '최**'];
-    var attaches = ['동영상 1건', '문서 1건', '동영상 2건', '문서 2건'];
-    for (var i = 1; i < 15; i++) {
-      rows.push({
-        title: tasks[i % tasks.length].replace(' 자동화', '') + ' 자료 ' + i,
-        task: tasks[i % tasks.length],
-        owner: owners[i % owners.length],
-        attachment: attaches[i % attaches.length],
-        registered: '2026-07-' + String((i % 27) + 1).padStart(2, '0'),
-      });
-    }
-    return rows;
-  })();
+  // ---- SCR-011 (mock은 js/mock/scr011.js로 분리됨 — v3 기준 재구현으로 구 협의체 목록 mock은 제거) ----
 
-  // ---- SCR-011 ----
-  // 근거: 위 소스 state.mtrmList 생성 로직 이식(13건).
-  var scr011Rows = (function () {
-    var rows = [{ name: '26H1 협의체', section: '차체', agenda: '로드맵 리뷰', target: '이**', schedule: '2026-08-20', mailStatus: '발송완료' }];
-    var depts = ['차체', '조립', '도장', '엔진', '물류'];
-    var agendas = ['로드맵 리뷰', '기술과제 협의', '진행 현황 점검', '차기 계획 수립'];
-    var targets = ['이**', '박**', '최**', '정**'];
-    var statuses = ['발송완료', '발송대기'];
-    for (var i = 1; i < 13; i++) {
-      rows.push({
-        name: '26H' + ((i % 2) + 1) + ' ' + depts[i % depts.length] + ' 협의체 ' + (Math.floor(i / depts.length) + 1),
-        section: depts[i % depts.length],
-        agenda: agendas[i % agendas.length],
-        target: targets[i % targets.length],
-        schedule: '2026-' + String((i % 12) + 1).padStart(2, '0') + '-' + String((i % 27) + 1).padStart(2, '0'),
-        mailStatus: statuses[i % statuses.length],
-      });
-    }
-    rows.forEach(function (r) { r.mailKind = r.mailStatus === '발송완료' ? 'success' : 'neutral'; });
-    return rows;
-  })();
-
-  // ---- SCR-012 ----
-  // 근거: 위 소스 state.mtrmMgmtList 생성 로직 이식(13건).
-  var scr012Rows = (function () {
-    var rows = [{ name: '차체 mTRM', section: '차체', status: '활성', registered: '2026-01-05' }];
-    var depts = ['차체', '조립', '도장', '엔진', '물류'];
-    var statuses = ['활성', '비활성'];
-    for (var i = 1; i < 13; i++) {
-      rows.push({
-        name: depts[i % depts.length] + ' mTRM ' + (Math.floor(i / depts.length) + 1),
-        section: depts[i % depts.length],
-        status: statuses[i % statuses.length],
-        registered: '2026-' + String((i % 12) + 1).padStart(2, '0') + '-' + String((i % 27) + 1).padStart(2, '0'),
-      });
-    }
-    rows.forEach(function (r) { r.statusKind = r.status === '활성' ? 'success' : 'neutral'; });
-    return rows;
-  })();
+  // ---- SCR-012 (mock은 js/mock/scr012.js로 분리됨 — v3 기준 재구현으로 구 mTRM 목록 mock은 제거) ----
 
   // ---- SCR-013 ----
   // 근거: 위 소스 ROADMAP_MAPPINGS — 연동 mTRM 로드맵 선택값에 따라 자동 매핑 결과 테이블 행이 달라진다.
@@ -565,20 +351,21 @@
       { label: '내용', type: 'plaintext', value: '자동용접 적용 사례' },
       { label: '첨부 재생', type: 'file' },
     ] },
-    stdProcessRegister: { title: '표준공정 마스터 등록', confirm: '저장', size: 480, successMessage: '성공적으로 저장되었습니다.', fields: [
-      { label: '공장', required: true, type: 'select', options: ['A공장', 'B공장'] },
-      { label: '라인', required: true, type: 'select', options: ['1라인', '2라인'] },
-      { label: '표준공정명', required: true, type: 'text', placeholder: '예: 용접, 조립 등' },
-      { label: '순서', required: true, type: 'text', placeholder: '예: 10, 20 등' },
-      { label: '비고', required: false, type: 'text', placeholder: '비고 입력' },
+    stdProcessRegister: { title: '표준공정 마스터 등록', editTitle: '표준공정 마스터 수정', confirm: '저장', size: 480, successMessage: '성공적으로 저장되었습니다.', fields: [
+      { label: '공장', field: 'factory', required: true, type: 'select', options: ['A공장', 'B공장'] },
+      { label: '라인', field: 'line', required: true, type: 'select', options: ['1라인', '2라인'] },
+      { label: '표준공정명', field: 'name', required: true, type: 'text', placeholder: '예: 용접, 조립 등' },
+      { label: '순서', field: 'seq', required: true, type: 'number', placeholder: '예: 10, 20 등' },
+      { label: '비고', field: 'desc', required: false, type: 'text', placeholder: '비고 입력' },
     ] },
-    stdTaskRegister: { title: '표준 작업명 등록', confirm: '등록', size: 480, successMessage: '표준 작업명이 등록되었습니다.', fields: [
-      { label: '작업명', required: true, type: 'text' },
-      { label: '공정유형', required: true, type: 'select', options: ['조립', '배선', '검사'] },
-    ] },
-    deleteConfirm: { title: '삭제 확인', confirm: '삭제', size: 480, fields: [
-      { label: '안내', type: 'plaintext', value: '이 항목은 12개 모듈에서 사용 중입니다. 계속하시겠습니까?' },
-    ] },
+    stdTaskRegister: {
+      title: '표준 작업명 등록', editTitle: '표준 작업명 수정', confirm: '등록', editConfirm: '수정', size: 480,
+      successMessage: '표준 작업명이 등록되었습니다.', editSuccessMessage: '표준 작업명이 수정되었습니다.',
+      fields: [
+        { label: '작업명', field: 'name', required: true, type: 'text' },
+        { label: '공정유형', field: 'type', required: true, type: 'select', options: ['조립', '배선', '검사'] },
+      ],
+    },
     roadmapRegister: { title: '통합 로드맵 등록', confirm: '등록', size: 640, fields: [
       { label: '분과', required: true, type: 'select' },
       { label: '로드맵명', required: true, type: 'text' },
@@ -591,36 +378,27 @@
       { label: 'v1.1', type: 'plaintext', value: '2026-04-01 · 대표과제 변경' },
       { label: 'v1.0', type: 'plaintext', value: '2026-01-05 · 최초 등록' },
     ] },
-    detailTaskRegister: { title: '상세과제 등록', confirm: '등록', size: 640, fields: [
-      { label: '과제명', required: true, type: 'text' },
-      { label: '담당자', required: true, type: 'select' },
-      { label: '기간(시작)', required: true, type: 'date' },
-      { label: '기간(종료)', required: true, type: 'date' },
-      { label: '진행상태', required: true, type: 'select' },
-    ] },
+    detailTaskRegister: {
+      title: '상세과제 등록', editTitle: '상세과제 수정', confirm: '등록', editConfirm: '수정', size: 480,
+      successMessage: '상세과제가 저장되었습니다.',
+      fields: [
+        { label: '과제명', field: 'name', required: true, type: 'text' },
+        { label: '담당자', field: 'owner', required: true, type: 'select', options: global.PNDES.mock.scr007.owners },
+        { label: '기간(시작)', field: 'startDate', required: true, type: 'date' },
+        { label: '기간(종료)', field: 'endDate', required: true, type: 'date' },
+        { label: '진행상태', field: 'status', required: true, type: 'select', options: global.PNDES.mock.scr007.statuses },
+      ],
+    },
     ganttDetail: { title: '과제 상세', confirm: '닫기', size: 640, fields: [
       { label: '과제명', type: 'plaintext', value: '용접 로봇 도입' },
       { label: '기간', type: 'plaintext', value: '2026.03 ~ 2026.09' },
       { label: '상태', type: 'plaintext', value: '진행중' },
     ] },
-    techPrInquiry: { title: '기술 문의/제안', confirm: '전송', size: 640, successMessage: '문의/제안이 전송되었습니다.', fields: [
-      { label: '대상 소재', type: 'plaintext', value: '용접 로봇 도입' },
-      { label: '문의/제안 내용', required: true, type: 'textarea' },
-    ] },
-    materialRegister: { title: '자료 등록', confirm: '등록', size: 800, successMessage: '자료가 등록되었습니다.', fields: [
-      { label: '제목', required: true, type: 'text' },
-      { label: '과제', required: true, type: 'select', options: ['용접 자동화', '검사 자동화'] },
-      { label: '담당자', required: true, type: 'select', options: ['홍**', '김**'] },
-      { label: '담당자 이메일', required: true, type: 'text', placeholder: 'name@company.com' },
-      { label: '상세 설명', required: false, type: 'textarea' },
-      { label: '첨부 문서', required: false, type: 'file' },
-      { label: '첨부 동영상', required: false, type: 'file' },
-    ] },
-    mtrmRegister: { title: 'mTRM 등록', confirm: '등록', size: 480, successMessage: 'mTRM이 저장되었습니다.', fields: [
-      { label: 'mTRM명', required: true, type: 'text' },
-      { label: '분과', required: true, type: 'select', options: ['차체', '조립', '도장'] },
-      { label: '상태', required: true, type: 'select', options: ['활성', '비활성'] },
-      { label: '등록일', required: true, type: 'date' },
+    // 근거: v3.dc.html "기술문의 / 제안" 모달 — 기술명(읽기전용)/요청자/문의·제안 내용 + 안내 문구
+    techPrInquiry: { title: '기술문의 / 제안', confirm: '등록', size: 640, successMessage: '문의/제안이 전송되었습니다.', fields: [
+      { label: '기술명', field: 'target', type: 'plaintext', value: '' },
+      { label: '요청자', type: 'plaintext', value: '자동화기술팀 / 김의왕 매니저' },
+      { label: '문의/제안 내용', field: 'content', required: true, type: 'textarea', hint: '※ 검토 후 메일/팀즈로 안내드리겠습니다.' },
     ] },
     trendRegister: { title: '기술동향 등록', confirm: '등록', size: 640, successMessage: '기술동향이 등록되었습니다.', fields: [
       { label: '제목', required: true, type: 'text' },
@@ -630,24 +408,12 @@
       { label: '내용', required: true, type: 'textarea' },
       { label: '첨부파일', required: false, type: 'file' },
     ] },
-    councilRegister: { title: '협의체 등록', confirm: '등록', size: 480, successMessage: '협의체가 등록되었습니다.', fields: [
-      { label: '협의체명', required: true, type: 'text' },
-      { label: '분과', required: true, type: 'select', options: ['차체', '조립', '도장'] },
-      { label: '연동 mTRM', required: true, type: 'select', options: ['차체 mTRM', '조립 mTRM'], hint: '분과를 먼저 선택하세요' },
-      { label: '의제', required: false, type: 'text' },
-      { label: '대상 분과장', required: true, type: 'select', options: ['이**', '박**'], hint: '메일 수신자(To)로 자동 발송됩니다' },
-      { label: '참조(CC)', required: false, type: 'text', placeholder: '이메일 입력 후 Enter', hint: 'Enter 또는 쉼표(,)로 여러 명 추가' },
-      { label: '일정', required: true, type: 'date' },
-    ] },
     ifError: { title: 'I/F 오류 로그', confirm: '닫기', size: 640, fields: [
       { label: '오류 내용', type: 'plaintext', value: '원본 DB 연결 타임아웃 (Connection timeout after 30000ms)' },
     ] },
   };
 
   global.PNDES = global.PNDES || {};
-  global.PNDES.SCREENS = SCREENS;
-  global.PNDES.NAV = NAV;
-  global.PNDES.NAV_CHILDREN = NAV_CHILDREN;
   global.PNDES.TECH_PR_TYPE = TECH_PR_TYPE;
   global.PNDES.data = {
     scr001Filters: scr001Filters, scr001FilterPlaceholders: scr001FilterPlaceholders,
@@ -656,16 +422,11 @@
     scr003Filters: scr003Filters, scr003FilterPlaceholders: scr003FilterPlaceholders, scr003LineDefs: scr003LineDefs, scr003SummaryCols: scr003SummaryCols,
     scr003SummaryRows: scr003SummaryRows, scr003DetailCols: scr003DetailCols,
     scr003ProcessDetail: scr003ProcessDetail, scr003Warning: scr003Warning, scr003LastSync: scr003LastSync,
-    scr002Rows: scr002Rows,
-    scr004Rows: scr004Rows,
     scr005Rows: scr005Rows,
     scr006Rows: scr006Rows, roadmapOptions: roadmapOptions,
     taskRoadmapList: taskRoadmapList, taskRoadmapFilterRoadmaps: taskRoadmapFilterRoadmaps,
     chartQuarters: chartQuarters, chartTasks: chartTasks,
     techPrCards: techPrCards,
-    scr010Rows: scr010Rows,
-    scr011Rows: scr011Rows,
-    scr012Rows: scr012Rows,
     roadmapMappings: ROADMAP_MAPPINGS,
     trendsData: trendsData,
   };
