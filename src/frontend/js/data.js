@@ -266,10 +266,6 @@
 
   // ---- MTRM-MAIN 통합 로드맵 목록 (mock은 js/mock/mtrm-main.js로 분리됨) ----
   var scr006Rows = global.PNDES.mock.mtrmMain.roadmapList;
-  var roadmapOptions = [
-    { id: 'body', label: '차체 자동화 로드맵' },
-    { id: 'assembly', label: '조립 자동화 로드맵' },
-  ];
 
   // ---- SCR-007 ----
   // 근거: design_handoff_생기포털/source/부품 공정 자동화 현황.dc.html isRoadmapMgmt — 상세과제 로드맵 관리는
@@ -299,33 +295,10 @@
 
   // ---- SCR-012 (mock은 js/mock/scr012.js로 분리됨 — v3 기준 재구현으로 구 mTRM 목록 mock은 제거) ----
 
-  // ---- SCR-013 ----
-  // 근거: 위 소스 ROADMAP_MAPPINGS — 연동 mTRM 로드맵 선택값에 따라 자동 매핑 결과 테이블 행이 달라진다.
-  // 로드맵을 선택하지 않았을 때는 "연동 mTRM 로드맵을 선택하세요." 안내 문구만 노출된다(techTaskNoMapping).
-  var ROADMAP_MAPPINGS = {
-    '차체 자동화 로드맵': [{ roadmap: '차체 자동화 로드맵', task: '용접 로봇 도입' }],
-    '조립 자동화 로드맵': [{ roadmap: '조립 자동화 로드맵', task: '검사공정 자동화' }],
-  };
+  // ---- SCR-013 (mock은 js/mock/scr013.js로 분리됨) ----
 
-  // ---- SCR-014 ----
-  // 근거: 위 소스 state.techTrendList(15건)를 그대로 이식.
-  var trendsData = [
-    { title: '글로벌 자동화 트렌드 A', views: 121, date: '2026-07-01', dept: '기획팀', owner: '박**', tag: '자동화', content: '해외 완성차 OEM의 조립라인 자동화 도입 현황과 협동로봇 적용 사례를 정리한 자료입니다.' },
-    { title: '신기술 소재 자료 B', views: 85, date: '2026-07-05', dept: '기획팀', owner: '이**', tag: '신소재', content: '경량화 신소재 적용을 위한 부품 시험 결과와 원가 영향 분석을 담은 자료입니다.' },
-    { title: '기술개발 제안 C', views: 42, date: '2026-07-10', dept: '기획팀', owner: '최**', tag: '제안', content: '현장 제안 기반 기술개발 아이디어와 기대 효과를 정리한 자료입니다.' },
-    { title: '글로벌 자동화 트렌드 D', views: 200, date: '2026-07-14', dept: '기획팀', owner: '정**', tag: '자동화', content: '해외 완성차 OEM의 조립라인 자동화 도입 현황과 협동로봇 적용 사례를 정리한 자료입니다.' },
-    { title: '로봇 기술동향 E', views: 74, date: '2026-07-19', dept: '기획팀', owner: '한**', tag: '로봇', content: '검사 분야 로봇 관련 최신 동향과 적용 사례를 정리한 자료입니다.' },
-    { title: '설계 기술동향 F', views: 85, date: '2026-07-20', dept: '기획팀', owner: '조**', tag: '설계', content: '배선 분야 설계 관련 최신 동향과 적용 사례를 정리한 자료입니다.' },
-    { title: '품질 기술동향 G', views: 96, date: '2026-07-21', dept: '기획팀', owner: '임**', tag: '품질', content: '냉각 분야 품질 관련 최신 동향과 적용 사례를 정리한 자료입니다.' },
-    { title: '안전 기술동향 H', views: 107, date: '2026-07-22', dept: '기획팀', owner: '홍**', tag: '안전', content: '물류 분야 안전 관련 최신 동향과 적용 사례를 정리한 자료입니다.' },
-    { title: '원가 기술동향 I', views: 118, date: '2026-07-23', dept: '기획팀', owner: '김**', tag: '원가', content: '도어 분야 원가 관련 최신 동향과 적용 사례를 정리한 자료입니다.' },
-    { title: '물류 기술동향 J', views: 129, date: '2026-07-24', dept: '기획팀', owner: '이**', tag: '물류', content: '섀시 분야 물류 관련 최신 동향과 적용 사례를 정리한 자료입니다.' },
-    { title: '자동화 기술동향 K', views: 140, date: '2026-07-25', dept: '기획팀', owner: '박**', tag: '자동화', content: '차체 분야 자동화 관련 최신 동향과 적용 사례를 정리한 자료입니다.' },
-    { title: '신소재 기술동향 L', views: 151, date: '2026-07-26', dept: '기획팀', owner: '최**', tag: '신소재', content: '조립 분야 신소재 관련 최신 동향과 적용 사례를 정리한 자료입니다.' },
-    { title: '제안 기술동향 M', views: 162, date: '2026-07-27', dept: '기획팀', owner: '정**', tag: '제안', content: '도장 분야 제안 관련 최신 동향과 적용 사례를 정리한 자료입니다.' },
-    { title: '비전 기술동향 N', views: 173, date: '2026-07-28', dept: '기획팀', owner: '유**', tag: '비전', content: '엔진 분야 비전 관련 최신 동향과 적용 사례를 정리한 자료입니다.' },
-    { title: '로봇 기술동향 O', views: 184, date: '2026-07-29', dept: '기획팀', owner: '한**', tag: '로봇', content: '검사 분야 로봇 관련 최신 동향과 적용 사례를 정리한 자료입니다.' },
-  ];
+  // ---- SCR-014 (mock은 js/mock/scr014.js로 분리됨 — MTRM-MAIN "최근 기술동향"도 같은 목록을 참조) ----
+  var trendsData = global.PNDES.mock.scr014.rows;
 
   // ---- 등록/수정 모달 필드 정의 ----
   var MODALS = {
@@ -400,14 +373,6 @@
       { label: '요청자', type: 'plaintext', value: '자동화기술팀 / 김의왕 매니저' },
       { label: '문의/제안 내용', field: 'content', required: true, type: 'textarea', hint: '※ 검토 후 메일/팀즈로 안내드리겠습니다.' },
     ] },
-    trendRegister: { title: '기술동향 등록', confirm: '등록', size: 640, successMessage: '기술동향이 등록되었습니다.', fields: [
-      { label: '제목', required: true, type: 'text' },
-      { label: '담당자 이름', required: true, type: 'text' },
-      { label: '부서명', required: true, type: 'text' },
-      { label: '태그', required: false, type: 'text' },
-      { label: '내용', required: true, type: 'textarea' },
-      { label: '첨부파일', required: false, type: 'file' },
-    ] },
     ifError: { title: 'I/F 오류 로그', confirm: '닫기', size: 640, fields: [
       { label: '오류 내용', type: 'plaintext', value: '원본 DB 연결 타임아웃 (Connection timeout after 30000ms)' },
     ] },
@@ -423,11 +388,10 @@
     scr003SummaryRows: scr003SummaryRows, scr003DetailCols: scr003DetailCols,
     scr003ProcessDetail: scr003ProcessDetail, scr003Warning: scr003Warning, scr003LastSync: scr003LastSync,
     scr005Rows: scr005Rows,
-    scr006Rows: scr006Rows, roadmapOptions: roadmapOptions,
+    scr006Rows: scr006Rows,
     taskRoadmapList: taskRoadmapList, taskRoadmapFilterRoadmaps: taskRoadmapFilterRoadmaps,
     chartQuarters: chartQuarters, chartTasks: chartTasks,
     techPrCards: techPrCards,
-    roadmapMappings: ROADMAP_MAPPINGS,
     trendsData: trendsData,
   };
   global.PNDES.MODALS = MODALS;

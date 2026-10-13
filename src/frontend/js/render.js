@@ -2205,35 +2205,44 @@
     );
   }
 
-  // ---------- SCR-013 기술과제 계획 등록 ----------
+  // ---------- SCR-013 기술과제 관리 ----------
 
-  // 근거: isTechTask — 연동 mTRM 로드맵을 선택하면 ROADMAP_MAPPINGS[선택값]에 해당하는 자동 매핑 결과
-  // 행이 표시되고, 선택 전(기본값)에는 "연동 mTRM 로드맵을 선택하세요." 안내만 노출된다(techTaskNoMapping).
-  // 이 화면은 초기 로드 상태를 그대로 보여준다(다른 화면과 동일하게 셀렉트는 장식용).
-  function renderSCR013() {
-    var options = D.roadmapOptions.map(function (o) { return '<option value="' + esc(o.label) + '">' + esc(o.label) + '</option>'; }).join('');
-    var mappingBody = '<tr><td colspan="3" class="empty-row-cell" style="padding:16px">연동 mTRM 로드맵을 선택하세요.</td></tr>';
+  // 근거: v3.dc.html isTechTask / README #14 — 기본정보 폼(과제명/담당자/계획등록일) → 구분선 → mTRM 연동 영역
+  // (연동 mTRM 로드맵 셀렉트) → 자동 매핑 결과 표(로드맵 미선택 시 안내 문구) → 취소/등록.
+  var TT = global.PNDES.mock.scr013;
+
+  function renderSCR013(state) {
+    var f = state.techTaskForm;
+    var required = ' <span class="tt-required">*</span>';
+    var options = function (list, selected) {
+      return '<option value="">선택</option>' + list.map(function (o) {
+        return '<option value="' + esc(o) + '"' + (o === selected ? ' selected' : '') + '>' + esc(o) + '</option>';
+      }).join('');
+    };
+    var mappingRows = f.linkedRoadmap
+      ? (TT.mappings[f.linkedRoadmap] || []).map(function (r) {
+          return '<tr><td class="tt-map-roadmap">' + esc(r.roadmap) + '</td><td>' + esc(r.task) + '</td><td><span class="tt-map-badge">매핑완료</span></td></tr>';
+        }).join('')
+      : '<tr><td colspan="3" class="tt-map-empty">연동 mTRM 로드맵을 선택하세요.</td></tr>';
+
     return (
-      '<div data-screen-label="SCR-013 기술과제 계획 등록">' +
-        '<div class="form-panel">' +
-          '<div class="form-row">' +
-            '<div class="form-group"><label>과제명 *</label><input /></div>' +
-            '<div class="form-group"><label>담당자 *</label><select><option>선택</option><option>홍**</option><option>김**</option></select></div>' +
+      '<div data-screen-label="SCR-013 기술과제 관리">' +
+        '<div class="tt-panel">' +
+          '<div class="tt-grid">' +
+            '<div><label class="tt-label" for="tt-name">과제명' + required + '</label><input type="text" id="tt-name" class="tt-input" data-tt-field="name" value="' + esc(f.name) + '" /></div>' +
+            '<div><label class="tt-label" for="tt-owner">담당자' + required + '</label><select id="tt-owner" class="tt-input" data-tt-field="owner">' + options(TT.owners, f.owner) + '</select></div>' +
           '</div>' +
-          '<div class="form-group" style="margin-bottom:var(--sp-lg)"><label>계획등록일 *</label><input type="date" style="max-width:200px" /></div>' +
-          '<div class="form-divider">' +
-            '<div class="form-subtitle">mTRM 연동 영역</div>' +
-            '<div class="form-group" style="margin-bottom:var(--sp-md)"><label>연동 mTRM 로드맵 *</label>' +
-              '<select data-role="task-plan-roadmap"><option value="">선택</option>' + options + '</select>' +
-            '</div>' +
-            '<div style="font-size:12px;color:var(--color-text-muted);margin-bottom:8px">자동 매핑 결과</div>' +
-            '<div style="border:1px solid var(--color-border);border-radius:6px;overflow:hidden">' +
-            renderTable([{ label: '매핑 로드맵명' }, { label: '매핑 상세과제' }, { label: '매핑상태', align: 'center' }], mappingBody) +
-            '</div>' +
+          '<div class="tt-field"><label class="tt-label" for="tt-plan-date">계획등록일' + required + '</label><input type="date" id="tt-plan-date" class="tt-input tt-input-date" data-tt-field="planDate" value="' + esc(f.planDate) + '" /></div>' +
+          '<hr class="tt-divider" />' +
+          '<h3 class="tt-section-title">mTRM 연동 영역</h3>' +
+          '<div><label class="tt-label" for="tt-roadmap">연동 mTRM 로드맵' + required + '</label><select id="tt-roadmap" class="tt-input" data-tt-field="linkedRoadmap">' + options(TT.roadmaps, f.linkedRoadmap) + '</select></div>' +
+          '<div class="tt-field"><span class="tt-label tt-label-table">자동 매핑 결과</span>' +
+            '<div class="tt-map-wrap"><table class="tt-map-table"><thead><tr><th>매핑 로드맵명</th><th>매핑 상세과제</th><th>매핑상태</th></tr></thead>' +
+            '<tbody>' + mappingRows + '</tbody></table></div>' +
           '</div>' +
-          '<div class="form-actions">' +
-            '<button type="button" class="btn btn-secondary" style="height:36px">취소</button>' +
-            '<button type="button" class="btn btn-primary" style="height:36px">등록</button>' +
+          '<div class="tt-actions">' +
+            '<button type="button" class="tt-btn-cancel" data-action="tt-cancel">취소</button>' +
+            '<button type="button" class="tt-btn-save" data-action="tt-save">등록</button>' +
           '</div>' +
         '</div>' +
       '</div>'
@@ -2241,77 +2250,226 @@
   }
 
   // ---------- SCR-014 기술동향 ----------
+  // 근거: v3.dc.html isTechTrend — 검색 영역(년도/유형/범위 + 검색창) + 수정/등록 버튼 + 유형 배지가 붙은 목록(10건 단위)
+  // + 전체화면 상세 오버레이(이전/다음) + 등록 팝업(이미지/첨부/해시태그/알림메일 + 발송 미리보기).
+  // README #15는 이전 버전 화면(5열 카드)이라 v3를 따른다.
 
-  // 근거: design_handoff_생기포털/source/부품 공정 자동화 현황.dc.html isTechTrend — 상세뷰는 목록/이전/다음
-  // 내비게이션 + 큰 이미지 프리뷰(480px) + 본문(content, 없으면 "등록된 설명이 없습니다.")로 구성되고,
-  // 목록은 관리자용 수정/등록 버튼 + 5열 카드(재생 아이콘 오버레이) + 15건 페이지네이션.
-  function renderSCR014(state) {
-    if (state.trendView === 'detail') {
-      var t = D.trendsData[state.trendIndex];
-      var prevDisabled = state.trendIndex === 0;
-      var nextDisabled = state.trendIndex === D.trendsData.length - 1;
-      return (
-        '<div data-screen-label="SCR-014 기술동향">' +
-          '<div class="trend-detail-head">' +
-            '<a href="#" data-action="trend-back">&lsaquo; 목록으로</a>' +
-            '<div class="trend-detail-nav">' +
-              '<button type="button" class="btn btn-secondary" data-action="trend-prev"' + (prevDisabled ? ' disabled' : '') + '>&lsaquo; 이전</button>' +
-              '<button type="button" class="btn btn-secondary" data-action="trend-next"' + (nextDisabled ? ' disabled' : '') + '>다음 &rsaquo;</button>' +
-            '</div>' +
-          '</div>' +
-          '<div class="panel">' +
-            '<div class="trend-detail-title-row">' +
-              '<div style="font-size:20px;font-weight:700">' + esc(t.title) + '</div>' +
-              '<div style="font-size:12px;color:var(--color-text-faint);white-space:nowrap;margin-left:16px">조회 ' + (t.views + 1) + ' | ' + esc(t.date) + ' | ' + esc(t.dept) + '/' + esc(t.owner) + '</div>' +
-            '</div>' +
-            '<div style="font-size:12px;color:var(--color-primary);margin-bottom:var(--sp-md)">#' + esc(t.tag) + '</div>' +
-            '<div class="trend-detail-body-preview" style="aspect-ratio:auto;height:480px">브로슈어 / 이미지 / 동영상 프리뷰 영역</div>' +
-            '<p style="font-size:14px;color:var(--color-text-sub);line-height:24px;margin-top:20px">' + esc(t.content || '등록된 설명이 없습니다.') + '</p>' +
-          '</div>' +
-        '</div>'
-      );
-    }
-    var pageSize = 10;
-    var page = state.techTrendPage || 1;
-    var totalPages = Math.max(1, Math.ceil(D.trendsData.length / pageSize));
-    page = Math.min(page, totalPages);
-    var pageItems = D.trendsData.slice((page - 1) * pageSize, page * pageSize);
-    // 근거: onTechTrendEdit/techTrendSelectMode — "수정" 버튼 클릭 시 카드에 선택 라디오 버튼이 노출되는
-    // 선택모드로 전환되고, 카드(또는 라디오) 클릭 즉시 해당 항목의 값이 채워진 수정 팝업이 열립니다.
-    var selectMode = !!state.trendSelectMode;
-    var cards = pageItems.map(function (c) {
-      var i = D.trendsData.indexOf(c);
-      var cardAction = selectMode ? 'select-trend-edit' : 'trend-detail';
-      var radioOverlay = selectMode
-        ? '<label class="trend-select-radio" data-action="select-trend-edit" data-index="' + i + '"><input type="radio" name="trendPick" /></label>'
-        : '';
-      return '<div class="media-card" style="position:relative" data-action="' + cardAction + '" data-index="' + i + '">' +
-        radioOverlay +
-        '<div class="media-thumb" style="aspect-ratio:1/1;position:relative">' +
-          '<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none">' +
-            '<span class="play-btn" style="width:44px;height:44px">&#9658;</span>' +
-          '</span>' +
-        '</div>' +
-        '<div class="media-body">' +
-          '<div class="media-title">' + esc(c.title) + '</div>' +
-          '<div class="media-meta">조회 ' + c.views + '</div>' +
-          '<div class="media-meta">' + esc(c.date) + ' · ' + esc(c.dept) + ' · ' + esc(c.owner) + ' · #' + esc(c.tag) + '</div>' +
-        '</div>' +
-      '</div>';
+  var TR = global.PNDES.mock.scr014;
+  var TR_FILE_ICON = { pdf: 'fas fa-file-pdf tr-ico-pdf', pptx: 'fas fa-file-powerpoint tr-ico-ppt', xlsx: 'fas fa-file-excel tr-ico-xls', zip: 'fas fa-file-archive tr-ico-zip' };
+
+  function trKindBadge(kind) {
+    var k = TR.kinds.filter(function (x) { return x.label === kind; })[0] || TR.kinds[0];
+    return '<span class="tr-kind" style="background:' + k.color + '">' + esc(k.label) + '</span>';
+  }
+  function trOptions(first, list, selected) {
+    return '<option value="">' + esc(first) + '</option>' + list.map(function (o) {
+      return '<option value="' + esc(o) + '"' + (o === selected ? ' selected' : '') + '>' + esc(o) + '</option>';
     }).join('');
+  }
+  // "조회" 시점에 확정된 조건으로 목록을 거른다 (년도 / 유형 / 검색 범위 + 검색어)
+  function trFilterRows(state) {
+    var a = state.trendApplied;
+    return state.trendRows.filter(function (r) {
+      if (a.year && r.date.slice(0, 4) !== a.year) return false;
+      if (a.kind && r.kind !== a.kind) return false;
+      if (!a.keyword) return true;
+      var inTitle = r.title.indexOf(a.keyword) >= 0;
+      var inContent = (r.content || '').indexOf(a.keyword) >= 0;
+      return a.scope === '제목' ? inTitle : (a.scope === '내용' ? inContent : (inTitle || inContent));
+    });
+  }
+
+  // 전체화면 상세 오버레이
+  function renderTrendDetailOverlay(state) {
+    var idx = state.trendDetailIndex;
+    var t = state.trendRows[idx];
+    var tags = TR.detailTags.map(function (g) { return '<span>' + esc(g) + '</span>'; }).join('');
+    return (
+      '<div class="tr-detail-overlay">' +
+        '<button type="button" class="tr-detail-arrow tr-detail-arrow-prev" data-action="trm-detail-prev" title="이전"' + (idx === 0 ? ' disabled' : '') + '>&lsaquo;</button>' +
+        '<button type="button" class="tr-detail-arrow tr-detail-arrow-next" data-action="trm-detail-next" title="다음"' + (idx === state.trendRows.length - 1 ? ' disabled' : '') + '>&rsaquo;</button>' +
+        '<button type="button" class="tr-detail-close" data-action="trm-detail-close" title="닫기"><i class="fas fa-times"></i></button>' +
+        '<div class="tr-detail-box">' +
+          '<div class="tr-detail-head">' + trKindBadge(t.kind) +
+            '<div class="tr-detail-title"><span>「 ' + esc(t.title) + ' 」</span></div><span class="tr-detail-head-pad"></span></div>' +
+          '<div class="tr-detail-tags">' + tags + '</div>' +
+          '<div class="tr-detail-meta">' +
+            '<span><i class="far fa-calendar"></i>' + esc(t.date) + '<span class="tr-detail-views"><i class="far fa-eye"></i>' + t.views + '</span></span>' +
+            '<span>' + esc(t.dept) + ' / ' + esc(t.owner) + '</span>' +
+            '<a href="#" data-action="trm-detail-file"><i class="fas fa-paperclip"></i>[' + esc(t.title) + '].pdf</a>' +
+          '</div>' +
+          '<div class="tr-detail-preview">브로슈어 / 이미지 / 동영상 프리뷰 영역</div>' +
+          '<p class="tr-detail-content">' + esc(t.content || '등록된 설명이 없습니다.') + '</p>' +
+        '</div>' +
+      '</div>'
+    );
+  }
+
+  // 등록 팝업의 발송 미리보기 (제목/알림메일 입력 시 이 조각만 다시 그린다)
+  function renderTrendMailPreview(f) {
+    var tags = f.tags.map(function (t) { return '<span>' + esc(t.label) + '</span>'; }).join('');
+    return (
+      '<div class="cm-preview">' +
+        '<div class="cm-prev-head"><span>PNDES 생기포털</span><span>기술동향 알림</span></div>' +
+        '<div class="cm-prev-body">' +
+          '<div class="cm-prev-meta">' +
+            '<p><span>받는 사람</span><span>' + esc(f.recipients.join(', ') || '(수신자를 추가하세요)') + '</span></p>' +
+            '<p><span>제목</span><strong>' + esc(f.mailSubject) + '</strong></p>' +
+          '</div>' +
+          '<p class="cm-prev-text">' + esc(f.mailBody) + '</p>' +
+          '<div class="tr-prev-card">' +
+            '<div class="tr-prev-thumb">' + (f.images.length ? '<div class="tr-img-ph">IMG<span class="tr-thumb-badge">썸네일</span></div>' : '<div class="tr-prev-nothumb">이미지 없음</div>') + '</div>' +
+            '<div class="tr-prev-info">' +
+              '<p class="tr-prev-title">' + esc(f.title.trim() || '(제목을 입력하세요)') + '</p>' +
+              '<p class="tr-prev-sub">' + esc((f.type || '유형 미선택') + ' · ' + TR.registrant.dept + ' / ' + TR.registrant.owner + ' · ' + TR.mailDate) + '</p>' +
+              '<div class="tr-prev-tags">' + tags + '</div>' +
+              '<p class="tr-prev-sub"><i class="fas fa-paperclip"></i>첨부 ' + f.files.length + '건 · 이미지 ' + f.images.length + '장</p>' +
+            '</div>' +
+          '</div>' +
+          '<div class="cm-prev-cta"><span>생기포털에서 자세히 보기</span></div>' +
+        '</div>' +
+      '</div>'
+    );
+  }
+
+  // 등록/수정 팝업
+  function renderTrendRegisterModal(state) {
+    var f = state.trendForm;
+    var isEdit = f.editIndex != null;
+    var images = f.images.length
+      ? '<div class="tr-img-grid">' + f.images.map(function (im, i) {
+          return '<div class="tr-img-tile"><div class="tr-img-ph">IMG</div>' + (i === 0 ? '<span class="tr-thumb-badge">썸네일</span>' : '') +
+            '<button type="button" class="tr-img-remove" data-action="trm-image-remove" data-id="' + im.id + '" title="이미지 삭제">&#10005;</button>' +
+            '<p>' + esc(im.name) + '</p></div>';
+        }).join('') + '</div>'
+      : '<div class="tr-empty-box"><i class="far fa-image"></i>업로드된 이미지가 없습니다.</div>';
+
+    var totalMb = f.files.reduce(function (sum, x) { return sum + x.mb; }, 0);
+    var totalSize = totalMb >= 1024 ? (totalMb / 1024).toFixed(1) + 'GB' : totalMb.toFixed(1) + 'MB';
+    var allFiles = f.files.length > 0 && f.files.every(function (x) { return x.checked; });
+    var files = f.files.length
+      ? f.files.map(function (x) {
+          return '<div class="tr-file-row"><input type="checkbox" data-action="trm-file-toggle" data-id="' + x.id + '"' + (x.checked ? ' checked' : '') + ' />' +
+            '<i class="' + (TR_FILE_ICON[x.name.split('.').pop()] || 'fas fa-file tr-ico-etc') + '"></i>' +
+            '<span class="tr-file-name">' + esc(x.name) + '</span><span class="tr-file-size">' + x.mb.toFixed(1) + 'MB</span>' +
+            '<button type="button" data-action="trm-file-remove" data-id="' + x.id + '" title="파일 삭제">&#10005;</button></div>';
+        }).join('')
+      : '<div class="tr-file-empty">첨부된 파일이 없습니다.</div>';
+
+    var checkedTags = f.tags.filter(function (t) { return t.checked; }).length;
+    var allTags = f.tags.length > 0 && checkedTags === f.tags.length;
+    var tags = f.tags.length
+      ? '<div class="tr-tag-list">' + f.tags.map(function (t) {
+          return '<span class="tr-tag' + (t.checked ? ' tr-tag-checked' : '') + '"><input type="checkbox" data-action="trm-tag-toggle" data-id="' + t.id + '"' + (t.checked ? ' checked' : '') + ' />' +
+            '<span>' + esc(t.label) + '</span><button type="button" data-action="trm-tag-remove" data-id="' + t.id + '" title="태그 삭제">&#10005;</button></span>';
+        }).join('') + '</div>'
+      : '<p class="tpa-muted" style="margin:0;padding:4px 0">등록된 해시태그가 없습니다.</p>';
+
+    var recipients = f.recipients.map(function (r, i) {
+      return '<span class="tpa-chip tpa-chip-lg">' + esc(r) + '<button type="button" data-action="trm-recipient-remove" data-index="' + i + '" title="수신자 삭제">&#10005;</button></span>';
+    }).join('');
+
+    return (
+      '<div class="rm-modal-overlay mm-overlay-register" data-action="trm-close-modal">' +
+        '<div class="rm-modal-box" style="max-width:768px">' +
+          '<div class="rm-modal-header-dark"><h3>' + (isEdit ? '기술동향 수정' : '기술동향 등록') + '</h3></div>' +
+          '<div class="rm-modal-topbar tpa-topbar">' +
+            '<button type="button" class="btn-navy tpa-btn-sm" data-action="trm-save">저장</button>' +
+            '<button type="button" class="btn-navy tpa-btn-sm" data-action="trm-close-modal">닫기</button>' +
+          '</div>' +
+          '<div class="rm-modal-body tpa-modal-body">' +
+            '<table class="rm-info-table tpa-form-table tr-form-table"><colgroup><col style="width:112px" /><col style="width:224px" /><col style="width:96px" /><col /></colgroup><tbody>' +
+              '<tr><th>제목</th><td colspan="3"><input type="text" data-trm-field="title" value="' + esc(f.title) + '" /></td></tr>' +
+              '<tr><th>유형</th><td><select class="tr-type-select" data-trm-field="type">' + trOptions('선택', TR.kinds.map(function (k) { return k.label; }), f.type) + '</select></td>' +
+                '<th>담당자</th><td><span class="tpa-owner"><span class="tpa-icon-btn"><i class="fas fa-search"></i></span>' + esc(TR.registrant.dept + ' / ' + TR.registrant.owner) + '</span></td></tr>' +
+              '<tr><td colspan="4" class="tr-upload-cell">' +
+                '<div class="tr-drop tr-drop-image" data-action="trm-image-add">' +
+                  '<span class="tr-drop-icon"><i class="fas fa-cloud-upload-alt"></i></span>' +
+                  '<div class="tr-drop-text"><p>이미지 파일 업로드</p><p>파일을 끌어다 놓거나 클릭해서 선택 · JPG, PNG, GIF · 최대 ' + TR.imageMax + '장 (첫 이미지가 썸네일)</p></div>' +
+                  '<span class="btn-navy tr-drop-btn">파일선택</span>' +
+                '</div>' +
+                '<div class="tr-sub-head"><p>업로드된 이미지 <strong>' + f.images.length + '</strong>장</p>' +
+                  (f.images.length ? '<button type="button" class="tr-link-danger" data-action="trm-image-clear">전체 삭제</button>' : '') + '</div>' +
+                images +
+              '</td></tr>' +
+              '<tr><th>파일첨부</th><td colspan="3">' +
+                '<div class="tr-drop tr-drop-file" data-action="trm-file-add">' +
+                  '<span class="tr-drop-icon tr-drop-icon-file"><i class="fas fa-paperclip"></i></span>' +
+                  '<div class="tr-drop-text"><p>첨부파일 업로드</p><p>파일을 끌어다 놓거나 클릭해서 선택 · PDF, PPT, XLS, DOC, ZIP · 파일당 최대 1GB, 전체 10GB</p></div>' +
+                  '<span class="tr-drop-btn tr-drop-btn-outline">파일선택</span>' +
+                '</div>' +
+                '<div class="tr-file-box">' +
+                  '<div class="tr-file-head"><label><input type="checkbox" data-action="trm-file-toggle-all"' + (allFiles ? ' checked' : '') + ' />전체선택</label>' +
+                    '<div class="tr-file-head-right"><span>총 <strong>' + f.files.length + '</strong>건 · <b>' + totalSize + '</b> / 10GB</span>' +
+                      '<button type="button" class="tr-btn-del" data-action="trm-file-remove-checked"><i class="fas fa-trash"></i>선택 삭제</button></div></div>' +
+                  files +
+                '</div>' +
+              '</td></tr>' +
+              '<tr><th>해시태그</th><td colspan="3">' +
+                '<div class="tr-tag-input-row"><div class="tr-tag-input"><span>#</span><input type="text" id="trm-tag-input" data-trm-field="tagInput" value="' + esc(f.tagInput) + '" placeholder="태그 입력 후 Enter 또는 등록 (쉼표로 여러 개)" /></div>' +
+                  '<button type="button" class="btn-navy tr-btn-tag" data-action="trm-tag-add">등록</button></div>' +
+                '<div class="tr-tag-head"><label><input type="checkbox" data-action="trm-tag-toggle-all"' + (allTags ? ' checked' : '') + ' />전체선택</label>' +
+                  '<div class="tr-file-head-right"><span class="tr-tag-count">총 <strong>' + f.tags.length + '</strong>개 · 선택 ' + checkedTags + '개</span>' +
+                    '<button type="button" class="tr-btn-del" data-action="trm-tag-remove-checked"><i class="fas fa-trash"></i>선택 삭제</button></div></div>' +
+                tags +
+              '</td></tr>' +
+              '<tr><th>메일알림대상</th><td colspan="3"><div class="tpa-chips tpa-chips-left" style="align-items:center"><span class="tpa-icon-btn"><i class="fas fa-search"></i></span>' + recipients + '</div></td></tr>' +
+              '<tr><th>알림메일 내용</th><td colspan="3">' +
+                '<div class="tr-mail-row"><span>제목</span><input type="text" data-trm-field="mailSubject" value="' + esc(f.mailSubject) + '" /></div>' +
+                '<div class="tr-mail-row tr-mail-row-top"><span>내용</span><textarea rows="5" data-trm-field="mailBody">' + esc(f.mailBody) + '</textarea></div>' +
+                '<div class="tr-mail-foot"><label><input type="checkbox" data-trm-field="mailOn"' + (f.mailOn ? ' checked' : '') + ' />저장 시 알림메일 발송</label>' +
+                  '<div class="tr-file-head-right"><span class="tpa-muted" id="trm-mail-len" style="font-size:11px">' + f.mailBody.length + ' / ' + TR.mailBodyMax + '자</span>' +
+                    '<button type="button" class="tr-btn-plain" data-action="trm-mail-reset">기본 문구</button></div></div>' +
+                '<div class="tr-mail-preview"><p>발송 미리보기</p><div class="cm-preview-cell" id="trm-preview-slot">' + renderTrendMailPreview(f) + '</div></div>' +
+              '</td></tr>' +
+            '</tbody></table>' +
+          '</div>' +
+        '</div>' +
+      '</div>'
+    );
+  }
+
+  function renderSCR014(state) {
+    var f = state.trendFilter;
+    var list = trFilterRows(state);
+    var pageSize = 10;
+    var totalPages = Math.max(1, Math.ceil(list.length / pageSize));
+    var page = Math.min(state.techTrendPage || 1, totalPages);
+    var selectMode = !!state.trendSelectMode;
+    var tags = TR.listTags.map(function (g) { return '<span>' + esc(g) + '</span>'; }).join('');
+    var rows = list.slice((page - 1) * pageSize, page * pageSize).map(function (r) {
+      return '<div class="tr-row" data-action="trm-row-click" data-index="' + state.trendRows.indexOf(r) + '">' +
+        '<div class="tr-row-kind">' + trKindBadge(r.kind) + '</div>' +
+        '<div class="tr-row-main">' +
+          '<div class="tr-row-meta"><span><i class="far fa-calendar"></i>' + esc(r.date) + '</span><span><i class="far fa-eye"></i>' + r.views + '</span></div>' +
+          '<p class="tr-row-title">「 ' + esc(r.period) + ' 」 ' + esc(r.title) + '</p>' +
+          '<div class="tr-row-tags">' + tags + '</div>' +
+        '</div>' +
+        '<div class="tr-row-owner">' + esc(r.dept) + ' | ' + esc(r.owner) + '</div>' +
+        '<div class="tr-row-thumb">썸네일</div>' +
+      '</div>';
+    }).join('') || '<div class="tr-row-empty">데이터가 없습니다.</div>';
+
     return (
       '<div data-screen-label="SCR-014 기술동향">' +
-        '<div class="filter-bar">' +
-          '<select style="height:32px;min-width:90px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 8px;background:#fff"><option>제목</option><option>태그</option><option>담당자</option></select>' +
-          '<input placeholder="제목 검색" style="height:32px;min-width:180px;border:1px solid var(--color-border-strong);border-radius:4px;padding:0 10px" />' +
-          '<button type="button" class="btn btn-primary" data-action="run-search">조회</button>' +
-          '<div class="filter-spacer"></div>' +
-          '<button type="button" class="btn btn-secondary" data-action="toggle-trend-select-mode">수정</button>' +
-          '<button type="button" class="btn btn-primary" data-action="open-modal" data-modal-id="trendRegister">+ 등록</button>' +
+        '<section class="tr-search">' +
+          '<select aria-label="년도" data-trm-filter="year">' + trOptions('년도선택', TR.yearOptions, f.year) + '</select>' +
+          '<select aria-label="유형" data-trm-filter="kind">' + trOptions('유형선택', TR.kinds.map(function (k) { return k.label; }), f.kind) + '</select>' +
+          '<select aria-label="검색 범위" data-trm-filter="scope">' + TR.scopeOptions.map(function (o) { return '<option' + (o === f.scope ? ' selected' : '') + '>' + esc(o) + '</option>'; }).join('') + '</select>' +
+          '<div class="tr-search-box"><i class="fas fa-search"></i>' +
+            '<input type="text" id="trm-keyword" aria-label="검색어" data-trm-filter="keyword" value="' + esc(f.keyword) + '" placeholder="검색어를 입력하세요" />' +
+            '<button type="button" class="tr-search-clear" data-action="trm-keyword-clear" title="검색어 지우기">&#10005;</button>' +
+            '<button type="button" class="tr-search-go" data-action="trm-search" title="조회"><i class="fas fa-search"></i></button></div>' +
+        '</section>' +
+        '<div class="tr-actions">' +
+          (selectMode ? '<span class="tr-select-hint">수정할 항목을 선택하세요.</span>' : '') +
+          '<button type="button" class="btn-outline-sm tr-btn' + (selectMode ? ' tr-btn-on' : '') + '" data-action="trm-toggle-select">수정</button>' +
+          '<button type="button" class="btn-outline-sm tr-btn" data-action="trm-open-add">등록</button>' +
         '</div>' +
-        (selectMode ? '<div class="field-hint" style="margin:-8px 0 var(--sp-md)">수정할 항목의 라디오 버튼을 선택하세요.</div>' : '') +
-        '<div class="card-grid card-grid-5">' + cards + '</div>' +
-        renderPagination(D.trendsData.length, page, pageSize, 'techTrendPage') +
+        '<div class="tr-list' + (selectMode ? ' tr-list-select' : '') + '">' + rows + '</div>' +
+        renderPagination(list.length, page, pageSize, 'techTrendPage') +
+        (state.trendDetailIndex != null ? renderTrendDetailOverlay(state) : '') +
+        (state.trendForm.open ? renderTrendRegisterModal(state) : '') +
       '</div>'
     );
   }
@@ -2388,30 +2546,6 @@
     );
   }
 
-  // 근거: design_handoff_생기포털/source/부품 공정 자동화 현황.dc.html selectCard() — SCR-014 카드 선택모드에서
-  // 라디오 버튼(또는 카드) 클릭 시 해당 항목(title/owner/dept/tag/content)이 채워진 상태로 열리는 수정 팝업.
-  // MODALS 공용 레지스트리는 필드 기본값을 지원하지 않아 chartDetail/autoVideo와 동일하게 전용 렌더러로 분리합니다.
-  function renderTrendEditModal(state) {
-    var t = D.trendsData[state.trendEditIndex] || {};
-    return (
-      '<div class="modal-box" style="width:640px">' +
-        '<div class="modal-header"><div class="modal-title">기술동향 수정</div><div class="modal-close" data-action="close-modal">&#10005;</div></div>' +
-        '<div class="modal-body">' +
-          '<div class="modal-field"><label>제목<span class="required">*</span></label><div class="modal-field-control"><input type="text" value="' + esc(t.title) + '" /></div></div>' +
-          '<div class="modal-field"><label>담당자 이름<span class="required">*</span></label><div class="modal-field-control"><input type="text" value="' + esc(t.owner) + '" /></div></div>' +
-          '<div class="modal-field"><label>부서명<span class="required">*</span></label><div class="modal-field-control"><input type="text" value="' + esc(t.dept) + '" /></div></div>' +
-          '<div class="modal-field"><label>태그</label><div class="modal-field-control"><input type="text" value="' + esc(t.tag) + '" /></div></div>' +
-          '<div class="modal-field"><label>내용<span class="required">*</span></label><div class="modal-field-control"><textarea>' + esc(t.content || '') + '</textarea></div></div>' +
-          '<div class="modal-field"><label>첨부파일</label><div class="modal-field-control">' + fieldControl({ type: 'file' }) + '</div></div>' +
-        '</div>' +
-        '<div class="modal-footer">' +
-          '<button type="button" class="btn btn-secondary" style="height:36px" data-action="close-modal">취소</button>' +
-          '<button type="button" class="btn btn-primary" style="height:36px" data-action="confirm-modal" data-message="기술동향이 수정되었습니다.">수정</button>' +
-        '</div>' +
-      '</div>'
-    );
-  }
-
   // 근거: openDashTechTrendDetail/dashTechTrendDetailOpen — MTRM-MAIN "최근 기술동향" 목록 항목 클릭 시
   // 뜨는 전용 상세 팝업(제목/등록일·조회수·부서·담당자/태그/이미지 자리표시/본문). SCR-014 전체 화면 상세와
   // 달리 대시보드에서 벗어나지 않고 모달로만 열립니다.
@@ -2434,7 +2568,6 @@
     if (!state.activeModal) return '';
     if (state.activeModal === 'autoVideo') return renderAutoVideoModal(state);
     if (state.activeModal === 'chartDetail') return renderChartDetailModal(state);
-    if (state.activeModal === 'trendEdit') return renderTrendEditModal(state);
     if (state.activeModal === 'dashTrendDetail') return renderDashTrendDetailModal(state);
     var modal = MODALS[state.activeModal];
     if (!modal) return '';
@@ -2484,6 +2617,7 @@
   global.PNDES.render = {
     gnbTop: renderGnbTop,
     councilMailPreview: renderCouncilMailPreview,
+    trendMailPreview: renderTrendMailPreview,
     screen: function (state) {
       var fn = SCREEN_RENDERERS[state.currentScreen];
       return renderContentTitleBar(state) + (fn ? fn(state) : '');

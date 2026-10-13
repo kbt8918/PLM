@@ -18,7 +18,7 @@
     'SCR-010': { group: '중장기 방향성 공유', name: '생산기술 Tech PR 관리자', admin: true },
     'SCR-011': { group: '중장기 방향성 공유', name: 'mTRM 협의체', admin: true },
     'SCR-012': { group: '중장기 방향성 공유', name: 'mTRM 관리', admin: true },
-    'SCR-013': { group: '중장기 방향성 공유', name: '기술과제 관리', admin: false },
+    'SCR-013': { group: '중장기 방향성 공유', name: '기술과제 관리', admin: true },
     'SCR-014': { group: '중장기 방향성 공유', name: '기술동향', admin: false },
     'MTRM-MAIN': { group: '중장기 방향성 공유', name: '메인 대시보드', admin: false },
     // README 0~16번 목록에는 없으나 v3.dc.html GNB "공법 관리 > 부품/모듈공정배치"에서 연결되는 신규 화면.

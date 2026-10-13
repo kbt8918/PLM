@@ -18,6 +18,20 @@
   }
   var CM = global.PNDES.mock.scr011;
   var MM = global.PNDES.mock.scr012;
+  var TR = global.PNDES.mock.scr014;
+  // SCR-014 등록 팝업 초기값(v3 ttImages/ttFiles/ttTags/TT_MAIL_*). editIndex가 있으면 수정 모드
+  function newTrendForm(open, editIndex, row) {
+    var withId = function (list, make) { return list.map(function (x, i) { return make(x, i + 1); }); };
+    return {
+      open: !!open, editIndex: editIndex == null ? null : editIndex,
+      title: row ? row.title : '', type: row ? row.kind : '',
+      images: withId(TR.defaultImages, function (name, id) { return { id: id, name: name }; }), imageSeq: TR.defaultImages.length,
+      files: withId(TR.defaultFiles, function (f, id) { return { id: id, name: f[0], mb: f[1], checked: false }; }), fileSeq: TR.defaultFiles.length,
+      tags: withId(TR.defaultTags, function (label, id) { return { id: id, label: label, checked: false }; }), tagSeq: TR.defaultTags.length,
+      tagInput: '', recipients: TR.mailRecipients.slice(),
+      mailSubject: TR.mailSubject, mailBody: TR.mailBody, mailOn: true,
+    };
+  }
   // SCR-012 신규등록 팝업 초기값(v3 mtrmRegBlocks — mTRM 블록 2개)
   function newMmForm() {
     return { blocks: [0, 1].map(function () { return { ko: '', en: '', dept: '', date: '', content: '' }; }) };
@@ -84,10 +98,12 @@
     rmHover: null, // 로드맵 바 hover 요약 팝오버: { li, bi, style }
     rmLinks: [], // 로드맵 간 SVG 연결선 좌표(measureRmLinks()가 DOM 실측 후 채움)
     subTaskDetail: null, // 상세과제 상세 팝업에 표시할 { name, status, period, dept, mtrm, owner, reg }
-    trendView: 'list',
-    trendIndex: 0,
-    trendSelectMode: false, // SCR-014 "수정" 버튼 클릭 시 카드에 선택 라디오 버튼을 노출하는 선택모드
-    trendEditIndex: null, // 선택모드에서 라디오(카드) 클릭 시 수정 팝업에 채울 기술동향 인덱스
+    trendRows: TR.rows.slice(), // SCR-014 기술동향 목록 (등록/수정 시 갱신)
+    trendFilter: { year: '', kind: '', scope: TR.scopeOptions[0], keyword: '' }, // 검색 영역 입력값
+    trendApplied: { year: '', kind: '', scope: TR.scopeOptions[0], keyword: '' }, // "조회" 시점에 확정된 조건
+    trendSelectMode: false, // "수정" 버튼으로 켜는 선택모드 — 켜진 동안 목록 행 클릭 시 수정 팝업이 열린다
+    trendDetailIndex: null, // 전체화면 상세 오버레이에 표시할 행 인덱스
+    trendForm: newTrendForm(false), // 등록/수정 팝업 입력값
     dashTrendDetailIndex: null, // MTRM-MAIN "최근 기술동향" 항목 클릭 시 표시할 상세 팝업 인덱스
     videoProcess: null, // SCR-001 "현재=자동"/SCR-003 "기술현황=●" 클릭 시 자동화 설비 동영상 모달에 표시할 공정/작업명
     videoKind: 'part', // 동영상 모달 제목 접두어 구분: 'part'(부품) / 'module'(모듈)
@@ -127,6 +143,7 @@
     mmPickedCouncil: '', mmPickedTrm: '',
     mmVerPicked: null, mmVerCompare: false, // 버전관리 팝업: 선택한 버전 인덱스 / 차이점 비교 패널
     mmSummaryMode: 'task', mmSumDept: '', mmSumStatus: '', // 요약 팝업: task | roadmap, 상세 표 필터
+    techTaskForm: { name: '', owner: '', planDate: '', linkedRoadmap: '' }, // SCR-013 기술과제 관리 입력값
     techTrendPage: 1, // SCR-014 기술동향 페이지네이션
   }, initialModalExtras);
   var toastTimer = null;
@@ -308,6 +325,30 @@
     $('#tpa-tag-input').trigger('focus');
   }
 
+  // ---- SCR-014 등록 팝업 헬퍼 ----
+  function setTrendForm(patch) { setState({ trendForm: $.extend({}, state.trendForm, patch) }); }
+  function trendWithout(list, $el) { var id = Number($el.data('id')); return list.filter(function (x) { return x.id !== id; }); }
+  function trendToggle(list, $el) {
+    var id = Number($el.data('id'));
+    return list.map(function (x) { return x.id === id ? $.extend({}, x, { checked: !x.checked }) : x; });
+  }
+  function trendToggleAll(list) {
+    var all = list.length > 0 && list.every(function (x) { return x.checked; });
+    return list.map(function (x) { return $.extend({}, x, { checked: !all }); });
+  }
+  // 입력창의 태그를 쉼표로 나눠 '#태그' 형태로 추가 (v3 ttAddTag — 중복은 건너뛴다)
+  function addTrendTags() {
+    var f = state.trendForm;
+    var parts = f.tagInput.split(',').map(function (t) { return t.trim().replace(/^#+/, ''); }).filter(Boolean).map(function (t) { return '#' + t; });
+    if (!parts.length) return;
+    var exist = f.tags.map(function (t) { return t.label; });
+    var fresh = parts.filter(function (t, i) { return exist.indexOf(t) < 0 && parts.indexOf(t) === i; });
+    if (!fresh.length) { setTrendForm({ tagInput: '' }); showToast('이미 등록된 해시태그입니다.'); return; }
+    var seq = f.tagSeq;
+    setTrendForm({ tags: f.tags.concat(fresh.map(function (label) { seq += 1; return { id: seq, label: label, checked: false }; })), tagSeq: seq, tagInput: '' });
+    $('#trm-tag-input').trigger('focus');
+  }
+
   // 현재 열린 모달의 DOM에서 [data-field] 입력값을 읽어 {field: value} 맵으로 반환
   function readModalFormValues() {
     var values = {};
@@ -441,28 +482,122 @@
           setState({ dashExpandedRoadmaps: dashNext });
           break;
         }
-        case 'trend-detail':
-          setState({ currentScreen: 'SCR-014', activeModal: null, trendView: 'detail', trendIndex: Number($el.data('index')) });
-          break;
-        case 'toggle-trend-select-mode':
-          setState({ trendSelectMode: !state.trendSelectMode });
-          break;
-        case 'select-trend-edit':
-          setState({ activeModal: 'trendEdit', trendSelectMode: false, trendEditIndex: Number($el.data('index')) });
-          break;
         case 'open-dash-trend-detail':
           setState({ activeModal: 'dashTrendDetail', dashTrendDetailIndex: Number($el.data('index')) });
           break;
-        case 'trend-back':
+        // ---- SCR-014 기술동향 ----
+        case 'trm-search':
+          setState({ trendApplied: $.extend({}, state.trendFilter), techTrendPage: 1 });
+          showToast('검색 조건이 적용되었습니다.');
+          break;
+        case 'trm-keyword-clear':
+          state.trendFilter.keyword = '';
+          $('#trm-keyword').val('').trigger('focus');
+          break;
+        case 'trm-toggle-select':
+          setState({ trendSelectMode: !state.trendSelectMode });
+          break;
+        case 'trm-row-click': {
+          var trIdx = Number($el.data('index'));
+          if (state.trendSelectMode) setState({ trendSelectMode: false, trendForm: newTrendForm(true, trIdx, state.trendRows[trIdx]) });
+          else setState({ trendDetailIndex: trIdx });
+          break;
+        }
+        case 'trm-detail-prev':
+          setState({ trendDetailIndex: Math.max(0, state.trendDetailIndex - 1) });
+          break;
+        case 'trm-detail-next':
+          setState({ trendDetailIndex: Math.min(state.trendRows.length - 1, state.trendDetailIndex + 1) });
+          break;
+        case 'trm-detail-close':
+          setState({ trendDetailIndex: null });
+          break;
+        case 'trm-detail-file':
           e.preventDefault();
-          setState({ trendView: 'list' });
+          showToast('첨부파일 다운로드는 준비중입니다.');
           break;
-        case 'trend-prev':
-          setState({ trendIndex: Math.max(0, state.trendIndex - 1) });
+        case 'trm-open-add':
+          setState({ trendSelectMode: false, trendForm: newTrendForm(true) });
           break;
-        case 'trend-next':
-          setState({ trendIndex: Math.min(global.PNDES.data.trendsData.length - 1, state.trendIndex + 1) });
+        case 'trm-close-modal':
+          if ($el.is('button') || e.target === this) setTrendForm({ open: false });
           break;
+        case 'trm-image-add': {
+          var imgForm = state.trendForm;
+          if (imgForm.images.length >= TR.imageMax) { showToast('이미지는 최대 ' + TR.imageMax + '장까지 등록할 수 있습니다.'); break; }
+          var imgSeq = imgForm.imageSeq + 1;
+          setTrendForm({ images: imgForm.images.concat([{ id: imgSeq, name: '기술동향_이미지_' + String(imgSeq).padStart(2, '0') + '.png' }]), imageSeq: imgSeq });
+          break;
+        }
+        case 'trm-image-remove':
+          setTrendForm({ images: trendWithout(state.trendForm.images, $el) });
+          break;
+        case 'trm-image-clear':
+          setTrendForm({ images: [] });
+          break;
+        case 'trm-file-add': {
+          var fileSeq = state.trendForm.fileSeq + 1;
+          var fileSample = TR.fileSamples[(fileSeq - 1) % TR.fileSamples.length];
+          setTrendForm({ files: state.trendForm.files.concat([{ id: fileSeq, name: fileSample[0], mb: fileSample[1], checked: false }]), fileSeq: fileSeq });
+          break;
+        }
+        case 'trm-file-toggle':
+          setTrendForm({ files: trendToggle(state.trendForm.files, $el) });
+          break;
+        case 'trm-file-toggle-all':
+          setTrendForm({ files: trendToggleAll(state.trendForm.files) });
+          break;
+        case 'trm-file-remove':
+          setTrendForm({ files: trendWithout(state.trendForm.files, $el) });
+          break;
+        case 'trm-file-remove-checked':
+          setTrendForm({ files: state.trendForm.files.filter(function (x) { return !x.checked; }) });
+          break;
+        case 'trm-tag-add':
+          addTrendTags();
+          break;
+        case 'trm-tag-toggle':
+          setTrendForm({ tags: trendToggle(state.trendForm.tags, $el) });
+          break;
+        case 'trm-tag-toggle-all':
+          setTrendForm({ tags: trendToggleAll(state.trendForm.tags) });
+          break;
+        case 'trm-tag-remove':
+          setTrendForm({ tags: trendWithout(state.trendForm.tags, $el) });
+          break;
+        case 'trm-tag-remove-checked':
+          if (!state.trendForm.tags.some(function (t) { return t.checked; })) { showToast('삭제할 해시태그를 선택하세요.'); break; }
+          setTrendForm({ tags: state.trendForm.tags.filter(function (t) { return !t.checked; }) });
+          break;
+        case 'trm-recipient-remove': {
+          var trRcAt = Number($el.data('index'));
+          setTrendForm({ recipients: state.trendForm.recipients.filter(function (_, j) { return j !== trRcAt; }) });
+          break;
+        }
+        case 'trm-mail-reset':
+          setTrendForm({ mailSubject: TR.mailSubject, mailBody: TR.mailBody });
+          break;
+        case 'trm-save': {
+          // v3의 저장은 이전 버전 폼(담당자/부서/내용)을 검사해 신규 등록이 항상 막힌다. 여기서는 팝업에 실제로 있는
+          // 제목·유형을 필수로 보고, 담당자는 팝업에 표시된 등록자로 저장한다.
+          var trf = state.trendForm;
+          if (!trf.title.trim() || !trf.type) { global.alert('필수 항목을 모두 입력해주세요.'); break; }
+          var trRows = state.trendRows.slice();
+          var trEdit = trf.editIndex != null;
+          if (trEdit) {
+            trRows[trf.editIndex] = $.extend({}, trRows[trf.editIndex], { title: trf.title.trim(), kind: trf.type });
+          } else {
+            var trToday = todayDotted().split('.');
+            trRows.unshift({
+              title: trf.title.trim(), views: 0, date: trToday.join('-'), dept: TR.registrant.dept, owner: TR.registrant.owner,
+              tag: trf.tags.length ? trf.tags[0].label.replace(/^#/, '') : '-', kind: trf.type,
+              period: trToday[0] + ' ' + Math.ceil(Number(trToday[1]) / 3) + '분기', content: '',
+            });
+          }
+          setState({ trendRows: trRows, trendForm: $.extend({}, trf, { open: false }), techTrendPage: trEdit ? state.techTrendPage : 1 });
+          showToast(trEdit ? '기술동향이 수정되었습니다.' : '기술동향이 등록되었습니다.');
+          break;
+        }
         case 'logout':
           e.preventDefault();
           // 프로토타입 단계: 실 연동 시 PNDES SSO(Azure/MPASS/PKI) 로그아웃 처리로 교체
@@ -835,6 +970,20 @@
           setState({ mmSumDept: '', mmSumStatus: '' });
           break;
 
+        // ---- SCR-013 기술과제 관리 ----
+        // v3에는 취소/등록 동작이 정의돼 있지 않아(버튼만 존재) 다른 등록 화면과 같은 규칙으로 구현:
+        // 취소는 입력값 초기화, 등록은 필수 4항목 확인 후 완료 안내와 함께 초기화.
+        case 'tt-cancel':
+          setState({ techTaskForm: { name: '', owner: '', planDate: '', linkedRoadmap: '' } });
+          break;
+        case 'tt-save': {
+          var ttf = state.techTaskForm;
+          if (!ttf.name.trim() || !ttf.owner || !ttf.planDate || !ttf.linkedRoadmap) { global.alert('필수 항목을 모두 입력해주세요.'); break; }
+          setState({ techTaskForm: { name: '', owner: '', planDate: '', linkedRoadmap: '' } });
+          showToast('기술과제가 등록되었습니다.');
+          break;
+        }
+
         case 'rm-close-task-detail':
           if ($el.is('button') || e.target === this) setState({ subTaskDetail: null });
           break;
@@ -862,6 +1011,36 @@
     // SCR-011 진행상태 셀렉트: 값만 보관하고 "조회" 클릭 시 적용
     $(document).on('change', '[data-action="council-filter"]', function () {
       state.councilFilter = $(this).val();
+    });
+    // SCR-014 검색 영역: 값만 보관하고 조회 버튼(또는 검색창 Enter)에서 적용
+    $(document).on('input change', '[data-trm-filter]', function () {
+      state.trendFilter[$(this).data('trmFilter')] = $(this).val();
+    });
+    $(document).on('keydown', '#trm-keyword', function (ev) {
+      if (ev.key === 'Enter') { ev.preventDefault(); $('[data-action="trm-search"]').trigger('click'); }
+    });
+    // SCR-014 등록 팝업 입력값: state에 보관하고 발송 미리보기 조각과 글자 수만 갱신한다(포커스 유지)
+    $(document).on('input change', '[data-trm-field]', function () {
+      var f = state.trendForm;
+      var key = $(this).data('trmField');
+      if (key === 'mailOn') { f.mailOn = $(this).prop('checked'); return; }
+      var val = $(this).val();
+      if (key === 'mailBody') {
+        f.mailBody = val.slice(0, TR.mailBodyMax);
+        $('#trm-mail-len').text(f.mailBody.length + ' / ' + TR.mailBodyMax + '자');
+      } else {
+        f[key] = val;
+      }
+      if (key !== 'tagInput') $('#trm-preview-slot').html(render.trendMailPreview(f));
+    });
+    $(document).on('keydown', '#trm-tag-input', function (ev) {
+      if (ev.key === 'Enter') { ev.preventDefault(); addTrendTags(); }
+    });
+    // SCR-013 입력값: state에만 보관. 연동 mTRM 로드맵을 바꾸면 자동 매핑 결과 표가 달라지므로 다시 그린다
+    $(document).on('input change', '[data-tt-field]', function (ev) {
+      var ttKey = $(this).data('ttField');
+      state.techTaskForm[ttKey] = $(this).val();
+      if (ttKey === 'linkedRoadmap' && ev.type === 'change') renderAll();
     });
     // SCR-012 필터: 값만 보관하고 "조회" 클릭 시 적용. 분과를 바꾸면 로드맵 선택지가 달라지므로 다시 그린다
     $(document).on('change', '[data-mm-filter]', function () {
