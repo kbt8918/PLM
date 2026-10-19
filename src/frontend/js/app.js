@@ -137,7 +137,12 @@
     mmFilter: { dept: '', roadmap: '', from: '', to: '' }, // SCR-012 필터 입력값
     mmApplied: { dept: '', roadmap: '', from: '', to: '' }, // "조회" 클릭 시점에 확정된 필터
     mmInfos: MM.infos.slice(), // "mTRM 정보" 표 (신규등록 결재 시 행 추가)
-    mmModal: null, // 열린 팝업: register | version | summary | deptChange | deptHead
+    mmModal: null, // 열린 팝업: register | version | summary | deptChange | deptHead | infoDetail
+    mmInfoDetail: null, // mTRM 정보 상세 팝업에 표시할 행
+    mmRmSort: null, // 로드맵 요약 교차표 정렬: null|'total' = 합계, 0..n = 상태 열 인덱스
+    // [공통] 메일알림 대상 검색 팝업 — SCR-011 협의체 / SCR-014 기술동향이 공유한다.
+    // target: 확인 시 수신자를 반영할 화면 (council | trend)
+    mailTarget: { open: false, target: null, query: { room: '', team: '' }, selected: [] },
     mmForm: newMmForm(), // 신규등록 팝업 입력값
     mmPicker: null, // 조회 선택 팝업 종류: council | trm
     mmPickedCouncil: '', mmPickedTrm: '',
@@ -916,8 +921,91 @@
           break;
         }
         case 'mm-close-modal':
-          if ($el.is('button') || e.target === this) setState({ mmModal: null, mmPicker: null, mmVerCompare: false });
+          if ($el.is('button') || e.target === this) setState({ mmModal: null, mmPicker: null, mmVerCompare: false, mmInfoDetail: null });
           break;
+        case 'mm-rm-sort': {
+          var rmKey = String($el.data('key'));
+          setState({ mmRmSort: rmKey === 'total' ? 'total' : Number(rmKey) });
+          break;
+        }
+        case 'mm-info-detail-open':
+          setState({ mmModal: 'infoDetail', mmInfoDetail: state.mmInfos[Number($el.data('index'))] || null });
+          break;
+        case 'mm-info-detail-close':
+          setState({ mmModal: null, mmInfoDetail: null });
+          break;
+        case 'mm-info-detail-backdrop':
+          if (e.target === this) setState({ mmModal: null, mmInfoDetail: null });
+          break;
+        case 'mm-info-detail-roadmap':
+          setState({ mmModal: null, mmInfoDetail: null });
+          showToast('해당 로드맵 화면으로 이동합니다.');
+          break;
+        case 'mt-open': {
+          // 현재 화면의 수신자 칩을 팝업 초기 선택값으로 복원한다(팀명 -> 마스터 key 역매핑).
+          var mtTarget = String($el.data('target'));
+          var mtCurrent = mtTarget === 'council' ? state.councilForm.recipients : state.trendForm.recipients;
+          var mtKeys = [];
+          PNDES.data.mailDirectory.forEach(function (d) {
+            if (mtCurrent.indexOf(d.team) >= 0) mtKeys.push(d.key);
+          });
+          setState({ mailTarget: { open: true, target: mtTarget, query: { room: '', team: '' }, selected: mtKeys } });
+          break;
+        }
+        case 'mt-close':
+          setState({ mailTarget: $.extend({}, state.mailTarget, { open: false }) });
+          break;
+        case 'mt-backdrop':
+          if (e.target === this) setState({ mailTarget: $.extend({}, state.mailTarget, { open: false }) });
+          break;
+        case 'mt-search': {
+          // 입력값은 렌더 전에 DOM에서 수거한다(입력 중 리렌더를 피하기 위해 onChange 대신 조회 시점에 읽음).
+          var mtQ = {
+            room: String($('.mt-input[data-mt-field="room"]').val() || '').trim(),
+            team: String($('.mt-input[data-mt-field="team"]').val() || '').trim(),
+          };
+          setState({ mailTarget: $.extend({}, state.mailTarget, { query: mtQ }) });
+          break;
+        }
+        case 'mt-toggle': {
+          // tr에 위임된 핸들러다. 행 안의 체크박스를 눌러도 click이 tr로 버블링되어 여기로 들어오며,
+          // 체크박스는 렌더 결과만 반영하므로 별도 분기 없이 한 번만 토글한다.
+          var mtKey = String($el.data('key'));
+          var mtSel = state.mailTarget.selected.slice();
+          var mtAt = mtSel.indexOf(mtKey);
+          if (mtAt >= 0) mtSel.splice(mtAt, 1); else mtSel.push(mtKey);
+          setState({ mailTarget: $.extend({}, state.mailTarget, { selected: mtSel }) });
+          break;
+        }
+        case 'mt-toggle-all': {
+          var mtQ2 = state.mailTarget.query;
+          var mtRows = PNDES.data.mailDirectory.filter(function (d) {
+            return (!mtQ2.room || d.room.indexOf(mtQ2.room) >= 0) && (!mtQ2.team || d.team.indexOf(mtQ2.team) >= 0);
+          });
+          var mtAll = mtRows.length > 0 && mtRows.every(function (d) { return state.mailTarget.selected.indexOf(d.key) >= 0; });
+          var mtNext = mtAll ? [] : mtRows.map(function (d) { return d.key; });
+          setState({ mailTarget: $.extend({}, state.mailTarget, { selected: mtNext }) });
+          break;
+        }
+        case 'mt-chip-remove': {
+          var mtRm = String($el.data('key'));
+          setState({ mailTarget: $.extend({}, state.mailTarget, {
+            selected: state.mailTarget.selected.filter(function (k) { return k !== mtRm; }),
+          }) });
+          break;
+        }
+        case 'mt-confirm': {
+          var mtTeams = state.mailTarget.selected.map(function (k) { return k.split('|')[1]; });
+          var mtPatch = { mailTarget: $.extend({}, state.mailTarget, { open: false }) };
+          if (state.mailTarget.target === 'council') {
+            mtPatch.councilForm = $.extend({}, state.councilForm, { recipients: mtTeams });
+          } else {
+            mtPatch.trendForm = $.extend({}, state.trendForm, { recipients: mtTeams });
+          }
+          setState(mtPatch);
+          showToast('메일알림 대상 ' + mtTeams.length + '건이 반영되었습니다.');
+          break;
+        }
         case 'mm-picker-open':
           setState({ mmPicker: String($el.data('kind')) });
           break;

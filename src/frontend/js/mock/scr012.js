@@ -65,29 +65,34 @@
   // ---- 요약 팝업 (과제명 기준) ----
   // sumDepts: [분과, 로드맵, [P1, P2, P3, P4 과제 수]] / sumStatusDef: [상태, 건수, 막대색, 배지 배경, 배지 글자]
   var sumDepts = [
-    ['생산', '생산 자동화 로드맵', [3, 4, 3, 2]], ['물류', '물류/반송 로드맵', [2, 3, 2, 2]], ['생산관리', '생산관리 DX 로드맵', [2, 2, 1, 1]],
-    ['보전', '예지보전 로드맵', [1, 2, 1, 1]], ['품질', '품질 자동검사 로드맵', [2, 2, 2, 2]], ['에너지', '에너지 절감 로드맵', [2, 1, 1, 0]],
-    ['인간친화', '인간친화 작업환경 로드맵', [1, 1, 1, 0]],
+    ['생산', '생산 자동화 로드맵', [14, 18, 15, 12]], ['물류', '물류/반송 로드맵', [12, 15, 13, 11]], ['생산관리', '생산관리 DX 로드맵', [11, 13, 10, 10]],
+    ['보전', '예지보전 로드맵', [10, 12, 11, 10]], ['품질', '품질 자동검사 로드맵', [13, 14, 12, 11]], ['에너지', '에너지 절감 로드맵', [10, 11, 10, 10]],
+    ['인간친화', '인간친화 작업환경 로드맵', [10, 10, 11, 10]],
   ];
+  // 상태 정의는 7종을 유지한다 — 배지 색상 매핑(mmSumStatusMap)을 SCR-010/011/014와 로드맵 간트가 공유하므로
+  // 2종(변경요청/취소)을 지우면 타 화면 배지와 간트 색상이 깨진다.
+  // 다만 v3의 SUM_STATUS_DEF는 5종이므로, 요약 화면에 "노출"되는 상태는 sumStatusShown으로 따로 추린다.
   var sumStatusDef = [
-    ['작성중', 6, '#94a3b8', '#F1F5F9', '#475569'], ['결제중', 5, '#f59e0b', '#FEF3C7', '#B45309'],
-    ['완료', 14, '#16a34a', '#DCFCE7', '#15803D'], ['반려', 3, '#dc2626', '#FFE4E6', '#BE123C'],
-    ['확정', 11, '#2563eb', '#DBEAFE', '#1D4ED8'], ['변경요청', 5, '#a855f7', '#F3E8FF', '#7E22CE'],
-    ['취소', 3, '#475569', '#E5E7EB', '#4B5563'],
+    ['작성중', 55, '#94a3b8', '#F1F5F9', '#475569'], ['결제중', 50, '#f59e0b', '#FEF3C7', '#B45309'],
+    ['완료', 96, '#16a34a', '#DCFCE7', '#15803D'], ['반려', 28, '#dc2626', '#FFE4E6', '#BE123C'],
+    ['확정', 100, '#2563eb', '#DBEAFE', '#1D4ED8'], ['변경요청', 0, '#a855f7', '#F3E8FF', '#7E22CE'],
+    ['취소', 0, '#475569', '#E5E7EB', '#4B5563'],
   ];
-  var sumPhases = [['P1', 13, '#93c5fd'], ['P2', 15, '#3b82f6'], ['P3', 11, '#1d4ed8'], ['P4', 8, '#1e3a8a']];
+  // v3 SUM_STATUS_DEF와 동일한 5종 (요약 팝업 과제상태 표 / 과제 생성 statusPool 기준)
+  var sumStatusShown = sumStatusDef.filter(function (s) { return s[1] > 0; });
+  var sumPhases = [['P1', 80, '#93c5fd'], ['P2', 93, '#3b82f6'], ['P3', 82, '#1d4ed8'], ['P4', 74, '#1e3a8a']];
   var sumCards = [
-    { label: '총 과제 수', value: '47', unit: '건' },
-    { label: '완료', value: '14', unit: '건 (29.8%)' },
-    { label: '진행 (작성중·결제중·확정)', value: '22', unit: '건' },
-    { label: '이슈 (반려·변경요청·취소)', value: '11', unit: '건' },
+    { label: '총 과제 수', value: '329', unit: '건' },
+    { label: '완료 + 확정', value: '196', unit: '건 (59.6%)' },
+    { label: '진행 (작성중·결제중)', value: '105', unit: '건' },
+    { label: '이슈 (반려)', value: '28', unit: '건' },
   ];
-  var sumTotal = 47;
-  var sumDoneRate = '29.8%';
+  var sumTotal = 329;
+  var sumDoneRate = '59.6%';
   // 상세 표 47건: 분과×단계로 펼친 뒤 상태를 건수 비율대로 순환 배정(v3 SUM_TASKS 생성 로직)
   var sumTasks = (function () {
     var statusPool = [];
-    sumStatusDef.forEach(function (s) { for (var n = 0; n < s[1]; n++) statusPool.push(s[0]); });
+    sumStatusShown.forEach(function (s) { for (var n = 0; n < s[1]; n++) statusPool.push(s[0]); });
     var list = [];
     sumDepts.forEach(function (d) {
       d[2].forEach(function (count, pi) {
@@ -96,9 +101,9 @@
     });
     return list.map(function (t, i) {
       t.no = i + 1;
-      t.name = t.dept + ' 기술과제 #' + String(i + 1).padStart(2, '0');
+      t.name = t.dept + ' 기술과제 #' + String(i + 1).padStart(3, '0');
       t.linked = i % 3 === 0 ? '연계과제 #' + ((i % 5) + 1) : '-';
-      t.status = statusPool[(i * 7) % statusPool.length];
+      t.status = statusPool[(i * 11) % statusPool.length];
       return t;
     });
   })();
@@ -109,18 +114,53 @@
     ['생산', '생산 자동화 로드맵', 0, 8, '차체 mTRM', '조립 mTRM', '확정', 12, '2026.01.12', '2026.09.20'],
     ['생산', '셀 무인화 로드맵', 4, 8, '조립 mTRM', '-', '작성중', 4, '2026.09.10', '2026.09.20'],
     ['물류', '물류/반송 로드맵', 1, 9, '물류 mTRM', '신규 mTRM', '확정', 9, '2026.02.03', '2026.10.02'],
-    ['생산관리', '생산관리 DX 로드맵', 2, 6, 'DX mTRM', 'AI mTRM', '변경요청', 6, '2026.03.15', '2026.09.28'],
+    ['생산관리', '생산관리 DX 로드맵', 2, 6, 'DX mTRM', 'AI mTRM', '결제중', 6, '2026.03.15', '2026.09.28'],
     ['보전', '예지보전 로드맵', 0, 7, '보전 mTRM', '-', '확정', 5, '2026.01.20', '2026.06.11'],
     ['보전', '설비 이상감지 로드맵', 0, 4, '보전 mTRM', '-', '완료', 3, '2026.01.08', '2026.08.30'],
     ['품질', '품질 자동검사 로드맵', 3, 9, '검사 mTRM', '-', '결제중', 5, '2026.04.01', '2026.09.05'],
     ['품질', 'AI 외관검사 로드맵', 6, 8, '검사 mTRM', 'AI mTRM', '작성중', 3, '2026.06.22', '2026.10.06'],
     ['에너지', '에너지 절감 로드맵', 2, 10, '에너지 mTRM', '-', '확정', 4, '2026.03.02', '2026.07.18'],
     ['인간친화', '인간친화 작업환경 로드맵', 5, 7, '안전 mTRM', '-', '반려', 3, '2026.05.11', '2026.08.04'],
-    ['물류', 'AGV 확대 로드맵', 8, 8, '물류 mTRM', '-', '취소', 0, '2026.07.07', '2026.07.29'],
+    ['물류', 'AGV 확대 로드맵', 8, 8, '물류 mTRM', '-', '작성중', 0, '2026.07.07', '2026.07.29'],
   ];
   var roadmapSummaryDepts = ['생산', '물류', '생산관리', '보전', '품질', '에너지', '인간친화'];
   var roadmapSummaryYears = ["'26년", "'27년", "'28년", "'29년"];
   var roadmapSummaryToday = '2026.10.10'; // "최근 30일 수정" 판정 및 간트 "오늘" 선 기준일
+
+  // ---- 로드맵 요약: 분과 x 상태 교차표 ----
+  // 근거: v3.dc.html RM_BIG_RAW / RM_BIG / RM_STATUS_ICON.
+  // rmBigRaw는 상태 7종 건수를 보유하고, 교차표는 앞 5종(rmStatusCols)만 노출한다(v3 RM_BIG = slice(0,5)).
+  // [분과, [작성중, 결제중, 완료, 반려, 확정, 변경요청, 취소]]
+  var rmBigRaw = [
+    ['생산', [18, 14, 32, 11, 41, 16, 10]],
+    ['물류', [15, 21, 24, 10, 33, 12, 11]],
+    ['생산관리', [12, 13, 27, 14, 22, 25, 10]],
+    ['보전', [20, 11, 29, 10, 19, 13, 12]],
+    ['품질', [13, 24, 18, 15, 36, 11, 14]],
+    ['에너지', [11, 10, 23, 12, 15, 10, 10]],
+    ['인간친화', [10, 12, 14, 21, 13, 11, 10]],
+  ];
+  var rmStatusCols = ['작성중', '결제중', '완료', '반려', '확정'];
+  var rmStatusIcon = {
+    '작성중': 'fas fa-pen', '결제중': 'fas fa-hourglass-half', '완료': 'fas fa-flag-checkered',
+    '반려': 'fas fa-rotate-left', '확정': 'fas fa-check', '변경요청': 'fas fa-code-compare', '취소': 'fas fa-ban',
+  };
+
+  // ---- mTRM 정보 상세 팝업 ----
+  // 근거: v3.dc.html mmInfoDetailOpen 블록 (mmIdRows / mmIdPrev / mmIdNext / mmIdHistory).
+  var infoDetailRows = [
+    { k: '분과', v: 'AI' },
+    { k: '로드맵', v: '기술과제 중장기 로드맵' },
+    { k: '기간', v: '2026.01 ~ 2027.12' },
+    { k: '등록일', v: '2026-09-09' },
+    { k: '수정일', v: '2026.09.20' },
+  ];
+  var infoDetailPrev = '자체 mTRM';
+  var infoDetailNext = '연계 mTRM';
+  var infoDetailHistory = [
+    { date: '2026.09.20', item: '연계 mTRM', before: '-', after: '연계 mTRM', owner: '김의왕 매니저' },
+    { date: '2026.06.18', item: '기간', before: '2026.01~2026.12', after: '2026.01~2027.12', owner: '박생기 수석' },
+  ];
 
   // ---- 분과 변경 / 분과장 관리 팝업 ----
   var deptChangeRows = [
@@ -142,10 +182,13 @@
     tasks: tasks, infos: infos, depts: depts,
     registrant: registrant, regDate: regDate, regDeptOptions: regDeptOptions, pickerRows: pickerRows,
     versions: versions, versionSnaps: versionSnaps, versionFields: versionFields,
-    sumDepts: sumDepts, sumStatusDef: sumStatusDef, sumPhases: sumPhases, sumCards: sumCards,
+    sumDepts: sumDepts, sumStatusDef: sumStatusDef, sumStatusShown: sumStatusShown, sumPhases: sumPhases, sumCards: sumCards,
     sumTotal: sumTotal, sumDoneRate: sumDoneRate, sumTasks: sumTasks,
     roadmapSummary: roadmapSummary, roadmapSummaryDepts: roadmapSummaryDepts,
     roadmapSummaryYears: roadmapSummaryYears, roadmapSummaryToday: roadmapSummaryToday,
+    rmBigRaw: rmBigRaw, rmStatusCols: rmStatusCols, rmStatusIcon: rmStatusIcon,
+    infoDetailRows: infoDetailRows, infoDetailPrev: infoDetailPrev,
+    infoDetailNext: infoDetailNext, infoDetailHistory: infoDetailHistory,
     deptChangeRows: deptChangeRows, deptHeadRows: deptHeadRows,
   };
 })(window);

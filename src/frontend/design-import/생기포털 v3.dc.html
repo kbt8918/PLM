@@ -614,6 +614,117 @@
         </div>
       </sc-if>
 
+      <!-- mTRM 정보 상세 팝업 -->
+      <sc-if value="{{ mmInfoDetailOpen }}">
+        <div onClick="{{ mmIdClose }}" class="fixed inset-0 bg-black/50 flex items-center justify-center z-[70] p-6">
+          <div onClick="{{ mmIdStop }}" class="bg-white shadow-2xl w-full max-w-[640px] rounded overflow-hidden">
+            <div class="bg-[#1e3f8a] px-5 py-3 flex items-center justify-between">
+              <h3 class="font-bold text-white text-sm whitespace-nowrap">mTRM 정보 상세</h3>
+              <button onClick="{{ mmIdClose }}" class="text-white/70 hover:text-white" style="min-height:0"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="p-5 space-y-4">
+              <div class="flex items-center justify-between gap-3">
+                <p class="font-bold text-gray-900 text-[15px]">mTRM 정보</p>
+                <span class="{{ mmIdStatusCls }}">{{ mmIdStatus }}</span>
+              </div>
+              <table class="w-full border-collapse border border-gray-300">
+                <tbody>
+                  <sc-for list="{{ mmIdRows }}" as="mi" hint-placeholder-count="5">
+                    <tr>
+                      <th class="bg-gray-100 border border-gray-300 px-3 py-2 w-32 text-left font-semibold text-gray-700 whitespace-nowrap">{{ mi.k }}</th>
+                      <td class="border border-gray-300 px-3 py-2 text-gray-900">{{ mi.v }}</td>
+                    </tr>
+                  </sc-for>
+                  <tr>
+                    <th class="bg-gray-100 border border-gray-300 px-3 py-2 text-left font-semibold text-gray-700 whitespace-nowrap">연계 mTRM</th>
+                    <td class="border border-gray-300 px-3 py-2">
+                      <div class="flex items-center gap-3 flex-wrap">
+                        <span class="text-gray-500 text-[11px] whitespace-nowrap">前</span><span class="text-blue-700 font-semibold whitespace-nowrap">{{ mmIdPrev }}</span>
+                        <i class="fas fa-arrow-right text-gray-400 text-[11px]"></i>
+                        <span class="text-gray-500 text-[11px] whitespace-nowrap">後</span><span class="text-blue-700 font-semibold whitespace-nowrap">{{ mmIdNext }}</span>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <div>
+                <p class="font-bold text-gray-900 mb-2">변경 이력</p>
+                <table class="w-full border-collapse border border-gray-300">
+                  <thead><tr class="bg-gray-100 text-gray-700"><th class="border border-gray-300 px-3 py-1.5 font-semibold w-28">일자</th><th class="border border-gray-300 px-3 py-1.5 font-semibold">내용</th><th class="border border-gray-300 px-3 py-1.5 font-semibold w-24">처리자</th></tr></thead>
+                  <tbody>
+                    <sc-for list="{{ mmIdHistory }}" as="mh" hint-placeholder-count="2">
+                      <tr><td class="border border-gray-300 px-3 py-1.5 text-center text-gray-600 whitespace-nowrap">{{ mh.date }}</td><td class="border border-gray-300 px-3 py-1.5 text-gray-800">{{ mh.text }}</td><td class="border border-gray-300 px-3 py-1.5 text-center text-gray-600">{{ mh.who }}</td></tr>
+                    </sc-for>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="px-5 py-3 border-t border-gray-200 flex justify-end gap-2">
+              <button onClick="{{ mmIdGoRoadmap }}" class="border border-[#1e4fa3] text-[#1e4fa3] hover:bg-blue-50 font-semibold px-4 py-1.5 rounded whitespace-nowrap" style="min-height:0">통합 로드맵에서 보기</button>
+              <button onClick="{{ mmIdClose }}" class="bg-[#1e4fa3] hover:bg-[#173f84] text-white font-semibold px-4 py-1.5 rounded whitespace-nowrap" style="min-height:0">닫기</button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- [공통] 메일알림 대상 검색 팝업 -->
+      <sc-if value="{{ mtIsOpen }}">
+        <div onClick="{{ mtClose }}" class="fixed inset-0 bg-black/50 flex items-center justify-center z-[80] p-6">
+          <div onClick="{{ mtStop }}" class="bg-white shadow-2xl w-full max-w-[640px] rounded overflow-hidden flex flex-col" style="max-height: 86vh">
+            <div class="bg-[#1e3f8a] px-5 py-3 flex items-center justify-between">
+              <h3 class="font-bold text-white text-sm whitespace-nowrap">메일알림 대상 검색</h3>
+              <button onClick="{{ mtClose }}" class="text-white/70 hover:text-white" style="min-height:0"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="px-5 pt-4 pb-3 border-b border-gray-200">
+              <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+                <label class="flex items-center gap-2"><span class="text-gray-700 font-semibold whitespace-nowrap">담당실</span><input type="text" value="{{ mtQ.room }}" onChange="{{ mtOnRoom }}" onKeyDown="{{ mtOnKey }}" placeholder="예: 생기실" class="border border-gray-300 rounded px-2 py-1.5 w-40 focus:outline-none focus:border-blue-500" /></label>
+                <label class="flex items-center gap-2"><span class="text-gray-700 font-semibold whitespace-nowrap">담당팀</span><input type="text" value="{{ mtQ.team }}" onChange="{{ mtOnTeam }}" onKeyDown="{{ mtOnKey }}" placeholder="예: 기술팀" class="border border-gray-300 rounded px-2 py-1.5 w-40 focus:outline-none focus:border-blue-500" /></label>
+                <button onClick="{{ mtSearch }}" class="ml-auto bg-gray-800 hover:bg-gray-900 text-white font-semibold px-4 py-1.5 rounded flex items-center gap-1.5 whitespace-nowrap" style="min-height:0"><i class="fas fa-search text-[11px]"></i>조회</button>
+              </div>
+              <p class="text-[11px] text-gray-500 mt-2">부분 일치 검색 · 조건 없이 조회하면 전체 목록이 표시됩니다.</p>
+            </div>
+            <div class="px-5 pt-3 flex items-center justify-between gap-3">
+              <label class="flex items-center gap-1.5 text-gray-700 whitespace-nowrap"><input type="checkbox" checked="{{ mtAllChecked }}" onChange="{{ mtToggleAll }}" class="w-3.5 h-3.5" />전체선택</label>
+              <span class="text-gray-500 text-[12px] whitespace-nowrap">조회 <b class="text-gray-900">{{ mtRowCount }}</b>건 · 선택 <b class="text-blue-700">{{ mtSelCount }}</b>건</span>
+            </div>
+            <div class="mx-5 mt-2 border border-gray-300 overflow-y-auto om-scroll" style="max-height: 300px">
+              <table class="w-full border-collapse">
+                <thead class="sticky top-0 bg-gray-100 z-10">
+                  <tr class="text-gray-700">
+                    <th class="border-b border-gray-300 w-10 py-2"></th>
+                    <th class="border-b border-l border-gray-300 py-2 font-semibold">담당실</th>
+                    <th class="border-b border-l border-gray-300 py-2 font-semibold">부서(팀)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <sc-for list="{{ mtRows }}" as="mr" hint-placeholder-count="8">
+                    <tr onClick="{{ mr.onToggle }}" class="{{ mr.trCls }}">
+                      <td class="border-b border-gray-200 text-center py-2"><input type="checkbox" checked="{{ mr.checked }}" onChange="{{ mr.onToggle }}" onClick="{{ mtStop }}" class="w-3.5 h-3.5" /></td>
+                      <td class="border-b border-l border-gray-200 px-3 py-2 text-gray-800">{{ mr.room }}</td>
+                      <td class="border-b border-l border-gray-200 px-3 py-2 text-gray-800">{{ mr.team }}</td>
+                    </tr>
+                  </sc-for>
+                </tbody>
+              </table>
+              <sc-if value="{{ mtEmpty }}">
+                <div class="py-10 text-center text-gray-500">조회 조건에 해당하는 담당자정보가 없습니다.<br />조회 조건을 변경 후 다시 조회해 주세요.</div>
+              </sc-if>
+            </div>
+            <div class="px-5 py-3 mt-3 border-t border-gray-200 flex items-center justify-between gap-3">
+              <div class="flex flex-wrap gap-1 min-w-0 max-h-14 overflow-y-auto">
+                <sc-for list="{{ mtSelChips }}" as="sc3" hint-placeholder-count="0">
+                  <span class="inline-flex items-center gap-1 bg-blue-50 border border-blue-200 text-blue-800 rounded px-2 py-0.5 text-[11px] whitespace-nowrap">{{ sc3.label }}<button onClick="{{ sc3.onRemove }}" class="text-blue-400 hover:text-red-500" style="min-height:0">✕</button></span>
+                </sc-for>
+              </div>
+              <div class="flex gap-2 flex-shrink-0">
+                <button onClick="{{ mtConfirm }}" disabled="{{ mtNoSel }}" class="bg-[#1e4fa3] hover:bg-[#173f84] disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold px-4 py-1.5 rounded whitespace-nowrap" style="min-height:0">선택 ({{ mtSelCount }})</button>
+                <button onClick="{{ mtClose }}" class="border border-gray-400 bg-white hover:bg-gray-50 text-gray-700 font-semibold px-4 py-1.5 rounded whitespace-nowrap" style="min-height:0">닫기</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
       <!-- 통합 로드맵: 버전 변경 내용 팝업 -->
       <sc-if value="{{ rmVerModalOpen }}">
         <div onClick="{{ rmVmClose }}" class="fixed inset-0 bg-black/50 flex items-start justify-center z-[70] p-8 overflow-y-auto">
@@ -2466,11 +2577,12 @@
         <div onClick="{{ onMtrmMgmtModalBackdropClick }}" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start justify-center z-50 p-6 overflow-y-auto">
           <div class="bg-white shadow-xl w-full max-w-4xl">
             <div class="bg-blue-800 px-5 py-2.5">
-              <h3 class="font-bold text-white text-base">신규등록</h3>
+              <h3 class="font-bold text-white text-base">{{ mmRegTitle }}</h3>
             </div>
             <div class="px-5 py-3 flex justify-end gap-2">
-              <button onClick="{{ saveMtrmMgmt }}" class="bg-blue-700 hover:bg-blue-800 text-white font-semibold px-5 py-1 rounded">결재</button>
-              <button onClick="{{ closeMtrmMgmtModal }}" class="bg-blue-700 hover:bg-blue-800 text-white font-semibold px-5 py-1 rounded">닫기</button>
+              <sc-for list="{{ mmRegButtons }}" as="rb" hint-placeholder-count="2">
+                <button onClick="{{ rb.onClick }}" class="{{ rb.cls }}" style="min-height:0">{{ rb.label }}</button>
+              </sc-for>
             </div>
             <div class="px-5 pb-6 space-y-4 max-h-[70vh] overflow-y-auto om-scroll">
               <sc-for list="{{ mtrmRegBlocks }}" as="blk" hint-placeholder-count="2">
@@ -2883,7 +2995,7 @@
                   </sc-for>
                 </div>
                 <div class="px-4 pb-3 pt-1 flex items-center gap-3">
-                  <span class="text-gray-500 text-[11px] whitespace-nowrap">완료율</span>
+                  <span class="text-gray-500 text-[11px] whitespace-nowrap">완료+확정 비율</span>
                   <div class="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden"><div class="h-full bg-green-600 rounded-full" style="{{ sumDoneStyle }}"></div></div>
                   <span class="text-green-700 font-bold text-[11px] whitespace-nowrap">{{ sumDoneRate }}</span>
                 </div>
@@ -2933,17 +3045,18 @@
                 <div class="border border-gray-200 rounded-lg bg-white p-4">
                   <div class="flex items-baseline justify-between mb-3">
                     <p class="font-bold text-gray-800 whitespace-nowrap">과제상태</p>
-                    <span class="text-gray-400 text-[11px] whitespace-nowrap">총 47건</span>
+                    <span class="text-gray-400 text-[11px] whitespace-nowrap">총 329건 · 클릭 시 아래 목록 필터</span>
                   </div>
-                  <div class="space-y-1.5">
-                    <sc-for list="{{ sumStatus }}" as="st" hint-placeholder-count="7">
+                  <div class="space-y-2">
+                    <sc-for list="{{ sumStatusFlat }}" as="st" hint-placeholder-count="7">
                       <div onClick="{{ st.onClick }}" class="{{ st.rowCls }}">
+                        <span class="w-4 text-center text-gray-500 text-[11px] flex-shrink-0"><i class="{{ st.icon }}"></i></span>
                         <span class="w-14 text-gray-700 whitespace-nowrap">{{ st.label }}</span>
-                        <div class="flex-1 h-4 bg-gray-50 rounded overflow-hidden">
-                          <div class="h-full rounded" style="{{ st.barStyle }}"></div>
+                        <div class="flex-1 h-3.5 bg-gray-100 rounded-sm overflow-hidden">
+                          <div class="h-full rounded-sm bg-[#1a4fb4]" style="{{ st.barStyle }}"></div>
                         </div>
                         <span class="w-6 text-right font-bold text-gray-800">{{ st.v }}</span>
-                        <span class="w-11 text-right text-gray-400 whitespace-nowrap">{{ st.pct }}</span>
+                        <span class="w-11 text-right text-gray-500 whitespace-nowrap">{{ st.pct }}</span>
                       </div>
                     </sc-for>
                   </div>
@@ -3004,46 +3117,51 @@
                     </sc-for>
                   </div>
 
-                  <div class="grid gap-4" style="grid-template-columns: minmax(0,1fr) minmax(0,1fr)">
-                    <div class="border border-gray-200 rounded-lg bg-white p-4">
-                      <div class="flex items-baseline justify-between mb-3">
-                        <p class="font-bold text-gray-800 whitespace-nowrap">분과별 로드맵</p>
-                        <span class="text-gray-400 text-[11px] whitespace-nowrap">로드맵 1건 = 1칸 · 색상 = 상태</span>
-                      </div>
-                      <div class="space-y-2">
+                  <div class="border border-gray-200 rounded-lg bg-white p-5">
+                    <div class="flex flex-wrap items-baseline justify-between gap-2 mb-3">
+                      <p class="font-bold text-gray-900 text-[15px] whitespace-nowrap">분과별 로드맵 상태 <span class="text-gray-500 font-normal text-[12px] ml-1">전체 {{ rmSumTotalAll }}건</span></p>
+                      <span class="text-[11px] text-gray-500 whitespace-nowrap"><span class="inline-block w-2 h-2 rounded-full bg-[#1a4fb4] align-middle mr-1"></span>분과별 최다 상태 · 열 제목 클릭 시 정렬</span>
+                    </div>
+                    <table class="w-full border-collapse text-[13px] tabular-nums">
+                      <thead>
+                        <tr class="border-b-2 border-gray-200">
+                          <th class="text-left font-semibold text-gray-500 py-2 pl-2 w-[110px]">분과</th>
+                          <sc-for list="{{ rmSumStatusIcons }}" as="si" hint-placeholder-count="7">
+                            <th class="py-1 px-1 font-normal">
+                              <button onClick="{{ si.onClick }}" class="{{ si.thCls }}" style="min-height:0"><i class="{{ si.icon }} text-[11px]"></i>{{ si.label }}<span class="text-[9px]">{{ si.sortMark }}</span></button>
+                            </th>
+                          </sc-for>
+                          <th class="py-1 pr-2 font-normal w-[150px]">
+                            <button onClick="{{ rmSumSortTotal }}" class="{{ rmSumSortTotalThCls }}" style="min-height:0">합계<span class="text-[9px]">{{ rmSumTotalMark }}</span></button>
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
                         <sc-for list="{{ rmSumDeptBars }}" as="rd" hint-placeholder-count="7">
-                          <div class="flex items-center gap-3">
-                            <span class="w-14 text-gray-700 whitespace-nowrap">{{ rd.name }}</span>
-                            <div class="flex-1 h-4">
-                              <div class="h-full flex gap-0.5" style="{{ rd.style }}">
-                                <sc-for list="{{ rd.segs }}" as="rsg" hint-placeholder-count="1">
-                                  <div class="h-full rounded-sm" style="{{ rsg.style }}" title="{{ rsg.title }}"></div>
-                                </sc-for>
+                          <tr class="border-b border-gray-100 hover:bg-[#f7f9fd]">
+                            <td class="py-2.5 pl-2 font-semibold text-gray-900 whitespace-nowrap">{{ rd.name }}</td>
+                            <sc-for list="{{ rd.cells }}" as="rc" hint-placeholder-count="7">
+                              <td class="py-2.5 text-center" title="{{ rc.title }}"><span class="{{ rc.simpleCls }}">{{ rc.v }}</span></td>
+                            </sc-for>
+                            <td class="py-2.5 pr-2">
+                              <div class="flex items-center gap-2">
+                                <div class="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden"><div class="h-full bg-[#1a4fb4] rounded-full" style="{{ rd.totalBar }}"></div></div>
+                                <span class="w-8 text-right font-bold text-gray-900">{{ rd.count }}</span>
                               </div>
-                            </div>
-                            <span class="w-6 text-right text-gray-800 font-bold">{{ rd.count }}</span>
-                          </div>
+                            </td>
+                          </tr>
                         </sc-for>
-                      </div>
-                    </div>
-                    <div class="border border-gray-200 rounded-lg bg-white p-4">
-                      <div class="flex items-baseline justify-between mb-3">
-                        <p class="font-bold text-gray-800 whitespace-nowrap">로드맵 상태</p>
-                        <span class="text-gray-400 text-[11px] whitespace-nowrap">상태 7종</span>
-                      </div>
-                      <div class="space-y-2">
-                        <sc-for list="{{ rmSumStatus }}" as="rs2" hint-placeholder-count="7">
-                          <div class="flex items-center gap-3">
-                            <span class="w-14 text-gray-700 whitespace-nowrap">{{ rs2.label }}</span>
-                            <div class="flex-1 h-4 bg-gray-50 rounded overflow-hidden">
-                              <div class="h-full rounded" style="{{ rs2.rowBar }}"></div>
-                            </div>
-                            <span class="w-6 text-right font-bold text-gray-800">{{ rs2.v }}</span>
-                            <span class="w-10 text-right text-gray-400 whitespace-nowrap">{{ rs2.pct }}</span>
-                          </div>
-                        </sc-for>
-                      </div>
-                    </div>
+                      </tbody>
+                      <tfoot>
+                        <tr class="border-t-2 border-gray-200 bg-gray-50">
+                          <td class="py-2.5 pl-2 font-semibold text-gray-600">합계</td>
+                          <sc-for list="{{ rmSumStatusIcons }}" as="ct" hint-placeholder-count="7">
+                            <td class="py-2.5 text-center"><b class="text-gray-900">{{ ct.colTotal }}</b><span class="block text-[10px] text-gray-500">{{ ct.pct }}</span></td>
+                          </sc-for>
+                          <td class="py-2.5 pr-2 text-right"><b class="text-[#1a4fb4] text-[15px]">{{ rmSumTotalAll }}</b></td>
+                        </tr>
+                      </tfoot>
+                    </table>
                   </div>
 
                   <div class="border border-gray-200 rounded-lg bg-white p-4">
@@ -3602,10 +3720,11 @@
                     <td class="border border-gray-300 bg-gray-100 px-3 py-2 text-gray-700 font-semibold text-center">메일알림대상</td>
                     <td colspan="3" class="border border-gray-300 px-2 py-2">
                       <div class="flex items-center gap-2 flex-wrap">
-                        <button class="w-6 h-6 border border-gray-300 bg-white rounded flex items-center justify-center text-blue-700"><i class="fas fa-search text-[10px]"></i></button>
-                        <span class="inline-flex items-center gap-1 bg-gray-100 border border-gray-300 rounded px-2 py-0.5 text-gray-700">자동화기술팀<button class="text-gray-400 hover:text-red-500">✕</button></span>
-                        <span class="inline-flex items-center gap-1 bg-gray-100 border border-gray-300 rounded px-2 py-0.5 text-gray-700">요소기술팀<button class="text-gray-400 hover:text-red-500">✕</button></span>
-                        <span class="inline-flex items-center gap-1 bg-gray-100 border border-gray-300 rounded px-2 py-0.5 text-gray-700">지능화기술팀<button class="text-gray-400 hover:text-red-500">✕</button></span>
+                        <button onClick="{{ mtOpen }}" title="메일알림 대상 검색" class="w-6 h-6 border border-gray-300 bg-white hover:bg-blue-50 rounded flex items-center justify-center text-blue-700" style="min-height:0"><i class="fas fa-search text-[10px]"></i></button>
+                        <sc-for list="{{ mtChips }}" as="mc" hint-placeholder-count="3">
+                          <span class="inline-flex items-center gap-1 bg-gray-100 border border-gray-300 rounded px-2 py-0.5 text-gray-700 whitespace-nowrap">{{ mc.label }}<button onClick="{{ mc.onRemove }}" class="text-gray-400 hover:text-red-500" style="min-height:0">✕</button></span>
+                        </sc-for>
+                        <sc-if value="{{ mtNoChips }}"><span class="text-gray-400 text-[11px]">돋보기를 눌러 알림 대상을 선택하세요.</span></sc-if>
                       </div>
                     </td>
                   </tr>
@@ -5415,15 +5534,14 @@ const RM_LANES = [
 ];
 
 const SUM_DEPTS = [
-  ['생산', '생산 자동화 로드맵', [3, 4, 3, 2]], ['물류', '물류/반송 로드맵', [2, 3, 2, 2]], ['생산관리', '생산관리 DX 로드맵', [2, 2, 1, 1]],
-  ['보전', '예지보전 로드맵', [1, 2, 1, 1]], ['품질', '품질 자동검사 로드맵', [2, 2, 2, 2]], ['에너지', '에너지 절감 로드맵', [2, 1, 1, 0]],
-  ['인간친화', '인간친화 작업환경 로드맵', [1, 1, 1, 0]],
+  ['생산', '생산 자동화 로드맵', [14, 18, 15, 12]], ['물류', '물류/반송 로드맵', [12, 15, 13, 11]], ['생산관리', '생산관리 DX 로드맵', [11, 13, 10, 10]],
+  ['보전', '예지보전 로드맵', [10, 12, 11, 10]], ['품질', '품질 자동검사 로드맵', [13, 14, 12, 11]], ['에너지', '에너지 절감 로드맵', [10, 11, 10, 10]],
+  ['인간친화', '인간친화 작업환경 로드맵', [10, 10, 11, 10]],
 ];
 const SUM_STATUS_DEF = [
-  ['작성중', 6, '#94a3b8', 'bg-slate-100 text-slate-600'], ['결제중', 5, '#f59e0b', 'bg-amber-100 text-amber-700'],
-  ['완료', 14, '#16a34a', 'bg-green-100 text-green-700'], ['반려', 3, '#dc2626', 'bg-rose-100 text-rose-700'],
-  ['확정', 11, '#2563eb', 'bg-blue-100 text-blue-700'], ['변경요청', 5, '#a855f7', 'bg-purple-100 text-purple-700'],
-  ['취소', 3, '#475569', 'bg-gray-200 text-gray-600'],
+  ['작성중', 55, '#94a3b8', 'bg-slate-100 text-slate-600'], ['결제중', 50, '#f59e0b', 'bg-amber-100 text-amber-700'],
+  ['완료', 96, '#16a34a', 'bg-green-100 text-green-700'], ['반려', 28, '#dc2626', 'bg-rose-100 text-rose-700'],
+  ['확정', 100, '#2563eb', 'bg-blue-100 text-blue-700'],
 ];
 const SUM_TASKS = (() => {
   const statusPool = SUM_STATUS_DEF.flatMap(([s, n]) => Array(n).fill(s));
@@ -5434,9 +5552,9 @@ const SUM_TASKS = (() => {
     });
   });
   return tasks.map((t, i) => {
-    const status = statusPool[(i * 7) % statusPool.length];
-    const change = status === '변경요청' ? ['일정변경', '담당자 변경', 'mTRM 변경 (A→B)'][i % 3] : (i % 9 === 0 ? '일정변경' : '-');
-    return { ...t, no: i + 1, name: `${t.dept} 기술과제 #${String(i + 1).padStart(2, '0')}`, linked: i % 3 === 0 ? `연계과제 #${(i % 5) + 1}` : '-', status, change };
+    const status = statusPool[(i * 11) % statusPool.length];
+    const change = i % 9 === 0 ? ['일정변경', '담당자 변경', 'mTRM 변경 (A→B)'][(i / 9) % 3] : '-';
+    return { ...t, no: i + 1, name: `${t.dept} 기술과제 #${String(i + 1).padStart(3, '0')}`, linked: i % 3 === 0 ? `연계과제 #${(i % 5) + 1}` : '-', status, change };
   });
 })();
 
@@ -5444,20 +5562,20 @@ const RM_SUM = [
   ['생산', '생산 자동화 로드맵', 0, 8, '차체 mTRM', '조립 mTRM', '확정', 12, '2026.01.12', '2026.09.20'],
   ['생산', '셀 무인화 로드맵', 4, 8, '조립 mTRM', '-', '작성중', 4, '2026.09.10', '2026.09.20'],
   ['물류', '물류/반송 로드맵', 1, 9, '물류 mTRM', '신규 mTRM', '확정', 9, '2026.02.03', '2026.10.02'],
-  ['생산관리', '생산관리 DX 로드맵', 2, 6, 'DX mTRM', 'AI mTRM', '변경요청', 6, '2026.03.15', '2026.09.28'],
+  ['생산관리', '생산관리 DX 로드맵', 2, 6, 'DX mTRM', 'AI mTRM', '결제중', 6, '2026.03.15', '2026.09.28'],
   ['보전', '예지보전 로드맵', 0, 7, '보전 mTRM', '-', '확정', 5, '2026.01.20', '2026.06.11'],
   ['보전', '설비 이상감지 로드맵', 0, 4, '보전 mTRM', '-', '완료', 3, '2026.01.08', '2026.08.30'],
   ['품질', '품질 자동검사 로드맵', 3, 9, '검사 mTRM', '-', '결제중', 5, '2026.04.01', '2026.09.05'],
   ['품질', 'AI 외관검사 로드맵', 6, 8, '검사 mTRM', 'AI mTRM', '작성중', 3, '2026.06.22', '2026.10.06'],
   ['에너지', '에너지 절감 로드맵', 2, 10, '에너지 mTRM', '-', '확정', 4, '2026.03.02', '2026.07.18'],
   ['인간친화', '인간친화 작업환경 로드맵', 5, 7, '안전 mTRM', '-', '반려', 3, '2026.05.11', '2026.08.04'],
-  ['물류', 'AGV 확대 로드맵', 8, 8, '물류 mTRM', '-', '취소', 0, '2026.07.07', '2026.07.29'],
+  ['물류', 'AGV 확대 로드맵', 8, 8, '물류 mTRM', '-', '작성중', 0, '2026.07.07', '2026.07.29'],
 ];
 const RM_Q_START = (n) => `${2026 + Math.floor(n / 4)}.${String((n % 4) * 3 + 1).padStart(2, '0')}.01`;
 const RM_Q_END = (n) => { const m = (n % 4) * 3 + 3; return `${2026 + Math.floor(n / 4)}.${String(m).padStart(2, '0')}.${[31, 30, 30, 31][n % 4]}`; };
 const RM_TODAY = '2026.10.10';
 const rmDaysAgo = (d) => Math.round((new Date(RM_TODAY.replace(/\./g, '-')) - new Date(d.replace(/\./g, '-'))) / 86400000);
-const RM_STATUS_COLOR = { '작성중': '#94a3b8', '결제중': '#f59e0b', '완료': '#16a34a', '반려': '#dc2626', '확정': '#2563eb', '변경요청': '#a855f7', '취소': '#475569' };
+const RM_STATUS_COLOR = { '작성중': '#94a3b8', '결제중': '#f59e0b', '완료': '#16a34a', '반려': '#dc2626', '확정': '#2563eb' };
 
 const TT_MAIL_SUBJECT = '[생기포털] 신규 기술동향이 등록되었습니다.';
 const TT_MAIL_BODY = '안녕하세요.\n생기포털 기술동향 게시판에 새로운 자료가 등록되어 안내드립니다.\n\n· 등록자 : 자동화기술팀 / 김의왕 매니저\n· 등록일 : 2026.09.30\n\n자세한 내용은 생기포털 > 생산기술 Tech PR > 기술동향 메뉴에서 확인하실 수 있습니다.\n감사합니다.';
@@ -5554,6 +5672,34 @@ Object.assign(MENU_LABELS, {
 });
 CUSTOM_VIEWS.push('todo-main', 'bp-gk', 'bp-sc', 'mp-gk', 'mp-sc');
 
+// 기술과제: 분과 × 과제상태 건수 [작성중, 결제중, 완료, 반려, 확정, 변경요청, 취소]
+const TK_BIG = [
+  ['생산', [16, 12, 38, 10, 27, 14, 11]],
+  ['물류', [13, 18, 25, 11, 22, 10, 12]],
+  ['생산관리', [11, 14, 20, 13, 17, 19, 10]],
+  ['보전', [18, 10, 23, 10, 15, 12, 10]],
+  ['품질', [12, 21, 17, 14, 29, 11, 13]],
+  ['에너지', [10, 11, 19, 12, 13, 10, 10]],
+  ['인간친화', [10, 13, 12, 18, 11, 10, 11]],
+];
+// 분과 × 상태 건수 [작성중, 결제중, 완료, 반려, 확정, 변경요청, 취소]
+const RM_BIG_RAW = [
+  ['생산', [18, 14, 32, 11, 41, 16, 10]],
+  ['물류', [15, 21, 24, 10, 33, 12, 11]],
+  ['생산관리', [12, 13, 27, 14, 22, 25, 10]],
+  ['보전', [20, 11, 29, 10, 19, 13, 12]],
+  ['품질', [13, 24, 18, 15, 36, 11, 14]],
+  ['에너지', [11, 10, 23, 12, 15, 10, 10]],
+  ['인간친화', [10, 12, 14, 21, 13, 11, 10]],
+];
+const RM_BIG = RM_BIG_RAW.map(([d, c]) => [d, c.slice(0, 5)]);
+const MT_DIR = [
+  ['램프생기실', '램프생기팀'], ['램프생기실', '램프선행생기팀'], ['모듈생기실', '모듈생기팀'], ['모듈생기실', '모듈공법팀'],
+  ['배터리생기실', '금형기술팀'], ['배터리생기실', '셀공정기술팀'], ['생기개발실', '자동화기술팀'], ['생기개발실', '요소기술팀'],
+  ['생기개발실', '지능화기술팀'], ['사사안전생기실', '안전생기팀'], ['전동화생기실', '전동화생기팀'], ['전동화생기실', '모터공정팀'],
+  ['전장생기실', '전장생기팀'], ['파워모듈생산개발실', '파워모듈개발팀'], ['파워모듈생산개발실', '파워모듈공정팀'],
+].map(([room, team]) => ({ room, team, key: `${room}|${team}` }));
+const RM_STATUS_ICON = { '작성중': 'fas fa-pen', '결제중': 'fas fa-hourglass-half', '완료': 'fas fa-flag-checkered', '반려': 'fas fa-rotate-left', '확정': 'fas fa-check' };
 const GNB_MENUS = [
   { id: 'myjob', label: 'My Job' }, { id: 'equip', label: '설비 통합 관리' }, { id: 'base', label: '기준정보' },
   {
@@ -6278,14 +6424,14 @@ class Component extends DCLogic {
   setMtrmMgmtFilter = (field, value) => this.setState(s => ({ mtrmMgmtFilter: { ...s.mtrmMgmtFilter, [field]: value } }));
   setMtrmMgmtForm = (field, value) => this.setState(s => ({ mtrmMgmtForm: { ...s.mtrmMgmtForm, [field]: value } }));
   openMtrmMgmtAdd = () => this.setState({
-    mtrmMgmtModalOpen: true, mtrmMgmtEditIndex: null,
+    mtrmMgmtModalOpen: true, mtrmMgmtEditIndex: null, mmRegStatus: null,
     mtrmMgmtForm: { name: '', dept: '', status: '', regDate: '' },
   });
   openMtrmMgmtEdit = (idx) => {
     const r = this.state.mtrmMgmtList[idx];
     this.setState({ mtrmMgmtModalOpen: true, mtrmMgmtEditIndex: idx, mtrmMgmtForm: { ...r } });
   };
-  closeMtrmMgmtModal = () => this.setState({ mtrmMgmtModalOpen: false });
+  closeMtrmMgmtModal = () => this.setState({ mtrmMgmtModalOpen: false, mmRegStatus: null });
   onMtrmMgmtModalBackdropClick = (e) => { if (e.target === e.currentTarget) this.closeMtrmMgmtModal(); };
   saveMtrmMgmt = () => {
     const f = this.state.mtrmMgmtForm;
@@ -7173,42 +7319,158 @@ class Component extends DCLogic {
       })(),
       verCompareCount: '',
       summaryCards: [
-        { label: '총 과제 수', value: '47', unit: '건', cls: 'border-t-blue-700' },
-        { label: '완료', value: '14', unit: '건 (29.8%)', cls: 'border-t-green-600' },
-        { label: '진행 (작성중·결제중·확정)', value: '22', unit: '건', cls: 'border-t-sky-500' },
-        { label: '이슈 (반려·변경요청·취소)', value: '11', unit: '건', cls: 'border-t-red-500' },
+        { label: '총 과제 수', value: '329', unit: '건', cls: 'border-t-blue-700' },
+        { label: '완료 + 확정', value: '196', unit: '건 (59.6%)', cls: 'border-t-green-600' },
+        { label: '진행 (작성중·결제중)', value: '105', unit: '건', cls: 'border-t-sky-500' },
+        { label: '이슈 (반려)', value: '28', unit: '건', cls: 'border-t-red-500' },
       ],
       sumDeptBars: [
-        ['생산', 12, 3, 4, 3, 2], ['물류', 9, 2, 3, 2, 2], ['생산관리', 6, 2, 2, 1, 1], ['보전', 5, 1, 2, 1, 1],
-        ['품질', 8, 2, 2, 2, 2], ['에너지', 4, 2, 1, 1, 0], ['인간친화', 3, 1, 1, 1, 0],
+        ['생산', 59, 14, 18, 15, 12], ['물류', 51, 12, 15, 13, 11], ['생산관리', 44, 11, 13, 10, 10], ['보전', 43, 10, 12, 11, 10],
+        ['품질', 50, 13, 14, 12, 11], ['에너지', 41, 10, 11, 10, 10], ['인간친화', 41, 10, 10, 11, 10],
       ].map(([name, total, p1, p2, p3, p4]) => ({
         name, total,
         onClick: () => this.setSumDept(name),
-        simpleStyle: { width: `${(total / 12) * 100}%` },
+        simpleStyle: { width: `${(total / 59) * 100}%` },
         rowCls: 'flex items-center gap-3 cursor-pointer px-1 py-0.5 rounded hover:bg-blue-50 ' + (this.state.sumDept === name ? 'bg-blue-50 ring-1 ring-blue-300' : (this.state.sumDept ? 'opacity-40' : '')),
-        wrapStyle: { width: `${(total / 12) * 100}%` },
+        wrapStyle: { width: `${(total / 59) * 100}%` },
         segs: [['P1', p1, '#93c5fd'], ['P2', p2, '#3b82f6'], ['P3', p3, '#1d4ed8'], ['P4', p4, '#1e3a8a']]
           .filter(s => s[1] > 0)
           .map(([label, v, c]) => ({ label, v, style: { width: `${(v / total) * 100}%`, background: c } })),
       })),
       sumStatus: [
-        ['작성중', 6, '#94a3b8'], ['결제중', 5, '#f59e0b'], ['완료', 14, '#16a34a'], ['반려', 3, '#dc2626'],
-        ['확정', 11, '#2563eb'], ['변경요청', 5, '#a855f7'], ['취소', 3, '#475569'],
+        ['작성중', 55, '#94a3b8'], ['결제중', 50, '#f59e0b'], ['완료', 96, '#16a34a'], ['반려', 28, '#dc2626'],
+        ['확정', 100, '#2563eb'],
       ].map(([label, v, c]) => ({
-        label, v, pct: `${((v / 47) * 100).toFixed(1)}%`, dot: { background: c },
-        seg: { width: `${(v / 47) * 100}%`, background: c },
-        barStyle: { width: `${(v / 14) * 100}%`, background: c },
+        label, v, pct: `${((v / 329) * 100).toFixed(1)}%`, dot: { background: c },
+        seg: { width: `${(v / 329) * 100}%`, background: c },
+        barStyle: { width: `${(v / 100) * 100}%`, background: c },
         onClick: () => this.setSumStatus(label),
         rowCls: 'flex items-center gap-3 cursor-pointer px-1 py-0.5 rounded hover:bg-gray-50 ' + (this.state.sumStatusF === label ? 'bg-blue-50 ring-1 ring-blue-300' : (this.state.sumStatusF ? 'opacity-40' : '')),
       })),
+      ...(() => {
+        const sts = Object.keys(RM_STATUS_ICON);
+        const fSt = this.state.sumStatusF;
+        const fDept = this.state.sumDept;
+        const fi = fSt ? sts.indexOf(fSt) : -1;
+        const totals = TK_BIG.map(([, c]) => c.reduce((a, b) => a + b, 0));
+        const all = totals.reduce((a, b) => a + b, 0);
+        const max = Math.max(...totals);
+        const colTotals = sts.map((_, k) => TK_BIG.reduce((a, [, c]) => a + c[k], 0));
+        const order = TK_BIG.map((_, i) => i).sort((a, b) => (fi >= 0 ? TK_BIG[b][1][fi] - TK_BIG[a][1][fi] : totals[b] - totals[a]));
+        return {
+          tkTotalAll: all,
+          tkCols: sts.map((k, si) => ({
+            label: k, icon: RM_STATUS_ICON[k],
+            total: colTotals[si], pct: `${((colTotals[si] / all) * 100).toFixed(0)}%`,
+            onClick: () => this.setSumStatus(k),
+            cls: 'w-full flex items-center justify-center gap-1 whitespace-nowrap rounded px-1 py-1 text-[12px] transition ' + (fSt === k ? 'text-white font-bold bg-[#1a4fb4]' : 'text-gray-500 font-semibold hover:text-[#1a4fb4] hover:bg-[#eef3fc]'),
+          })),
+          tkRows: order.map(i => {
+            const [d, c] = TK_BIG[i];
+            const mx = Math.max(...c);
+            const on = fDept === d;
+            return {
+              name: d, total: totals[i],
+              bar: { width: `${(totals[i] / max) * 100}%` },
+              onClick: () => this.setSumDept(d),
+              nameCls: 'font-semibold whitespace-nowrap rounded px-1.5 py-0.5 -ml-1.5 transition ' + (on ? 'bg-[#1a4fb4] text-white' : 'text-gray-900 hover:bg-[#eef3fc] hover:text-[#1a4fb4]'),
+              trCls: 'border-b border-gray-100 transition ' + (on ? 'bg-[#f4f7fc]' : (fDept ? 'opacity-50 hover:opacity-100' : 'hover:bg-[#f7f9fd]')),
+              cells: c.map((v, si) => ({
+                v, title: `${d} · ${sts[si]} ${v}건 (분과 내 ${Math.round((v / totals[i]) * 100)}%)`,
+                cls: v === mx
+                  ? 'inline-flex items-center justify-center min-w-[34px] h-7 px-2 rounded-full bg-[#1a4fb4] text-white font-bold'
+                  : (fi === si ? 'text-[#1a4fb4] font-bold' : (fi >= 0 ? 'text-gray-400' : 'text-gray-700')),
+              })),
+            };
+          }),
+        };
+      })(),
+      ...(() => {
+        const targets = this.state.mtTargets ?? ['생기개발실|자동화기술팀', '생기개발실|요소기술팀', '생기개발실|지능화기술팀'];
+        const m = this.state.mtModal;
+        const lbl = (k) => k.split('|')[1];
+        const base = {
+          mtChips: targets.map(k => ({ label: lbl(k), onRemove: () => this.setState({ mtTargets: targets.filter(x => x !== k) }) })),
+          mtNoChips: targets.length === 0,
+          mtOpen: () => this.setState({ mtModal: { q: { room: '', team: '' }, rows: MT_DIR.map(r => r.key), sel: [...targets] } }),
+          mtIsOpen: !!m,
+        };
+        if (!m) return base;
+        const set = (patch) => this.setState(st => ({ mtModal: { ...st.mtModal, ...patch } }));
+        const doSearch = () => {
+          const { room, team } = this.state.mtModal.q;
+          const rows = MT_DIR.filter(r => r.room.includes(room.trim()) && r.team.includes(team.trim())).map(r => r.key);
+          set({ rows });
+          if (!rows.length) alert('조회 조건에 해당하는 담당자정보가 없습니다.\n조회 조건을 변경 후 다시 조회해 주세요.');
+        };
+        const toggle = (k) => set({ sel: m.sel.includes(k) ? m.sel.filter(x => x !== k) : [...m.sel, k] });
+        const allOn = m.rows.length > 0 && m.rows.every(k => m.sel.includes(k));
+        return {
+          ...base,
+          mtQ: m.q,
+          mtOnRoom: (e) => set({ q: { ...m.q, room: e.target.value } }),
+          mtOnTeam: (e) => set({ q: { ...m.q, team: e.target.value } }),
+          mtOnKey: (e) => { if (e.key === 'Enter') doSearch(); },
+          mtSearch: doSearch,
+          mtRows: MT_DIR.filter(r => m.rows.includes(r.key)).map(r => {
+            const on = m.sel.includes(r.key);
+            return { ...r, checked: on, onToggle: () => toggle(r.key), trCls: 'cursor-pointer ' + (on ? 'bg-blue-50' : 'hover:bg-gray-50') };
+          }),
+          mtRowCount: m.rows.length,
+          mtEmpty: m.rows.length === 0,
+          mtAllChecked: allOn,
+          mtToggleAll: () => set({ sel: allOn ? m.sel.filter(k => !m.rows.includes(k)) : [...new Set([...m.sel, ...m.rows])] }),
+          mtSelCount: m.sel.length,
+          mtNoSel: m.sel.length === 0,
+          mtSelChips: m.sel.map(k => ({ label: `${k.split('|')[0]} · ${lbl(k)}`, onRemove: () => toggle(k) })),
+          mtConfirm: () => { this.setState({ mtTargets: m.sel, mtModal: null }); this.showToast(`메일알림 대상 ${m.sel.length}건이 선택되었습니다.`); },
+          mtClose: () => this.setState({ mtModal: null }),
+          mtStop: (e) => e.stopPropagation(),
+        };
+      })(),
+      sumStatusFlat: (() => {
+        const cnt = [['작성중', 55, 'fas fa-pen'], ['결제중', 50, 'fas fa-hourglass-half'], ['완료', 96, 'fas fa-flag-checkered'], ['반려', 28, 'fas fa-rotate-left'], ['확정', 100, 'fas fa-check']];
+        const f = this.state.sumStatusF;
+        return cnt.map(([k, v, icon]) => ({
+          label: k, v, icon,
+          pct: `${((v / 329) * 100).toFixed(1)}%`,
+          barStyle: { width: `${(v / 100) * 100}%`, opacity: f && f !== k ? 0.35 : 1 },
+          onClick: () => this.setSumStatus(k),
+          rowCls: 'flex items-center gap-2 cursor-pointer px-1 py-1 rounded hover:bg-gray-50 ' + (f === k ? 'bg-blue-50 ring-1 ring-blue-300' : (f ? 'opacity-60' : '')),
+        }));
+      })(),
+      sumStatusGroups: (() => {
+        const cnt = { '작성중': 6, '결제중': 5, '확정': 11, '완료': 14, '반려': 3, '변경요청': 5, '취소': 3 };
+        const icon = { '작성중': 'fas fa-pen', '결제중': 'fas fa-hourglass-half', '확정': 'fas fa-check', '완료': 'fas fa-flag-checkered', '반려': 'fas fa-rotate-left', '변경요청': 'fas fa-code-compare', '취소': 'fas fa-ban' };
+        const groups = [
+          ['진행', '작성 → 결제 → 확정', ['작성중', '결제중', '확정'], true],
+          ['완료', '', ['완료'], false],
+          ['이슈', '반려 · 변경요청 · 취소', ['반려', '변경요청', '취소'], false],
+        ];
+        const f = this.state.sumStatusF;
+        return groups.map(([title, desc, keys, flow]) => {
+          const total = keys.reduce((a, k) => a + cnt[k], 0);
+          return {
+            title, desc, total, pct: `${((total / 47) * 100).toFixed(1)}%`,
+            items: keys.map((k, i) => ({
+              label: k, v: cnt[k], icon: icon[k],
+              step: flow ? (i ? '→' : '') : '',
+              pct: `${((cnt[k] / 47) * 100).toFixed(1)}%`,
+              barStyle: { width: `${(cnt[k] / 14) * 100}%`, opacity: f && f !== k ? 0.35 : 1 },
+              onClick: () => this.setSumStatus(k),
+              rowCls: 'flex items-center gap-2 cursor-pointer px-1 py-0.5 rounded hover:bg-gray-50 ' + (f === k ? 'bg-blue-50 ring-1 ring-blue-300' : (f ? 'opacity-60' : '')),
+            })),
+          };
+        });
+      })(),
       openRoadmapSummary: this.openRoadmapSummary,
       isTaskSummary: this.state.summaryMode !== 'roadmap',
       isRoadmapSummary: this.state.summaryMode === 'roadmap',
       summaryTitle: this.state.summaryMode === 'roadmap' ? '요약 · mTRM 정보 (로드맵 기준)' : '요약 · mTRM 기술과제 (과제명 기준)',
       rmSumCards: (() => {
-        const total = RM_SUM.length;
+        const total = RM_BIG.reduce((a, [, c]) => a + c.reduce((x, y) => x + y, 0), 0);
         const changed = RM_SUM.filter(r => r[5] !== '-').length;
-        const fixed = RM_SUM.filter(r => r[6] === '확정' || r[6] === '완료').length;
+        const fixed = RM_BIG.reduce((a, [, c]) => a + c[2] + c[4], 0);
         const recent = RM_SUM.filter(r => rmDaysAgo(r[9]) <= 30).length;
         return [
           { label: '총 로드맵', value: String(total), unit: '건' },
@@ -7217,22 +7479,73 @@ class Component extends DCLogic {
           { label: '최근 30일 수정', value: String(recent), unit: '건' },
         ];
       })(),
+      rmSumStatusIcons: Object.keys(RM_STATUS_ICON).map((k, si) => {
+        const on = (this.state.rmSumSort ?? 'total') === si;
+        return {
+          label: k, icon: RM_STATUS_ICON[k],
+          colTotal: RM_BIG.reduce((a, [, c]) => a + c[si], 0),
+          pct: `${((RM_BIG.reduce((a, [, c]) => a + c[si], 0) / RM_BIG.reduce((a, [, c]) => a + c.reduce((x, y) => x + y, 0), 0)) * 100).toFixed(0)}%`,
+          bar: { width: `${(RM_BIG.reduce((a, [, c]) => a + c[si], 0) / Math.max(...Object.keys(RM_STATUS_ICON).map((_, k) => RM_BIG.reduce((a, [, c]) => a + c[k], 0)))) * 100}%` },
+          onClick: () => this.setState({ rmSumSort: on ? 'total' : si }),
+          cls: 'flex flex-col items-center gap-0.5 rounded-lg border px-1 py-2 transition ' + (on ? 'border-[#1a4fb4] bg-[#eef3fc] text-[#1a4fb4] font-bold' : 'border-gray-200 bg-white text-gray-600 hover:border-[#9fb6e6] hover:bg-[#f4f7fc]'),
+          sortMark: on ? '▼' : '',
+          thCls: 'w-full flex items-center justify-center gap-1 whitespace-nowrap rounded px-1 py-1 text-[12px] transition ' + (on ? 'text-[#1a4fb4] font-bold bg-[#eef3fc]' : 'text-gray-500 font-semibold hover:text-[#1a4fb4] hover:bg-gray-50'),
+        };
+      }),
+      rmSumTotalAll: RM_BIG.reduce((a, [, c]) => a + c.reduce((x, y) => x + y, 0), 0),
+      rmSumSortTotal: () => this.setState({ rmSumSort: 'total' }),
+      rmSumSortTotalCls: 'flex flex-col items-center gap-0.5 rounded-lg border px-1 py-2 transition ' + ((this.state.rmSumSort ?? 'total') === 'total' ? 'border-[#1a4fb4] bg-[#eef3fc] text-[#1a4fb4] font-bold' : 'border-gray-200 bg-white text-gray-600 hover:border-[#9fb6e6] hover:bg-[#f4f7fc]'),
+      rmSumTotalMark: (this.state.rmSumSort ?? 'total') === 'total' ? '▼' : '',
+      rmSumSortTotalThCls: 'w-full flex items-center justify-end gap-1 whitespace-nowrap rounded px-1 py-1 text-[12px] transition ' + ((this.state.rmSumSort ?? 'total') === 'total' ? 'text-[#1a4fb4] font-bold bg-[#eef3fc]' : 'text-gray-500 font-semibold hover:text-[#1a4fb4] hover:bg-gray-50'),
+      rmSumSortLabel: (() => { const k = this.state.rmSumSort ?? 'total'; return k === 'total' ? '합계' : Object.keys(RM_STATUS_ICON)[k]; })(),
       rmSumDeptBars: (() => {
-        const depts = ['생산', '물류', '생산관리', '보전', '품질', '에너지', '인간친화'];
-        const max = Math.max(...depts.map(d => RM_SUM.filter(r => r[0] === d).length));
-        return depts.map(d => {
-          const rows = RM_SUM.filter(r => r[0] === d);
-          const tasks = rows.reduce((a, r) => a + r[7], 0);
-          return {
-            name: d, count: rows.length, tasks,
-            style: { width: `${(rows.length / max) * 100}%` },
-            segs: rows.map(r => ({ style: { flex: 1, background: RM_STATUS_COLOR[r[6]] }, title: `${r[1]} · ${r[6]}` })),
-          };
+        const sts = Object.keys(RM_STATUS_ICON);
+        const totals = RM_BIG.map(([, c]) => c.reduce((a, b) => a + b, 0));
+        const max = Math.max(...totals);
+        const cellMax = Math.max(...RM_BIG.flatMap(([, c]) => c));
+        const sortKey = this.state.rmSumSort ?? 'total';
+        const order = RM_BIG.map((_, i) => i).sort((a, b) => {
+          const va = sortKey === 'total' ? totals[a] : RM_BIG[a][1][sortKey];
+          const vb = sortKey === 'total' ? totals[b] : RM_BIG[b][1][sortKey];
+          return vb - va;
         });
+        return order.map((i) => ({ d: RM_BIG[i][0], c: RM_BIG[i][1], i })).map(({ d, c, i }) => ({
+          name: d, count: totals[i],
+          sharePct: `${((totals[i] / totals.reduce((a, b) => a + b, 0)) * 100).toFixed(0)}%`,
+          topLabel: sts[c.indexOf(Math.max(...c))],
+          topIcon: RM_STATUS_ICON[sts[c.indexOf(Math.max(...c))]],
+          totalBar: { width: `${(totals[i] / max) * 100}%` },
+          cells: c.map((v, si) => {
+            const cellMin = Math.min(...RM_BIG.flatMap(([, cc]) => cc));
+            const a = v ? 0.06 + ((v - cellMin) / Math.max(1, cellMax - cellMin)) * 0.74 : 0;
+            return {
+              v: v ? String(v) : '–',
+              cellStyle: { background: v ? `rgba(26,79,180,${a.toFixed(2)})` : '#f9fafb' },
+              numCls: 'text-[15px] leading-none tabular-nums ' + (!v ? 'text-gray-300' : (a > 0.42 ? 'text-white font-bold' : 'text-[#173f84] font-bold')),
+              simpleCls: v === Math.max(...c)
+                ? 'inline-flex items-center justify-center min-w-[34px] h-7 px-2 rounded-full bg-[#1a4fb4] text-white font-bold'
+                : (sortKey === si ? 'text-[#1a4fb4] font-semibold' : 'text-gray-700'),
+              share: `${totals[i] ? Math.round((v / totals[i]) * 100) : 0}%`,
+              shareCls: 'text-[10px] leading-none tabular-nums mt-1 ' + (a > 0.42 ? 'text-white/80' : 'text-[#173f84]/60'),
+              title: `${d} · ${sts[si]} ${v}건 (분과 내 ${totals[i] ? Math.round((v / totals[i]) * 100) : 0}%)`,
+              colCls: 'h-11 rounded-md flex flex-col items-center justify-center transition hover:ring-2 hover:ring-[#1a4fb4]/40 ' + (sortKey === si ? 'ring-2 ring-[#1a4fb4] ring-offset-0' : ''),
+            };
+          }),
+          style: { width: `${(totals[i] / max) * 100}%` },
+          segs: c.map((v, si) => ({ v, st: sts[si] })).filter(x => x.v > 0).map(x => ({
+            style: { flex: x.v },
+            label: String(x.v), icon: RM_STATUS_ICON[x.st],
+            title: `${d} · ${x.st} ${x.v}건`,
+          })),
+        }));
       })(),
       rmSumStatus: Object.keys(RM_STATUS_COLOR).map(st => {
-        const v = RM_SUM.filter(r => r[6] === st).length;
-        return { label: st, v, pct: `${((v / RM_SUM.length) * 100).toFixed(0)}%`, dot: { background: RM_STATUS_COLOR[st] }, barStyle: { width: `${(v / RM_SUM.length) * 100}%`, background: RM_STATUS_COLOR[st] }, rowBar: { width: `${(v / 4) * 100}%`, background: RM_STATUS_COLOR[st] } };
+        const si = Object.keys(RM_STATUS_ICON).indexOf(st);
+        const all = RM_BIG.reduce((a, [, c]) => a + c.reduce((x, y) => x + y, 0), 0);
+        const per = Object.keys(RM_STATUS_ICON).map((_, k) => RM_BIG.reduce((a, [, c]) => a + c[k], 0));
+        const v = si >= 0 ? per[si] : 0;
+        const mx = Math.max(...per);
+        return { label: st, v, icon: RM_STATUS_ICON[st] || '', monoBar: { width: `${(v / mx) * 100}%` }, pct: `${((v / all) * 100).toFixed(0)}%`, dot: { background: RM_STATUS_COLOR[st] }, barStyle: { width: `${(v / RM_SUM.length) * 100}%`, background: RM_STATUS_COLOR[st] }, rowBar: { width: `${(v / 4) * 100}%`, background: RM_STATUS_COLOR[st] } };
       }),
       rmSumFlows: RM_SUM.filter(r => r[5] !== '-').map(r => ({
         dept: r[0], name: r[1], pre: r[4], post: r[5], mod: r[9], status: r[6],
@@ -7252,9 +7565,9 @@ class Component extends DCLogic {
         statusStyle: { background: RM_STATUS_COLOR[r[6]] },
         barStyle: { gridColumn: `${r[2] + 2} / span ${Math.min(r[3], 16 - r[2])}`, gridRow: 1, background: RM_STATUS_COLOR[r[6]] },
       })),
-      sumPhaseText: 'P1 13 · P2 15 · P3 11 · P4 8',
-      sumDoneRate: '29.8%',
-      sumDoneStyle: { width: '29.8%' },
+      sumPhaseText: 'P1 80 · P2 93 · P3 82 · P4 74',
+      sumDoneRate: '59.6%',
+      sumDoneStyle: { width: '59.6%' },
       sumMatrixHead: SUM_STATUS_DEF.map(s => s[0]),
       sumMatrix: SUM_DEPTS.map(([dept]) => {
         const rows = SUM_TASKS.filter(t => t.dept === dept);
@@ -7278,8 +7591,8 @@ class Component extends DCLogic {
         return list.map(t => ({ ...t, statusCls: `inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap ${badge[t.status]}`, phaseCls: `inline-block w-8 py-0.5 rounded text-[10px] font-bold ${phaseCls[t.phase] || ''}` }));
       })(),
       sumPhaseLegend: [['P1', '#93c5fd'], ['P2', '#3b82f6'], ['P3', '#1d4ed8'], ['P4', '#1e3a8a']].map(([label, c]) => ({ label, dot: { background: c } })),
-      sumPhaseSteps: [['P1', 13], ['P2', 15], ['P3', 11], ['P4', 8]].map(([label, v], i, arr) => ({
-        label: `${label} 단계`, v, pct: `${((v / 47) * 100).toFixed(1)}%`,
+      sumPhaseSteps: [['P1', 80], ['P2', 93], ['P3', 82], ['P4', 74]].map(([label, v], i, arr) => ({
+        label: `${label} 단계`, v, pct: `${((v / 329) * 100).toFixed(1)}%`,
         style: {
           background: ['#93c5fd', '#3b82f6', '#1d4ed8', '#1e3a8a'][i],
           clipPath: i === arr.length - 1 ? 'polygon(0 0, 100% 0, 100% 100%, 0 100%, 12px 50%)' : (i === 0 ? 'polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%)' : 'polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%, 12px 50%)'),
@@ -7288,9 +7601,9 @@ class Component extends DCLogic {
         },
       })),
       sumTaskCount: SUM_TASKS.filter(t => (!this.state.sumDept || t.dept === this.state.sumDept) && (!this.state.sumStatusF || t.status === this.state.sumStatusF)).length,
-      sumPhases: [['P1', 13], ['P2', 15], ['P3', 11], ['P4', 8]].map(([label, v], i) => ({
+      sumPhases: [['P1', 80], ['P2', 93], ['P3', 82], ['P4', 74]].map(([label, v], i) => ({
         label, v,
-        barStyle: { height: `${(v / 15) * 100}%`, background: ['#93c5fd', '#3b82f6', '#1d4ed8', '#1e3a8a'][i] },
+        barStyle: { height: `${(v / 93) * 100}%`, background: ['#93c5fd', '#3b82f6', '#1d4ed8', '#1e3a8a'][i] },
       })),
       summaryRows: [
         { dept: 'AI', mtrm: '차체 mTRM', roadmap: '차체 자동화 로드맵', tasks: '5', status: '진행중' },
@@ -7376,7 +7689,7 @@ class Component extends DCLogic {
           mmTaskRows: tasks.map((t, i) => ({
             ...t, no: tasks.length - i,
             stateCls: stCls(t.state),
-            onRoadmap: () => this.gotoView('roadmap-chart'),
+            onRoadmap: this.gotoRoadmapOverview,
             onTask: () => this.openSubTaskDetail({ name: t.task, status: t.state, period: t.period }),
             onLinkedSearch: () => this.showToast('연계과제 선택 팝업 (기술과제 목록)'),
             onLinked: () => this.openSubTaskDetail({ name: t.linked, status: t.state, period: t.period }),
@@ -7386,11 +7699,34 @@ class Component extends DCLogic {
           mmInfoRows: infos.map((r, i) => ({
             ...r, no: infos.length - i,
             stateCls: stCls(r.status),
-            onRoadmap: () => this.gotoView('roadmap-chart'),
+            onRoadmap: () => this.setState({ mtrmMgmtModalOpen: true, mtrmMgmtEditIndex: null, mmRegStatus: r.status }),
           })),
           mmDeptCount: depts.length,
           mmDeptEmpty: depts.length === 0,
           mmDeptRows: depts.map(d => ({ ...d, onClick: this.openDeptHead })),
+        };
+      })(),
+      ...(() => {
+        const d = this.state.mmInfoDetail;
+        if (!d) return { mmInfoDetailOpen: false };
+        const cls = { '작성중': 'bg-gray-100 text-gray-600', '결재중': 'bg-amber-100 text-amber-700', '확정': 'bg-blue-100 text-blue-700', '완료': 'bg-green-100 text-green-700', '반려': 'bg-rose-100 text-rose-700' }[d.status] || 'bg-gray-100 text-gray-600';
+        const changed = d.prev !== d.next;
+        return {
+          mmInfoDetailOpen: true,
+          mmIdRows: [
+            ['분과', d.dept], ['로드맵', d.roadmap], ['기간', d.period], ['등록일', d.reg], ['최근 수정일', d.modDate],
+          ].map(([k, v]) => ({ k, v })),
+          mmIdPrev: d.prev, mmIdNext: d.next,
+          mmIdChanged: changed,
+          mmIdStatus: d.status,
+          mmIdStatusCls: 'inline-block flex-shrink-0 whitespace-nowrap rounded-full px-3 py-0.5 text-[12px] font-semibold ' + cls,
+          mmIdHistory: [
+            { date: d.modDate, text: changed ? `연계 mTRM 변경 (${d.prev} → ${d.next})` : '연계 mTRM 지정', who: '홍길동' },
+            { date: d.reg.replace(/-/g, '.'), text: '로드맵 등록', who: '김의왕' },
+          ],
+          mmIdClose: () => this.setState({ mmInfoDetail: null }),
+          mmIdStop: (e) => e.stopPropagation(),
+          mmIdGoRoadmap: () => { this.setState({ mmInfoDetail: null }); this.gotoRoadmapOverview(); },
         };
       })(),
       mtrmRegBlocks: [
@@ -7843,6 +8179,25 @@ class Component extends DCLogic {
           && (!this.state.mtrmMgmtFilter.status || r.status === this.state.mtrmMgmtFilter.status)).length,
         this.state.mtrmMgmtPage, 10, (p) => this.setState({ mtrmMgmtPage: p })
       ),
+      ...(() => {
+        const st = this.state.mmRegStatus;
+        const toast = (m) => () => { this.setState({ mtrmMgmtModalOpen: false, mmRegStatus: null }); this.showToast(m); };
+        const P = 'bg-blue-700 hover:bg-blue-800 text-white font-semibold px-5 py-1 rounded whitespace-nowrap';
+        const D = 'bg-gray-600 hover:bg-gray-700 text-white font-semibold px-5 py-1 rounded whitespace-nowrap';
+        const B = (label, onClick, cls = P) => ({ label, onClick, cls });
+        const close = B('닫기', this.closeMtrmMgmtModal);
+        const norm = st === '결제중' ? '결재중' : st;
+        const map = {
+          '작성중': [B('저장', toast('작성중으로 저장되었습니다.')), B('수정', toast('수정되었습니다.')), close],
+          '결재중': [B('수정', toast('수정되었습니다.')), close],
+          '완료': [B('수정', toast('수정되었습니다.')), B('확정', toast('확정 처리되었습니다.')), B('삭제', toast('삭제되었습니다.'), D), close],
+          '확정': [B('수정', toast('수정되었습니다.')), B('삭제', toast('삭제되었습니다.'), D), close],
+        };
+        return {
+          mmRegTitle: st ? `mTRM 정보 · ${st}` : '신규등록',
+          mmRegButtons: map[norm] || [B('결재', this.saveMtrmMgmt), close],
+        };
+      })(),
       mtrmMgmtModalOpen: this.state.mtrmMgmtModalOpen,
       mtrmMgmtModalTitle: this.state.mtrmMgmtEditIndex !== null ? 'mTRM 수정' : 'mTRM 등록',
       mtrmMgmtModalBtn: this.state.mtrmMgmtEditIndex !== null ? '수정' : '등록',

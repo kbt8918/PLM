@@ -378,6 +378,17 @@
     ] },
   };
 
+  // ---- [공통] 메일알림 대상 검색 ----
+  // 근거: design-import/생기포털 v3.dc.html MT_DIR (담당실 / 부서(팀) 마스터).
+  // SCR-011 협의체 수신자, SCR-012 mTRM 관리 메일알림대상, SCR-014 기술동향 수신자가 공유한다.
+  // 실 연동 시 조직 마스터(담당실/팀) 조회 API 응답으로 교체됩니다.
+  var mailDirectory = [
+    ['램프생기실', '램프생기팀'], ['램프생기실', '램프선행생기팀'], ['모듈생기실', '모듈생기팀'], ['모듈생기실', '모듈공법팀'],
+    ['배터리생기실', '금형기술팀'], ['배터리생기실', '셀공정기술팀'], ['생기개발실', '자동화기술팀'], ['생기개발실', '요소기술팀'],
+    ['생기개발실', '지능화기술팀'], ['사사안전생기실', '안전생기팀'], ['전동화생기실', '전동화생기팀'], ['전동화생기실', '모터공법팀'],
+    ['전장생기실', '전장생기팀'], ['파워모듈생산개발실', '파워모듈개발팀'], ['파워모듈생산개발실', '파워모듈공정팀'],
+  ].map(function (d) { return { room: d[0], team: d[1], key: d[0] + '|' + d[1] }; });
+
   global.PNDES = global.PNDES || {};
   global.PNDES.TECH_PR_TYPE = TECH_PR_TYPE;
   global.PNDES.data = {
@@ -393,6 +404,7 @@
     chartQuarters: chartQuarters, chartTasks: chartTasks,
     techPrCards: techPrCards,
     trendsData: trendsData,
+    mailDirectory: mailDirectory,
   };
   global.PNDES.MODALS = MODALS;
 })(window);
