@@ -22,6 +22,27 @@
   var MPM = global.PNDES.mock.mp;
   var PPM = global.PNDES.mock.pp;
   var TTM = global.PNDES.mock.tt;
+  var SMM = global.PNDES.mock.sm;
+
+  // state.sm[key]에 부분 패치를 적용한 새 sm 객체를 만든다.
+  function smPatch(st, key, patch) {
+    var next = $.extend({}, st.sm);
+    next[key] = $.extend({}, st.sm[key], patch);
+    return next;
+  }
+
+  // 현재 필터가 적용돼 화면에 보이는 마스터 행 (전체선택 토글 대상)
+  function SMVisible(state, key) {
+    var o = state.sm[key];
+    var base = key === 'std' ? SMM.std : SMM.work;
+    var all = o.extra.concat(base).filter(function (r) { return o.del.indexOf(r.id) < 0; });
+    var A = o.A;
+    return all.filter(function (r) {
+      return r.isNew || ((A.group === '전체' || r.group === A.group) &&
+        (A.product === '전체' || r.product === A.product) &&
+        (!A.name || r.ko.indexOf(A.name) >= 0 || r.en.toLowerCase().indexOf(A.name.toLowerCase()) >= 0));
+    });
+  }
 
   // 현재 페이지에 보이는 기술과제 행(전체선택 토글 대상)
   function TTView(state) {
@@ -214,6 +235,14 @@
     ttSel: {}, // 행 체크 상태(v3 ttSel)
     ttModalId: null, // 상세 팝업 대상 행 id
     ttTab: 'detail', // 상세 팝업 탭(기술과제 상세 / 결재현황)
+    // 마스터 2종(표준공정/표준 작업명) 편집 상태 — F:필터입력, A:확정필터, extra:신규행,
+    // del:삭제된 id, chk:체크, use:사용여부 덮어쓰기 (v3 state.sm)
+    sm: {
+      std: { F: $.extend({}, global.PNDES.mock.sm.F0), A: $.extend({}, global.PNDES.mock.sm.F0), extra: [], del: [], chk: {}, use: {} },
+      work: { F: $.extend({}, global.PNDES.mock.sm.F0), A: $.extend({}, global.PNDES.mock.sm.F0), extra: [], del: [], chk: {}, use: {} },
+    },
+    smPop: false, // 표준공정 등록 팝업(v3 smPop)
+    smPopF: { group: '', product: '', name: '', en: '', bp: '' },
     mmPicker: null, // 조회 선택 팝업 종류: council | trm
     mmPk: { sel: '', filter: { a: '', b: '' }, applied: { a: '', b: '' } }, // 조회 선택 팝업 필터/선택 상태(v3 pk*)
     mmPickedCouncil: '', mmPickedTrm: '',
@@ -848,6 +877,101 @@
         case 'pp-toast':
           showToast(String($el.data('m')));
           break;
+        case 'sm-search': {
+          var ssK = String($el.data('key'));
+          setState(function (st) { return { sm: smPatch(st, ssK, { A: $.extend({}, st.sm[ssK].F) }) }; });
+          showToast('조회 조건이 적용되었습니다.');
+          break;
+        }
+        case 'sm-check': {
+          var scK = String($el.data('key'));
+          var scId = String($el.data('id'));
+          setState(function (st) {
+            var chk = $.extend({}, st.sm[scK].chk);
+            chk[scId] = !chk[scId];
+            return { sm: smPatch(st, scK, { chk: chk }) };
+          });
+          break;
+        }
+        case 'sm-toggle-all': {
+          var saK = String($el.data('key'));
+          var saRows = SMVisible(state, saK);
+          var saOn = saRows.length > 0 && saRows.every(function (r) { return state.sm[saK].chk[r.id]; });
+          setState(function (st) {
+            var chk = $.extend({}, st.sm[saK].chk);
+            saRows.forEach(function (r) { chk[r.id] = !saOn; });
+            return { sm: smPatch(st, saK, { chk: chk }) };
+          });
+          break;
+        }
+        case 'sm-add': {
+          var adK = String($el.data('key'));
+          // 표준공정은 등록 팝업으로, 표준 작업명은 빈 행 추가로 처리한다(v3 onAdd).
+          if (adK === 'std') { setState({ smPop: true, smPopF: { group: '', product: '', name: '', en: '', bp: '' } }); break; }
+          var adBase = SMM.work;
+          setState(function (st) {
+            var o = st.sm[adK];
+            var row = {
+              id: 'n' + Date.now(), isNew: true,
+              group: o.F.group !== '전체' ? o.F.group : adBase[0].group,
+              product: o.F.product !== '전체' ? o.F.product : adBase[0].product,
+              ko: '', en: '', bp: '', status: '', use: 'Y', writer: '이*영', at: '2026.10.20',
+            };
+            return { sm: smPatch(st, adK, { extra: [row].concat(o.extra) }) };
+          });
+          break;
+        }
+        case 'sm-save': {
+          var svK = String($el.data('key'));
+          var svNew = state.sm[svK].extra.filter(function (r) { return r.isNew; });
+          if (!svNew.length) { showToast('저장할 변경 사항이 없습니다.'); break; }
+          if (svNew.some(function (r) { return !String(r.ko).trim(); })) {
+            showToast((svK === 'std' ? '표준공정명' : '표준 작업명') + '(한글)을 입력하세요.');
+            break;
+          }
+          setState(function (st) {
+            return { sm: smPatch(st, svK, {
+              extra: st.sm[svK].extra.map(function (r) { return r.isNew ? $.extend({}, r, { isNew: false, status: 'Y' }) : r; }),
+            }) };
+          });
+          showToast('저장되었습니다.');
+          break;
+        }
+        case 'sm-del': {
+          var dlK = String($el.data('key'));
+          var dlIds = Object.keys(state.sm[dlK].chk).filter(function (k) { return state.sm[dlK].chk[k]; });
+          if (!dlIds.length) { showToast('삭제할 행을 선택하세요.'); break; }
+          setState(function (st) {
+            return { sm: smPatch(st, dlK, { del: st.sm[dlK].del.concat(dlIds), chk: {} }) };
+          });
+          showToast(dlIds.length + '건 삭제되었습니다.');
+          break;
+        }
+        case 'sm-excel':
+          showToast('조회 결과를 엑셀로 내려받습니다.');
+          break;
+        case 'smpop-close':
+          if ($el.hasClass('rm-modal-overlay') && e.target !== this) break;
+          setState({ smPop: false });
+          break;
+        case 'smpop-save': {
+          var f = state.smPopF;
+          if (!f.group) { showToast('제품군을 선택하세요.'); break; }
+          if (!f.product) { showToast('제품을 선택하세요.'); break; }
+          if (!String(f.name).trim()) { showToast('표준공정명(한글)을 입력하세요.'); break; }
+          if (!String(f.en).trim()) { showToast('표준공정명(영문)을 입력하세요.'); break; }
+          if (!String(f.bp).trim()) { showToast('Best Practice를 입력하세요.'); break; }
+          setState(function (st) {
+            var row = {
+              id: 'n' + Date.now(), group: f.group, product: f.product,
+              ko: String(f.name).trim(), en: String(f.en).trim(), bp: String(f.bp).trim(),
+              status: 'Y', use: 'Y', writer: '이*영', at: '2026.10.20',
+            };
+            return { smPop: false, sm: smPatch(st, 'std', { extra: [row].concat(st.sm.std.extra) }) };
+          });
+          showToast('표준공정이 등록되었습니다.');
+          break;
+        }
         case 'tt-search':
           setState(function (st) { return { ttApplied: $.extend({}, st.ttF), ttPage: 1, ttSel: {} }; });
           showToast('조회 조건이 적용되었습니다.');
@@ -1452,6 +1576,54 @@
 
     // 모듈공정배치 필터 입력 — 조회 버튼을 눌러야 적용된다(v3 mpF -> mpApplied)
     // 부품공정배치 필터 입력 — 조회 버튼을 눌러야 적용된다(v3 ppF -> ppApplied)
+    // 마스터 필터 입력(조회를 눌러야 적용) / 신규행 셀 편집 / 사용여부 변경
+    $(document).on('input change', '[data-sm-field]', function () {
+      var $i = $(this);
+      var k = $i.data('key');
+      var key = $i.data('smField');
+      var patch = {};
+      patch[key] = $i.val();
+      state.sm[k] = $.extend({}, state.sm[k], { F: $.extend({}, state.sm[k].F, patch) });
+    });
+
+    $(document).on('input change', '[data-smrow-field]', function () {
+      var $i = $(this);
+      var k = $i.data('key');
+      var id = String($i.data('id'));
+      var field = $i.data('smrowField');
+      var val = $i.val();
+      state.sm[k] = $.extend({}, state.sm[k], {
+        extra: state.sm[k].extra.map(function (r) {
+          if (r.id !== id) return r;
+          var o = {};
+          o[field] = val;
+          return $.extend({}, r, o);
+        }),
+      });
+    });
+
+    $(document).on('change', '[data-sm-use]', function () {
+      var $i = $(this);
+      var k = $i.data('key');
+      var id = String($i.data('id'));
+      var val = $i.val();
+      setState(function (st) {
+        var use = $.extend({}, st.sm[k].use);
+        use[id] = val;
+        return { sm: smPatch(st, k, {
+          use: use,
+          extra: st.sm[k].extra.map(function (r) { return r.id === id ? $.extend({}, r, { use: val }) : r; }),
+        }) };
+      });
+    });
+
+    $(document).on('input change', '[data-smpop-field]', function () {
+      var key = $(this).data('smpopField');
+      var patch = {};
+      patch[key] = $(this).val();
+      state.smPopF = $.extend({}, state.smPopF, patch);
+    });
+
     $(document).on('input change', '[data-tt-field]', function () {
       var $i = $(this);
       var key = $i.data('ttField');

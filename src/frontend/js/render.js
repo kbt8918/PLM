@@ -2052,6 +2052,135 @@
     );
   }
 
+  // ---------- 관리자 > 공법기본관리 > 마스터 (stdprc-m 표준공정 / stdwork-m 표준 작업명) ----------
+  // 근거: design-import/생기포털 v3.dc.html isSmStd/isSmWork 블록 / smVals / smRows.
+  // 두 화면은 라벨만 다른 동일 구조의 편집 그리드(행 추가/저장/삭제 + 필터).
+  var SM = global.PNDES.mock.sm;
+
+  // 기본 데이터 + 신규 추가분(extra) - 삭제분(del), 사용여부 덮어쓰기(use) 반영 (v3 smRows).
+  function smRows(state, key) {
+    var st = state.sm[key];
+    var base = key === 'std' ? SM.std : SM.work;
+    return st.extra.concat(base)
+      .filter(function (r) { return st.del.indexOf(r.id) < 0; })
+      .map(function (r) { return st.use[r.id] ? $.extend({}, r, { use: st.use[r.id] }) : r; });
+  }
+
+  function smVisible(state, key) {
+    var A = state.sm[key].A;
+    return smRows(state, key).filter(function (r) {
+      return r.isNew || ((A.group === '전체' || r.group === A.group) &&
+        (A.product === '전체' || r.product === A.product) &&
+        (!A.name || r.ko.indexOf(A.name) >= 0 || r.en.toLowerCase().indexOf(A.name.toLowerCase()) >= 0));
+    });
+  }
+
+  function smUniq(base, key) {
+    var seen = [];
+    base.forEach(function (r) { if (seen.indexOf(r[key]) < 0) seen.push(r[key]); });
+    return seen;
+  }
+
+  function renderSmRegisterModal(state) {
+    var f = state.smPopF;
+    var sel = function (k, options, placeholder) {
+      return '<select data-smpop-field="' + k + '"><option value="">' + esc(placeholder) + '</option>' +
+        options.map(function (o) {
+          return '<option value="' + esc(o) + '"' + (o === f[k] ? ' selected' : '') + '>' + esc(o) + '</option>';
+        }).join('') + '</select>';
+    };
+    var txt = function (k) {
+      return '<input type="text" data-smpop-field="' + k + '" value="' + esc(f[k]) + '" />';
+    };
+    return (
+      '<div class="rm-modal-overlay" data-action="smpop-close">' +
+        '<div class="rm-modal-box sm-pop">' +
+          '<div class="rm-modal-header-navy"><h3>표준공정 등록</h3>' +
+            '<button type="button" class="rm-modal-close" data-action="smpop-close"><i class="fas fa-times"></i></button></div>' +
+          '<div class="rm-modal-body">' +
+            '<table class="tpa-table mp-info-table"><tbody>' +
+              '<tr><th>제품군 <span class="mm-req">*</span></th><td>' + sel('group', SM.popGroups, '선택') + '</td></tr>' +
+              '<tr><th>제품 <span class="mm-req">*</span></th><td>' + sel('product', SM.popProducts, '선택') + '</td></tr>' +
+              '<tr><th>표준공정명(한글) <span class="mm-req">*</span></th><td>' + txt('name') + '</td></tr>' +
+              '<tr><th>표준공정명(영문) <span class="mm-req">*</span></th><td>' + txt('en') + '</td></tr>' +
+              '<tr><th>Best Practice <span class="mm-req">*</span></th><td>' + txt('bp') + '</td></tr>' +
+            '</tbody></table>' +
+            '<div class="tm-actions">' +
+              '<button type="button" class="btn-navy tpa-btn-sm" data-action="smpop-save">저장</button>' +
+              '<button type="button" class="btn-outline-sm" data-action="smpop-close">닫기</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>'
+    );
+  }
+
+  function renderSm(state, view) {
+    var isStd = view === 'stdprc-m';
+    var key = isStd ? 'std' : 'work';
+    var base = isStd ? SM.std : SM.work;
+    var st = state.sm[key];
+    var rows = smVisible(state, key);
+    var allOn = rows.length > 0 && rows.every(function (r) { return st.chk[r.id]; });
+    var nameLabel = isStd ? '표준공정명' : '표준 작업명';
+    var sel = function (k, options) {
+      return '<select data-sm-field="' + k + '" data-key="' + key + '"><option value="전체">전체</option>' +
+        options.map(function (o) {
+          return '<option value="' + esc(o) + '"' + (o === st.F[k] ? ' selected' : '') + '>' + esc(o) + '</option>';
+        }).join('') + '</select>';
+    };
+    var body = rows.length
+      ? rows.map(function (r, i) {
+          var cell = function (field, value) {
+            return r.isNew
+              ? '<td><input type="text" data-smrow-field="' + field + '" data-key="' + key + '" data-id="' + esc(r.id) + '" value="' + esc(value) + '" /></td>'
+              : '<td class="mp-left">' + esc(value) + '</td>';
+          };
+          return '<tr>' +
+            '<td data-action="sm-check" data-key="' + key + '" data-id="' + esc(r.id) + '"><input type="checkbox" class="pp-box"' + (st.chk[r.id] ? ' checked' : '') + ' /></td>' +
+            '<td>' + (i + 1) + '</td><td>' + esc(r.group) + '</td><td>' + esc(r.product) + '</td>' +
+            cell('ko', r.ko) + cell('en', r.en) + cell('bp', r.bp) +
+            '<td>' + esc(r.status) + '</td>' +
+            '<td><select data-sm-use data-key="' + key + '" data-id="' + esc(r.id) + '">' +
+              ['Y', 'N'].map(function (o) {
+                return '<option value="' + o + '"' + (o === r.use ? ' selected' : '') + '>' + o + '</option>';
+              }).join('') + '</select></td>' +
+            '<td>' + esc(r.writer) + '</td><td class="mp-nowrap">' + esc(r.at) + '</td></tr>';
+        }).join('')
+      : '<tr><td colspan="11" class="mm-empty">조회된 데이터가 없습니다.</td></tr>';
+    return (
+      '<div class="admin-screen mp-screen" data-screen-label="' + (isStd ? '제품별 표준공정 마스터' : '표준 작업명 관리 마스터') + '">' +
+        '<div class="mp-head">' +
+          '<h2 class="mp-title">' + (isStd ? '제품별 표준공정 마스터' : '표준 작업명 관리 마스터') + '</h2>' +
+          '<div class="mp-head-btns">' +
+            '<button type="button" class="btn-navy tpa-btn-sm" data-action="sm-add" data-key="' + key + '">행 추가</button>' +
+            '<button type="button" class="btn-navy tpa-btn-sm" data-action="sm-save" data-key="' + key + '">저장</button>' +
+            '<button type="button" class="btn-outline-sm" data-action="sm-del" data-key="' + key + '">삭제</button>' +
+            '<button type="button" class="btn-excel" data-action="sm-excel">엑셀</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="mp-filter"><table class="mp-filter-table cmp-filter-table"><tr>' +
+          '<th>제품군</th><td>' + sel('group', smUniq(base, 'group')) + '</td>' +
+          '<th>제품</th><td>' + sel('product', smUniq(base, 'product')) + '</td>' +
+          '<th>' + esc(nameLabel) + '</th><td><input type="text" data-sm-field="name" data-key="' + key + '" value="' + esc(st.F.name) + '" /></td>' +
+        '</tr></table>' +
+        '<div class="mp-filter-acts">' +
+          '<button type="button" class="btn-dark tpa-btn-sm" data-action="sm-search" data-key="' + key + '"><i class="fas fa-search" style="font-size:10px"></i>조회</button>' +
+        '</div></div>' +
+        '<p class="mp-total">총 <b>' + rows.length + '</b>건</p>' +
+        '<div class="mp-scroll"><table class="tpa-table mp-table sm-table"><thead>' +
+          '<tr><th rowspan="2"><input type="checkbox" class="pp-box" data-action="sm-toggle-all" data-key="' + key + '"' + (allOn ? ' checked' : '') + ' /></th>' +
+            '<th rowspan="2">NO</th><th rowspan="2">제품군</th><th rowspan="2">제품</th>' +
+            '<th colspan="2">' + esc(nameLabel) + '</th>' +
+            '<th rowspan="2">Best Practice<br />주요내용</th><th rowspan="2">상태</th>' +
+            '<th rowspan="2">사용여부</th><th rowspan="2">등록자</th><th rowspan="2">등록일시</th></tr>' +
+          '<tr><th>(한글)</th><th>(영문)</th></tr>' +
+        '</thead><tbody>' + body + '</tbody></table></div>' +
+        (isStd && state.smPop ? renderSmRegisterModal(state) : '') +
+      '</div>'
+    );
+  }
+
   // ---------- SCR-010 Tech PR 관리자 ----------
   // 근거: design-import/생기포털 v3.dc.html isTechPrAdmin — 필터(분과/BU/적용공장/기술태그) + "Tech PR 등록" 표 +
   // "기술태그 Master Table" + 신규등록 팝업 + 기술태그 추가 팝업. (README #11은 이전 화면 설명이라 v3를 따름)
@@ -3606,6 +3735,8 @@
     'mod-cmp': function (state) { return renderCmp(state, 'mod-cmp'); },
     'part-cmp': function (state) { return renderCmp(state, 'part-cmp'); },
     'tt-plan': renderTtPlan,
+    'stdprc-m': function (state) { return renderSm(state, 'stdprc-m'); },
+    'stdwork-m': function (state) { return renderSm(state, 'stdwork-m'); },
   };
 
   global.PNDES.render = {

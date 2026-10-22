@@ -1552,3 +1552,11 @@ button.cm-round-btn { cursor: pointer; }
 .tt-filter-table th { width: 84px; }
 .tt-filter-table td { width: 28%; }
 .tt-filter-table select, .tt-filter-table input[type="text"], .tt-filter-table input[type="date"] { max-width: 260px; }
+
+/* 마스터 관리(표준공정 / 표준 작업명) — 근거: 생기포털 v3.dc.html isSmStd/isSmWork */
+.sm-table { min-width: 1200px; }
+.sm-table input[type="text"] { width: 100%; min-width: 80px; height: 22px; border: 1px solid #aeb5c1; font-size: 11px; padding: 0 4px; }
+.sm-table select { height: 22px; border: 1px solid #aeb5c1; font-size: 11px; }
+.sm-pop { max-width: 560px; }
+.sm-pop .mp-info-table th { width: 170px; text-align: left; }
+.sm-pop .mp-info-table input[type="text"], .sm-pop .mp-info-table select { width: 100%; height: 26px; border: 1px solid #aeb5c1; font-size: 12px; padding: 0 6px; }
