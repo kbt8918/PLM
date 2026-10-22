@@ -108,6 +108,8 @@
     videoProcess: null, // SCR-001 "현재=자동"/SCR-003 "기술현황=●" 클릭 시 자동화 설비 동영상 모달에 표시할 공정/작업명
     videoKind: 'part', // 동영상 모달 제목 접두어 구분: 'part'(부품) / 'module'(모듈)
     techPrDetailIndex: null, // SCR-009/MTRM-MAIN Tech PR 카드 클릭 시 표시할 커스텀 상세 오버레이 인덱스
+    deptRows: MM.deptHeadRows.map(function (r) { return $.extend({}, r, { checked: false, isNew: false }); }), // 분과장 관리 편집 행(v3 deptRows)
+    deptRowSeq: MM.deptHeadRows.length, // 신규 행 id 시퀀스
     trendMailOpen: false, // SCR-014 신규 등록 시 먼저 뜨는 알림메일 팝업(v3 trendMailOpen)
     mmUnlinked: [], // SCR-012에서 연계과제를 해제한 과제명 목록(v3 mmUnlinked)
     techPrDetailCard: null, // 클릭한 카드 좌표(gi/fi/ci) — 상세 오버레이가 카드 필드를 그대로 표시
@@ -931,6 +933,43 @@
         case 'mm-linked-search':
           showToast('연계과제 선택 팝업 (기술과제 목록)');
           break;
+        case 'dept-toggle': {
+          var dtId = Number($el.data('id'));
+          setState(function (st) {
+            return { deptRows: st.deptRows.map(function (x) { return x.id === dtId ? $.extend({}, x, { checked: !x.checked }) : x; }) };
+          });
+          break;
+        }
+        case 'dept-add-row':
+          setState(function (st) {
+            var nid = st.deptRowSeq + 1;
+            var t = todayDotted().replace(/\./g, '-');
+            return {
+              deptRowSeq: nid,
+              deptRows: st.deptRows.concat([{ id: nid, dept: '', main: '', sub: '', reg: t, mod: t, checked: false, isNew: true }]),
+            };
+          });
+          break;
+        case 'dept-remove-rows': {
+          var dRows = state.deptRows;
+          if (!dRows.some(function (r) { return r.checked; })) { showToast('삭제할 분과를 선택하세요.'); break; }
+          if (dRows.some(function (r) { return r.checked && !r.isNew; })) {
+            showToast('등록된 분과는 삭제할 수 없습니다. 신규로 추가한 행만 삭제할 수 있습니다.');
+            break;
+          }
+          setState({ deptRows: dRows.filter(function (r) { return !r.checked; }) });
+          break;
+        }
+        case 'dept-save': {
+          var badDept = state.deptRows.filter(function (r) { return !String(r.dept).trim() || !String(r.main).trim(); });
+          if (badDept.length) { global.alert('분과명과 분과 담당자(정)는 필수 입력입니다.'); break; }
+          setState({ mmModal: null });
+          showToast('분과 정보가 저장되었습니다.');
+          break;
+        }
+        case 'dept-search':
+          showToast('담당자 검색 팝업은 이후 연결됩니다.');
+          break;
         case 'trend-mail-close':
           setState({ trendMailOpen: false });
           break;
@@ -1136,6 +1175,21 @@
       if (ev.key === 'Enter') { ev.preventDefault(); $('[data-action="trm-search"]').trigger('click'); }
     });
     // SCR-014 등록 팝업 입력값: state에 보관하고 발송 미리보기 조각과 글자 수만 갱신한다(포커스 유지)
+    // 분과장 관리 그리드 입력 — 타이핑 중 재렌더로 포커스를 잃지 않도록 state만 갱신한다
+    // (저장/행추가 시점에 setState로 다시 그린다). data-trm-field 패턴과 동일.
+    $(document).on('input change', '[data-dept-field]', function () {
+      var $i = $(this);
+      var id = Number($i.data('id'));
+      var key = $i.data('deptField');
+      var val = $i.val();
+      state.deptRows = state.deptRows.map(function (x) {
+        if (x.id !== id) return x;
+        var patch = {};
+        patch[key] = val;
+        return $.extend({}, x, patch);
+      });
+    });
+
     $(document).on('input change', '[data-trm-field]', function () {
       var f = state.trendForm;
       var key = $(this).data('trmField');

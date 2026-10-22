@@ -1422,3 +1422,15 @@ button.cm-round-btn { cursor: pointer; }
 .tm-brand { font-weight: 700; color: #1e3a8a; flex-shrink: 0; }
 .tm-foot p { margin: 0; font-size: 11px; color: var(--color-text-faint); line-height: 1.7; }
 .tm-actions { display: flex; justify-content: center; gap: 8px; margin-top: 20px; }
+
+
+/* v3: 분과장 관리 팝업 편집 그리드. 근거: 생기포털 v3.dc.html deptRowsView/deptAddRow */
+.mm-dept-topbar { display: flex; align-items: center; justify-content: space-between; }
+.mm-dept-tools { display: flex; align-items: center; gap: 6px; }
+.mm-dept-tool { width: 22px; height: 22px; border: 1px solid #2f5aa8; background: #fff; color: #2f5aa8; font-weight: 700; font-size: 14px; line-height: 1; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; }
+.mm-dept-tool:hover { background: #eef2ff; }
+.mm-dept-acts { display: flex; gap: 8px; }
+.mm-dept-table input[type="text"] { width: 100%; min-width: 0; height: 24px; border: 1px solid var(--color-border); padding: 0 6px; font-size: 12px; }
+.mm-dept-person { display: flex; align-items: center; gap: 6px; }
+.mm-dept-person .mm-icon-btn { flex-shrink: 0; }
+.mm-req { color: #c0392b; }

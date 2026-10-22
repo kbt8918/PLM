@@ -2142,21 +2142,49 @@
   }
 
   // 분과장 관리 팝업
-  function renderMmDeptHeadModal() {
-    var person = function (name) { return '<div class="tpa-owner"><span class="tpa-icon-btn"><i class="fas fa-search"></i></span><span>' + esc(name) + '</span></div>'; };
-    var rows = MM.deptHeadRows.map(function (r) {
-      return '<tr><td class="mm-head-dept">' + esc(r.dept) + '</td><td class="mm-left">' + person(r.main) + '</td><td class="mm-left">' + person(r.sub) + '</td></tr>';
-    }).join('');
+  // v3: 분과장 관리 팝업이 읽기전용 표에서 편집 가능한 그리드로 바뀌었다.
+  // 행 추가(+)/선택 삭제(−)/저장, 기존 행은 분과명 고정(신규 행만 입력·삭제 가능).
+  // 근거: design-import/생기포털 v3.dc.html deptRowsView / deptAddRow / deptRemoveRows / deptSave.
+  function renderMmDeptHeadModal(state) {
+    var rows = (state.deptRows || []).map(function (r) {
+      var person = function (val, field) {
+        return '<div class="mm-dept-person">' +
+          '<button type="button" class="tpa-icon-btn mm-icon-btn" data-action="dept-search" title="담당자 검색"><i class="fas fa-search"></i></button>' +
+          '<input type="text" data-dept-field="' + field + '" data-id="' + r.id + '" value="' + esc(val) + '" />' +
+        '</div>';
+      };
+      var deptCell = r.isNew
+        ? '<input type="text" data-dept-field="dept" data-id="' + r.id + '" value="' + esc(r.dept) + '" placeholder="분과명 입력" />'
+        : '<span>' + esc(r.dept) + '</span>';
+      return '<tr>' +
+        '<td><input type="checkbox" data-action="dept-toggle" data-id="' + r.id + '"' + (r.checked ? ' checked' : '') + ' /></td>' +
+        '<td class="mm-head-dept">' + deptCell + '</td>' +
+        '<td class="mm-left">' + person(r.main, 'main') + '</td>' +
+        '<td class="mm-left">' + person(r.sub, 'sub') + '</td>' +
+        '<td class="mm-muted mm-nowrap">' + esc(r.reg) + '</td>' +
+        '<td class="mm-muted mm-nowrap">' + esc(r.mod) + '</td>' +
+      '</tr>';
+    }).join('') || mmEmptyRow(6);
     return (
       '<div class="rm-modal-overlay">' +
-        '<div class="rm-modal-box" style="max-width:768px">' +
+        '<div class="rm-modal-box" style="max-width:860px">' +
           '<div class="rm-modal-header-navy"><h3>분과장 관리</h3><button type="button" class="rm-modal-close" data-action="mm-close-modal"><i class="fas fa-times"></i></button></div>' +
-          '<div class="rm-modal-topbar tpa-topbar">' +
-            '<button type="button" class="btn-navy tpa-btn-sm" data-action="mm-close-modal">저장</button>' +
-            '<button type="button" class="btn-navy tpa-btn-sm" data-action="mm-close-modal">닫기</button>' +
+          '<div class="rm-modal-topbar tpa-topbar mm-dept-topbar">' +
+            '<div class="mm-dept-tools">' +
+              '<button type="button" class="mm-dept-tool" data-action="dept-add-row" title="행 추가">+</button>' +
+              '<button type="button" class="mm-dept-tool" data-action="dept-remove-rows" title="선택 삭제">&minus;</button>' +
+            '</div>' +
+            '<div class="mm-dept-acts">' +
+              '<button type="button" class="btn-navy tpa-btn-sm" data-action="dept-save">저장</button>' +
+              '<button type="button" class="btn-navy tpa-btn-sm" data-action="mm-close-modal">닫기</button>' +
+            '</div>' +
           '</div>' +
           '<div class="rm-modal-body">' +
-            '<table class="tpa-table mm-table"><thead><tr><th style="width:112px">분과</th><th>분과 담당자 (정)</th><th>분과 담당자 (부)</th></tr></thead>' +
+            '<table class="tpa-table mm-table mm-dept-table"><thead><tr>' +
+              '<th style="width:40px"></th><th style="width:120px">분과 <span class="mm-req">*</span></th>' +
+              '<th>분과 담당자(정) <span class="mm-req">*</span></th><th>분과 담당자(부)</th>' +
+              '<th style="width:84px">등록일</th><th style="width:92px">최근수정일</th>' +
+            '</tr></thead>' +
             '<tbody>' + rows + '</tbody></table>' +
             '<p class="tpa-muted mm-note">※ 분과장(정)은 mTRM 협의체 소집 메일의 수신자(To)로 자동 지정됩니다.</p>' +
           '</div>' +
@@ -2355,7 +2383,7 @@
     else if (state.mmModal === 'version') modal = renderMmVersionModal(state);
     else if (state.mmModal === 'summary') modal = renderMmSummaryModal(state);
     else if (state.mmModal === 'deptChange') modal = renderMmDeptChangeModal();
-    else if (state.mmModal === 'deptHead') modal = renderMmDeptHeadModal();
+    else if (state.mmModal === 'deptHead') modal = renderMmDeptHeadModal(state);
     else if (state.mmModal === 'infoDetail') modal = renderMmInfoDetailModal(state);
     else if (state.mmModal === 'updHist') modal = renderMmUpdHistModal();
 
