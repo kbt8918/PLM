@@ -1468,3 +1468,43 @@ button.cm-round-btn { cursor: pointer; }
 .todo-foot-sel { height: 22px; border: 1px solid #aeb5c1; background: #fff; padding: 0 6px; font-size: 11px; color: #333; }
 .todo-foot-icon { width: 24px; height: 22px; border: 1px solid #aeb5c1; background: #fff; color: #555; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 10px; }
 .todo-foot-icon:hover { background: #f1f3f7; }
+
+
+/* 공법 관리 > 공정배치 관리(mp-*/bp-*) — 근거: 생기포털 v3.dc.html isMpList/isPpList 블록 */
+.mp-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.mp-title { font-size: 18px; font-weight: 700; color: var(--color-text); margin: 0; white-space: nowrap; }
+.mp-head-btns { display: flex; gap: 6px; }
+.mp-filter { border: 1px solid var(--color-border); border-top: 2px solid #2f5aa8; background: #f6f7f9; padding: 0; margin-bottom: 12px; }
+.mp-filter-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.mp-filter-table th { background: #e6e9ef; border: 1px solid #c3c9d4; font-weight: 700; padding: 6px 8px; width: 84px; white-space: nowrap; text-align: center; }
+.mp-filter-table td { border: 1px solid #c3c9d4; background: #fff; padding: 4px 6px; }
+.mp-filter-table select, .mp-filter-table input[type="text"] { height: 22px; border: 1px solid #aeb5c1; background: #fff; font-size: 11px; padding: 0 4px; width: 100%; min-width: 0; }
+.mp-cell-pair { display: flex; gap: 4px; }
+.mp-sel-sm { flex: 0 0 140px; }
+.mp-sel-xs { flex: 0 0 64px; }
+.mp-check { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.mp-filter-acts { display: flex; justify-content: center; gap: 6px; padding: 8px; }
+.mp-total { font-size: 12px; color: var(--color-text-sub); margin: 0 0 6px; }
+.mp-total b { color: #2f5aa8; }
+.mp-scroll { overflow: auto; max-height: 460px; border: 1px solid var(--color-border); }
+.mp-table { min-width: 1600px; font-size: 11px; text-align: center; white-space: nowrap; }
+.mp-table th { background: #e9edf4; border: 1px solid #b6bfce; font-weight: 700; padding: 5px 4px; }
+.mp-table td { border: 1px solid #d5dae3; padding: 4px; }
+.mp-row { cursor: pointer; }
+.mp-row:hover td { background: #f4f7fc; }
+.mp-left { text-align: left; }
+.mp-nowrap { white-space: nowrap; }
+.mp-modal { max-width: 1180px; }
+.mp-info-table { font-size: 12px; margin-bottom: 12px; }
+.mp-info-table th { background: #eef0f4; width: 84px; white-space: nowrap; }
+.mp-tabs { display: flex; gap: 0; margin-bottom: 10px; }
+.mp-tab { height: 30px; padding: 0 20px; font-size: 12px; border: 1px solid #c9ced8; background: #f1f3f7; color: #555; cursor: pointer; white-space: nowrap; font-family: inherit; }
+.mp-tab.is-active { background: #fff; color: #c0392b; border-color: #c0392b; font-weight: 700; }
+.mp-colchks { display: flex; flex-wrap: wrap; gap: 10px; padding: 8px 10px; border: 1px solid var(--color-border); background: #f6f7f9; margin-bottom: 8px; font-size: 11px; }
+.mp-colchk { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
+.mp-grid-table { min-width: 900px; font-size: 11px; text-align: center; }
+.mp-grid-table th { background: #eef0f4; border: 1px solid #b6bfce; font-weight: 700; padding: 5px 4px; white-space: nowrap; }
+.mp-grid-table td { border: 1px solid #d5dae3; padding: 4px; }
+.mp-grid-main td { background: #f1f3f7; font-weight: 700; text-align: left; }
+.mp-grid-sel, .mp-grid-inp { height: 20px; border: 1px solid #aeb5c1; font-size: 11px; width: 100%; min-width: 60px; }
+.mp-pane-empty { padding: 40px; text-align: center; color: var(--color-text-faint); font-size: 12px; border: 1px dashed var(--color-border); }

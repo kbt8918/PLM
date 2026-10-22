@@ -19,6 +19,7 @@
   var CM = global.PNDES.mock.scr011;
   var MM = global.PNDES.mock.scr012;
   var TR = global.PNDES.mock.scr014;
+  var MPM = global.PNDES.mock.mp;
   // SCR-014 등록 팝업 초기값(v3 ttImages/ttFiles/ttTags/TT_MAIL_*). editIndex가 있으면 수정 모드
   function newTrendForm(open, editIndex, row) {
     var withId = function (list, make) { return list.map(function (x, i) { return make(x, i + 1); }); };
@@ -56,7 +57,8 @@
 
   // Figma 변환(html.to.design 등) 캡처처럼 화면별 개별 URL 진입이 필요할 때만 사용.
   // 예: index.html?screen=SCR-006 — 유효한 SCR-ID가 아니면 기본 진입 화면(SCR-001)을 유지.
-  var screenParamMatch = /[?&]screen=(SCR-\d{3}|MTRM-MAIN|todo-main)(&|$)/.exec(global.location.search);
+  // v3에서 공법 관리/업무지표현황/관리자 신규 화면이 추가되어 소문자 view id도 허용한다.
+  var screenParamMatch = /[?&]screen=(SCR-\d{3}|MTRM-MAIN|todo-main|mp-gk|mp-sc|bp-gk|bp-sc|mod-cmp|part-cmp|tt-plan|stdprc-m|stdwork-m)(&|$)/.exec(global.location.search);
   var initialScreen = screenParamMatch ? screenParamMatch[1] : 'todo-main';
 
   // 같은 목적으로 팝업(모달)도 페이지 로드 시 바로 열리게 하는 파라미터.
@@ -152,6 +154,11 @@
     // target: 확인 시 수신자를 반영할 화면 (council | trend)
     mailTarget: { open: false, target: null, query: { room: '', team: '' }, selected: [] },
     mmForm: newMmForm(), // 신규등록 팝업 입력값
+    mpF: $.extend({}, global.PNDES.mock.mp.F0), // 모듈공정배치 필터 입력값(v3 mpF)
+    mpApplied: $.extend({}, global.PNDES.mock.mp.F0), // 조회 버튼으로 확정된 필터(v3 mpApplied)
+    mpCols: $.extend({}, global.PNDES.mock.mp.COLS0), // 공정배치 탭 컬럼 토글(v3 mpCols)
+    mpModalId: null, // 상세 팝업 대상 행 id(v3 mpModal)
+    mpTab: 'basic', // 상세 팝업 탭(v3 mpTab)
     mmPicker: null, // 조회 선택 팝업 종류: council | trm
     mmPk: { sel: '', filter: { a: '', b: '' }, applied: { a: '', b: '' } }, // 조회 선택 팝업 필터/선택 상태(v3 pk*)
     mmPickedCouncil: '', mmPickedTrm: '',
@@ -703,6 +710,35 @@
         case 'todo-card':
           showToast($el.data('label') + ' 목록으로 이동합니다.');
           break;
+        case 'mp-search':
+          setState(function (st) { return { mpApplied: $.extend({}, st.mpF) }; });
+          showToast('조회 조건이 적용되었습니다.');
+          break;
+        case 'mp-reset':
+          setState({ mpF: $.extend({}, MPM.F0), mpApplied: $.extend({}, MPM.F0) });
+          break;
+        case 'mp-open':
+          setState({ mpModalId: String($el.data('id')), mpTab: 'basic' });
+          break;
+        case 'mp-close':
+          if ($el.hasClass('rm-modal-overlay') && e.target !== this) break;
+          setState({ mpModalId: null });
+          break;
+        case 'mp-tab':
+          setState({ mpTab: String($el.data('tab')) });
+          break;
+        case 'mp-col-toggle': {
+          var mpK = String($el.data('k'));
+          setState(function (st) {
+            var c = $.extend({}, st.mpCols);
+            c[mpK] = !c[mpK];
+            return { mpCols: c };
+          });
+          break;
+        }
+        case 'mp-toast':
+          showToast(String($el.data('m')));
+          break;
         case 'pm-manual':
           showToast('Web Manual을 엽니다.');
           break;
@@ -1245,6 +1281,16 @@
     $(document).on('keydown', '[data-pk-field]', function (ev) {
       if (ev.key !== 'Enter') return;
       setState(function (st) { return { mmPk: $.extend({}, st.mmPk, { applied: $.extend({}, st.mmPk.filter), sel: '' }) }; });
+    });
+
+    // 모듈공정배치 필터 입력 — 조회 버튼을 눌러야 적용된다(v3 mpF -> mpApplied)
+    $(document).on('input change', '[data-mp-field]', function () {
+      var $i = $(this);
+      var key = $i.data('mpField');
+      var val = $i.is(':checkbox') ? $i.prop('checked') : $i.val();
+      var patch = {};
+      patch[key] = val;
+      state.mpF = $.extend({}, state.mpF, patch);
     });
 
     $(document).on('change', '[data-lk-field]', function () {

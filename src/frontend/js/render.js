@@ -1450,6 +1450,171 @@
     );
   }
 
+  // ---------- 공법 관리 > 모듈공정배치 관리 (mp-gk 생기 / mp-sc 생산) ----------
+  // 근거: design-import/생기포털 v3.dc.html isMpList 블록 / mpVals.
+  // 필터(지역·공장·자종연식·라인·제품·담당·검색어) + 결과표 20컬럼 + 상세 팝업(4탭, 컬럼 토글 그리드).
+  var MP = global.PNDES.mock.mp;
+
+  function mpUniq(key) {
+    var seen = [];
+    MP.rows.forEach(function (r) { if (seen.indexOf(r[key]) < 0) seen.push(r[key]); });
+    return seen;
+  }
+
+  function mpFilterRows(A) {
+    return MP.rows.filter(function (r) {
+      return (A.region === '전체' || r.region === A.region) &&
+        (A.plant === '전체' || r.plant === A.plant) &&
+        (A.car === '전체' || r.dev === A.car || r.prod === A.car) &&
+        (!A.carTxt || r.dev.indexOf(A.carTxt) >= 0 || r.prod.indexOf(A.carTxt) >= 0) &&
+        (A.line === '전체' || r.line === A.line) &&
+        (!A.lineTxt || r.line.indexOf(A.lineTxt) >= 0) &&
+        (A.product === '전체' || r.product === A.product) &&
+        (!A.kw || [r.region, r.dev, r.plant, r.line, r.product].some(function (x) { return x.indexOf(A.kw) >= 0; }));
+    });
+  }
+
+  function mpSelect(key, value, options, extraCls) {
+    return '<select data-mp-field="' + key + '" class="' + (extraCls || '') + '"><option value="전체">전체</option>' +
+      options.map(function (o) {
+        return '<option value="' + esc(o) + '"' + (o === value ? ' selected' : '') + '>' + esc(o) + '</option>';
+      }).join('') + '</select>';
+  }
+
+  function mpText(key, value, extraCls) {
+    return '<input type="text" data-mp-field="' + key + '" value="' + esc(value) + '" class="' + (extraCls || '') + '" />';
+  }
+
+  function renderMpFilter(f) {
+    var th = function (t) { return '<th>' + esc(t) + '</th>'; };
+    return '<div class="mp-filter"><table class="mp-filter-table">' +
+      '<tr>' + th('지역') + '<td>' + mpSelect('region', f.region, mpUniq('region')) + '</td>' +
+        th('공장') + '<td>' + mpSelect('plant', f.plant, mpUniq('plant')) + '</td>' +
+        '<td colspan="2"></td></tr>' +
+      '<tr>' + th('자종연식') + '<td><div class="mp-cell-pair">' + mpSelect('car', f.car, mpUniq('dev'), 'mp-sel-sm') + mpText('carTxt', f.carTxt) + '</div></td>' +
+        th('라인') + '<td><div class="mp-cell-pair">' + mpSelect('line', f.line, mpUniq('line'), 'mp-sel-sm') + mpText('lineTxt', f.lineTxt) + '</div></td>' +
+        th('제품') + '<td><div class="mp-cell-pair">' + mpSelect('product', f.product, mpUniq('product'), 'mp-sel-sm') + mpText('productTxt', f.productTxt) + '</div></td></tr>' +
+      '<tr>' + th('담당') + '<td><label class="mp-check"><input type="checkbox" data-mp-field="mine"' + (f.mine ? ' checked' : '') + ' />본인 담당</label></td>' +
+        th('검색어') + '<td colspan="3"><div class="mp-cell-pair">' +
+          '<select data-mp-field="kwField" class="mp-sel-sm"><option value="전체"' + (f.kwField === '전체' ? ' selected' : '') + '>전체</option>' +
+            '<option value="라인"' + (f.kwField === '라인' ? ' selected' : '') + '>라인</option>' +
+            '<option value="제품"' + (f.kwField === '제품' ? ' selected' : '') + '>제품</option></select>' +
+          mpText('kw', f.kw) +
+          '<select class="mp-sel-xs"><option>AND</option><option>OR</option></select>' +
+        '</div></td></tr>' +
+      '</table>' +
+      '<div class="mp-filter-acts">' +
+        '<button type="button" class="btn-dark tpa-btn-sm" data-action="mp-search"><i class="fas fa-search" style="font-size:10px"></i>조회</button>' +
+        '<button type="button" class="btn-outline-sm" data-action="mp-reset">초기화</button>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function renderMpList(state, view) {
+    var sc = view === 'mp-sc';
+    var f = state.mpF;
+    var rows = mpFilterRows(state.mpApplied);
+    var body = rows.length
+      ? rows.map(function (r, i) {
+          var aMark = r.app ? (r.aDone ? '●' : '○') : '';
+          return '<tr class="mp-row" data-action="mp-open" data-id="' + esc(r.id) + '">' +
+            '<td>' + (i + 1) + '</td><td>' + esc(r.region) + '</td><td>' + esc(r.dev) + '</td><td>' + esc(r.prod) + '</td>' +
+            '<td class="mp-left">' + esc(r.plant) + '</td><td class="mp-left">' + esc(r.line) + '</td><td>' + esc(r.product) + '</td>' +
+            '<td>' + (r.std ? '●' : '○') + '</td><td>' + esc(r.uph) + '</td><td>' + esc(r.rate) + '</td>' +
+            '<td>' + esc(r.work) + '</td><td>' + esc(r.direct) + '</td><td>' + esc(r.rev) + '</td>' +
+            '<td class="mp-nowrap">' + esc(r.mod) + '</td><td>' + esc(r.writer) + '</td>' +
+            '<td>' + (r.wDone ? '●' : '○') + '</td><td>' + esc(r.app) + ' ' + aMark + '</td>' +
+            '<td>' + esc(r.dept) + '</td><td class="mp-nowrap">' + esc(r.dist) + '</td><td></td></tr>';
+        }).join('')
+      : '<tr><td colspan="20" class="mm-empty">조회된 데이터가 없습니다.</td></tr>';
+    return (
+      '<div class="admin-screen mp-screen" data-screen-label="' + (sc ? '생산모듈공정배치 관리' : '생기모듈공정배치 관리') + '">' +
+        '<div class="mp-head">' +
+          '<h2 class="mp-title">' + (sc ? '생산모듈공정배치 관리' : '생기모듈공정배치 관리') + '</h2>' +
+          '<div class="mp-head-btns">' +
+            '<button type="button" class="btn-navy tpa-btn-sm" data-action="mp-toast" data-m="등록 팝업을 엽니다.">등록</button>' +
+            '<button type="button" class="btn-excel" data-action="mp-toast" data-m="조회 결과를 엑셀로 내려받습니다.">엑셀</button>' +
+          '</div>' +
+        '</div>' +
+        renderMpFilter(f) +
+        '<p class="mp-total">총 <b>' + rows.length + '</b>건</p>' +
+        '<div class="mp-scroll"><table class="tpa-table mp-table"><thead>' +
+          '<tr><th rowspan="2">순번</th><th rowspan="2">지역</th><th colspan="2">자종연식</th>' +
+            '<th rowspan="2">공장</th><th rowspan="2">라인</th><th rowspan="2">제품</th><th rowspan="2">표준<br />라인</th>' +
+            '<th rowspan="2">UPH</th><th rowspan="2">편성율</th><th rowspan="2">조립공수</th><th rowspan="2">직접인원<br />(명)</th>' +
+            '<th rowspan="2">Rev</th><th rowspan="2">수정일</th><th colspan="6">작성부서</th></tr>' +
+          '<tr><th>개발</th><th>양산</th><th>작성</th><th>검토</th><th>승인</th><th>부서명</th><th>배포일</th><th>작성</th></tr>' +
+        '</thead><tbody>' + body + '</tbody></table></div>' +
+        (state.mpModalId ? renderMpDetailModal(state, sc) : '') +
+      '</div>'
+    );
+  }
+
+  // 상세 팝업 — 헤더 정보표 + 4탭. "공정배치" 탭은 컬럼 토글(MP_COL_LABEL)에 따라 그리드 컬럼이 늘고 준다.
+  function renderMpDetailModal(state, sc) {
+    var d = null;
+    MP.rows.forEach(function (r) { if (r.id === state.mpModalId) d = r; });
+    if (!d) return '';
+    var tab = state.mpTab || 'basic';
+    var tabsHtml = MP.tabs.map(function (t) {
+      return '<button type="button" class="mp-tab' + (tab === t[0] ? ' is-active' : '') + '" data-action="mp-tab" data-tab="' + t[0] + '">' + esc(t[1]) + '</button>';
+    }).join('');
+    var title = (sc ? '생산모듈공정배치[' : '생기모듈공정배치[') + d.plant + ' ' + d.dev + ' ' + d.product + ' ,Rev : ' + d.rev + ']';
+    var info = '<table class="tpa-table mp-info-table"><tbody>' +
+      '<tr><th>지역</th><td>' + esc(d.region) + '</td><th>공장</th><td>' + esc(d.plant) + '</td><th>라인</th><td>' + esc(d.line) + '</td></tr>' +
+      '<tr><th>제품</th><td>' + esc(d.product) + '</td><th>개발자종</th><td>' + esc(d.dev) + '</td><th>양산자종</th><td>' + esc(d.prod) + '</td></tr>' +
+      '<tr><th>Rev</th><td>' + esc(d.rev) + '</td><th>UPH</th><td>' + esc(d.uph) + '</td><th>C/T</th><td>0.0</td></tr>' +
+    '</tbody></table>';
+    var paneHtml;
+    if (tab === 'layout') {
+      var cols = state.mpCols || {};
+      var vis = MP.COL_DEF.filter(function (c) { return !c[1] || cols[c[1]]; });
+      var seed = MP.gridSeed[d.id === 'mp1' ? 'mp1' : 'other'];
+      var checks = MP.COL_LABEL.map(function (c) {
+        return '<label class="mp-colchk"><input type="checkbox" data-action="mp-col-toggle" data-k="' + c[0] + '"' +
+          (cols[c[0]] ? ' checked' : '') + ' />' + esc(c[1]) + '</label>';
+      }).join('');
+      var heads = vis.map(function (c) { return '<th>' + esc(c[0]) + '</th>'; }).join('');
+      var gridRows = seed.map(function (g, gi) {
+        var cells = vis.map(function (c) {
+          var k = c[0];
+          if (k === '공정') return '<td><select class="mp-grid-sel"><option>' + esc(g.proc) + '</option></select></td>';
+          if (k === '주작업내용') return '<td><input type="text" class="mp-grid-inp" /></td>';
+          if (k === '조립 인터페이스' || k === '평자동화 적용여부') return '<td><input type="checkbox" /></td>';
+          if (k === '표준 작업명') return '<td><select class="mp-grid-sel"><option>' + esc(g.std) + '</option></select></td>';
+          if (k === '작업내용') return '<td>' + esc(g.work) + '</td>';
+          if (k === '순서') return '<td>1</td>';
+          if (k === '작업번호') return '<td>' + esc(g.no) + '</td>';
+          if (k === '작업명') return '<td class="mp-left">' + esc(g.name) + '</td>';
+          return '<td></td>';
+        }).join('');
+        return (g.main || gi === 0 ? '<tr class="mp-grid-main"><td colspan="' + vis.length + '">' + esc(g.main || '1공정') + '</td></tr>' : '') +
+          '<tr>' + cells + '</tr>';
+      }).join('');
+      paneHtml = '<div class="mp-colchks">' + checks + '</div>' +
+        '<div class="mp-scroll"><table class="tpa-table mp-grid-table"><thead><tr>' + heads + '</tr></thead>' +
+        '<tbody>' + gridRows + '</tbody></table></div>';
+    } else {
+      // 나머지 3탭은 디자인에서도 본문이 비어 있는 자리표시 영역이다.
+      var label = '';
+      MP.tabs.forEach(function (t) { if (t[0] === tab) label = t[1]; });
+      paneHtml = '<div class="mp-pane-empty">' + esc(label) + ' 영역은 상세 설계 확정 후 연결됩니다.</div>';
+    }
+    return (
+      '<div class="rm-modal-overlay" data-action="mp-close">' +
+        '<div class="rm-modal-box mp-modal">' +
+          '<div class="rm-modal-header-navy"><h3>' + esc(title) + '</h3>' +
+            '<button type="button" class="rm-modal-close" data-action="mp-close"><i class="fas fa-times"></i></button></div>' +
+          '<div class="rm-modal-body">' +
+            info +
+            '<div class="mp-tabs">' + tabsHtml + '</div>' +
+            paneHtml +
+          '</div>' +
+        '</div>' +
+      '</div>'
+    );
+  }
+
   // ---------- SCR-010 Tech PR 관리자 ----------
   // 근거: design-import/생기포털 v3.dc.html isTechPrAdmin — 필터(분과/BU/적용공장/기술태그) + "Tech PR 등록" 표 +
   // "기술태그 Master Table" + 신규등록 팝업 + 기술태그 추가 팝업. (README #11은 이전 화면 설명이라 v3를 따름)
@@ -2997,6 +3162,8 @@
     'SCR-013': renderSCR013,
     'SCR-014': renderSCR014,
     'MTRM-MAIN': renderMTRMMAIN,
+    'mp-gk': function (state) { return renderMpList(state, 'mp-gk'); },
+    'mp-sc': function (state) { return renderMpList(state, 'mp-sc'); },
   };
 
   global.PNDES.render = {
