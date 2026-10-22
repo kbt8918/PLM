@@ -1881,6 +1881,177 @@
     );
   }
 
+  // ---------- 업무지표현황 > 기술과제 > 계획관리 (tt-plan) ----------
+  // 근거: design-import/생기포털 v3.dc.html isTtPlan 블록 / ttVals / ttRowsAll.
+  // 목록 492건(TT_BASE 15건 순환) + 액션바 8종 + 페이지네이션(15건, 10페이지 블록)
+  // + 상세 팝업(2탭: 기술과제 상세 / 결재현황).
+  var TTP = global.PNDES.mock.tt; // SCR-013의 TT(scr013 mock)와 이름이 겹치지 않도록 TTP 사용
+
+  function ttFilterRows(F) {
+    return TTP.rows.filter(function (r) {
+      return (F.dept === '전체' || (r.dept || '렘프생기실') === F.dept) &&
+        (F.team === '전체' || r.team === F.team) &&
+        (F.status === '전체' || r.status === F.status) &&
+        (F.type === '전체' || r.type === F.type) &&
+        (F.scope === '전체' || r.scope === F.scope) &&
+        (F.ptrm === '전체' || r.ptrm === F.ptrm) &&
+        (!F.name || r.name.indexOf(F.name) >= 0) &&
+        (!F.from || r.plan.replace(/\./g, '-') >= F.from) &&
+        (!F.to || r.plan.replace(/\./g, '-') <= F.to);
+    });
+  }
+
+  function ttSel(key, value, options) {
+    return '<select data-tt-field="' + key + '"><option value="전체">전체</option>' +
+      options.map(function (o) {
+        return '<option value="' + esc(o) + '"' + (o === value ? ' selected' : '') + '>' + esc(o) + '</option>';
+      }).join('') + '</select>';
+  }
+
+  // 결재현황 탭 — 작성중은 이력 없음, 결재중은 상신만, 그 외는 상신+승인/반려.
+  function ttApprovals(d) {
+    if (!d || d.status === '작성중') return [];
+    var list = [{ no: 1, kind: '상신', who: (d.dept || '렘프생기실') + ' ' + d.team + ' ' + d.writer, at: d.plan, memo: '' }];
+    if (d.status !== '결재중') {
+      list.push({
+        no: 2, kind: d.status === '반려' ? '반려' : '승인', who: '렘프생기실 실장', at: d.done,
+        memo: d.status === '반려' ? '보완 후 재상신 바랍니다.' : '',
+      });
+    }
+    return list;
+  }
+
+  function renderTtDetailModal(state) {
+    var d = null;
+    TTP.rows.forEach(function (r) { if (r.id === state.ttModalId) d = r; });
+    if (!d) return '';
+    var tab = state.ttTab || 'detail';
+    var tabsHtml = [['detail', '기술과제 상세'], ['approval', '결재현황']].map(function (t) {
+      return '<button type="button" class="mp-tab' + (tab === t[0] ? ' is-active' : '') + '" data-action="tt-tab" data-tab="' + t[0] + '">' + esc(t[1]) + '</button>';
+    }).join('');
+    var pane;
+    if (tab === 'approval') {
+      var ap = ttApprovals(d);
+      pane = '<table class="tpa-table mp-grid-table"><thead><tr>' +
+        '<th style="width:56px">순번</th><th style="width:96px">구분</th><th>결재자</th>' +
+        '<th style="width:112px">일자</th><th>의견</th></tr></thead><tbody>' +
+        (ap.length
+          ? ap.map(function (a) {
+              return '<tr><td>' + a.no + '</td><td>' + esc(a.kind) + '</td>' +
+                '<td class="mp-left">' + esc(a.who) + '</td><td class="mp-nowrap">' + esc(a.at) + '</td>' +
+                '<td class="mp-left">' + esc(a.memo) + '</td></tr>';
+            }).join('')
+          : '<tr><td colspan="5" class="mm-empty">결재 이력이 없습니다.</td></tr>') +
+        '</tbody></table>';
+    } else {
+      var row = function (a, b, c, dd) {
+        return '<tr><th>' + esc(a) + '</th><td>' + esc(b) + '</td><th>' + esc(c) + '</th><td>' + esc(dd) + '</td></tr>';
+      };
+      pane = '<table class="tpa-table mp-info-table tt-detail-table"><tbody>' +
+        row('REV', d.rev, '상태', d.status) +
+        row('담당자', (d.dept || '렘프생기실') + ' ' + d.team + ' ' + d.writer, '등록일', d.plan) +
+        '<tr><th>과제명</th><td colspan="3" class="mp-left">' + esc(d.name) + '</td></tr>' +
+        row('과제 유형', d.type, '추진범위', d.scope) +
+        '<tr><th>수행목적</th><td colspan="3" class="mp-left">' + esc(d.purpose || d.name) + '</td></tr>' +
+        row('정량목표', d.quant || '-', 'P/TRM', d.ptrm) +
+        row('계획보고', d.plan, '완료보고', d.done) +
+      '</tbody></table>';
+    }
+    return (
+      '<div class="rm-modal-overlay" data-action="tt-close">' +
+        '<div class="rm-modal-box mp-modal">' +
+          '<div class="rm-modal-header-navy"><h3>기술과제 계획상세 (Rev:' + esc(d.rev) + ')</h3>' +
+            '<button type="button" class="rm-modal-close" data-action="tt-close"><i class="fas fa-times"></i></button></div>' +
+          '<div class="rm-modal-body">' +
+            '<div class="mp-tabs">' + tabsHtml + '</div>' + pane +
+          '</div>' +
+        '</div>' +
+      '</div>'
+    );
+  }
+
+  function renderTtPlan(state) {
+    var F = state.ttF;
+    var rows = ttFilterRows(state.ttApplied);
+    var per = TTP.perPage;
+    var pages = Math.max(1, Math.ceil(rows.length / per));
+    var page = Math.min(state.ttPage || 1, pages);
+    var st0 = (page - 1) * per;
+    var view = rows.slice(st0, st0 + per);
+    var sel = state.ttSel || {};
+    var allOn = view.length > 0 && view.every(function (r) { return sel[r.id]; });
+
+    var acts = TTP.actions.map(function (label) {
+      var cls = label === '등록' ? 'tt-act is-primary' : (label === 'EXCEL' ? 'tt-act is-excel' : 'tt-act');
+      return '<button type="button" class="' + cls + '" data-action="tt-act" data-label="' + esc(label) + '">' + esc(label) + '</button>';
+    }).join('');
+
+    var body = view.length
+      ? view.map(function (r, i) {
+          return '<tr class="' + (r.status === '변경요청' ? 'tt-row-warn' : 'mp-row') + '" data-action="tt-open" data-id="' + esc(r.id) + '">' +
+            '<td data-action="tt-check" data-id="' + esc(r.id) + '"><input type="checkbox" class="pp-box"' + (sel[r.id] ? ' checked' : '') + ' /></td>' +
+            '<td>' + (st0 + i + 1) + '</td><td>' + esc(r.team) + '</td><td>' + esc(r.writer) + '</td>' +
+            '<td>' + esc(r.type) + '</td><td class="mp-left">' + esc(r.name) + '</td><td>' + esc(r.scope) + '</td>' +
+            '<td>' + esc(r.ptrm) + '</td><td>' + esc(r.code) + '</td>' +
+            '<td class="mp-nowrap">' + esc(r.plan) + '</td><td class="mp-nowrap">' + esc(r.done) + '</td>' +
+            '<td>' + esc(r.quant || '') + '</td><td>' + (r.doc ? '●' : '') + '</td>' +
+            '<td class="tt-st">' + esc(r.status) + '</td><td>' + esc(r.rev) + '</td></tr>';
+        }).join('')
+      : '<tr><td colspan="15" class="mm-empty">조회된 데이터가 없습니다.</td></tr>';
+
+    // 페이지 버튼은 10개씩 블록 단위로 보여준다(v3 b0 계산).
+    var b0 = Math.floor((page - 1) / 10) * 10 + 1;
+    var pgBtns = '';
+    for (var pi = b0; pi < b0 + 10 && pi <= pages; pi++) {
+      pgBtns += '<button type="button" class="pp-pg' + (pi === page ? ' is-active' : '') + '" data-action="tt-page" data-page="' + pi + '">' + pi + '</button>';
+    }
+
+    var th = function (t) { return '<th>' + esc(t) + '</th>'; };
+    return (
+      '<div class="admin-screen mp-screen" data-screen-label="기술과제 계획관리">' +
+        '<div class="mp-head">' +
+          '<h2 class="mp-title">기술과제 계획관리</h2>' +
+          '<div class="tt-acts">' + acts + '</div>' +
+        '</div>' +
+        '<div class="mp-filter"><table class="mp-filter-table tt-filter-table">' +
+          '<tr>' + th('담당실') + '<td>' + ttSel('dept', F.dept, ['렘프생기실', '금형개발실']) + '</td>' +
+            th('담당팀') + '<td>' + ttSel('team', F.team, ['금형기술팀', 'SF기술개발팀']) + '</td>' +
+            th('상태') + '<td>' + ttSel('status', F.status, ['작성중', '결재중', '완료', '반려', '확정', '변경요청', '취소']) + '</td></tr>' +
+          '<tr>' + th('과제 유형') + '<td>' + ttSel('type', F.type, ['mTRM연계', 'PTRM연계', '생산성개선']) + '</td>' +
+            th('추진범위') + '<td>' + ttSel('scope', F.scope, ['선행개발', '양산적용']) + '</td>' +
+            th('P/TRM') + '<td>' + ttSel('ptrm', F.ptrm, ['자체', '연계']) + '</td></tr>' +
+          '<tr>' + th('추진일정') + '<td colspan="3"><div class="mp-cell-pair">' +
+              '<input type="date" data-tt-field="from" value="' + esc(F.from) + '" />' +
+              '<span class="tt-tilde">~</span>' +
+              '<input type="date" data-tt-field="to" value="' + esc(F.to) + '" />' +
+            '</div></td>' +
+            th('과제명') + '<td><input type="text" data-tt-field="name" value="' + esc(F.name) + '" /></td></tr>' +
+        '</table>' +
+        '<div class="mp-filter-acts">' +
+          '<button type="button" class="btn-dark tpa-btn-sm" data-action="tt-search"><i class="fas fa-search" style="font-size:10px"></i>조회</button>' +
+          '<button type="button" class="btn-outline-sm" data-action="tt-reset">초기화</button>' +
+        '</div></div>' +
+        '<p class="mp-total">총 <b>' + rows.length + '</b>건</p>' +
+        '<div class="mp-scroll"><table class="tpa-table mp-table tt-table"><thead>' +
+          '<tr><th rowspan="2"><input type="checkbox" class="pp-box" data-action="tt-toggle-all"' + (allOn ? ' checked' : '') + ' /></th>' +
+            '<th rowspan="2">순번</th><th rowspan="2">담당팀</th><th rowspan="2">담당자</th><th rowspan="2">과제 유형</th>' +
+            '<th rowspan="2">과제명</th><th rowspan="2">추진<br />범위</th><th colspan="2">P/TRM</th>' +
+            '<th colspan="2">추진일정</th><th rowspan="2">정량목표</th><th rowspan="2">과제<br />정의서</th>' +
+            '<th rowspan="2">상태</th><th rowspan="2">REV</th></tr>' +
+          '<tr><th>연계유무</th><th>연계코드</th><th>계획보고</th><th>완료보고</th></tr>' +
+        '</thead><tbody>' + body + '</tbody></table></div>' +
+        '<div class="pp-pager">' +
+          '<button type="button" class="pp-pg" data-action="tt-page" data-page="1">&laquo;</button>' +
+          '<button type="button" class="pp-pg" data-action="tt-page" data-page="' + (page - 1) + '">&lsaquo;</button>' +
+          pgBtns +
+          '<button type="button" class="pp-pg" data-action="tt-page" data-page="' + (page + 1) + '">&rsaquo;</button>' +
+          '<button type="button" class="pp-pg" data-action="tt-page" data-page="' + pages + '">&raquo;</button>' +
+        '</div>' +
+        (state.ttModalId ? renderTtDetailModal(state) : '') +
+      '</div>'
+    );
+  }
+
   // ---------- SCR-010 Tech PR 관리자 ----------
   // 근거: design-import/생기포털 v3.dc.html isTechPrAdmin — 필터(분과/BU/적용공장/기술태그) + "Tech PR 등록" 표 +
   // "기술태그 Master Table" + 신규등록 팝업 + 기술태그 추가 팝업. (README #11은 이전 화면 설명이라 v3를 따름)
@@ -3434,6 +3605,7 @@
     'bp-sc': function (state) { return renderPpList(state, 'bp-sc'); },
     'mod-cmp': function (state) { return renderCmp(state, 'mod-cmp'); },
     'part-cmp': function (state) { return renderCmp(state, 'part-cmp'); },
+    'tt-plan': renderTtPlan,
   };
 
   global.PNDES.render = {

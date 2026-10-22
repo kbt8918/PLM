@@ -1535,3 +1535,20 @@ button.cm-round-btn { cursor: pointer; }
 .cmp-filter-table th { width: 80px; }
 .cmp-filter-table td { width: auto; }
 .cmp-filter-table select { max-width: 220px; }
+
+/* 기술과제 계획관리 — 근거: 생기포털 v3.dc.html isTtPlan */
+.tt-acts { display: flex; gap: 4px; flex-wrap: wrap; }
+.tt-act { height: 22px; padding: 0 12px; border: 1px solid #c7ccd6; background: #eef0f4; color: #666; font-size: 11px; white-space: nowrap; cursor: pointer; font-family: inherit; }
+.tt-act:hover { background: #fff; }
+.tt-act.is-primary { background: #dbe9f9; color: #1e4fa3; border-color: #8fb1dd; font-weight: 700; }
+.tt-act.is-excel { background: #fff; color: #222; border-color: #aeb5c1; font-weight: 700; }
+.tt-table { min-width: 1400px; }
+.tt-row-warn td { background: #f0c9c9; }
+.tt-st { font-weight: 700; }
+.tt-tilde { align-self: center; }
+.tt-detail-table th { width: 110px; }
+
+/* 기술과제 계획관리 필터는 3열 구조라 라벨 폭을 고정하고 셀이 과도하게 늘어나지 않게 한다 */
+.tt-filter-table th { width: 84px; }
+.tt-filter-table td { width: 28%; }
+.tt-filter-table select, .tt-filter-table input[type="text"], .tt-filter-table input[type="date"] { max-width: 260px; }

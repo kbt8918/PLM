@@ -21,6 +21,27 @@
   var TR = global.PNDES.mock.scr014;
   var MPM = global.PNDES.mock.mp;
   var PPM = global.PNDES.mock.pp;
+  var TTM = global.PNDES.mock.tt;
+
+  // 현재 페이지에 보이는 기술과제 행(전체선택 토글 대상)
+  function TTView(state) {
+    var F = state.ttApplied;
+    var rows = TTM.rows.filter(function (r) {
+      return (F.dept === '전체' || (r.dept || '렘프생기실') === F.dept) &&
+        (F.team === '전체' || r.team === F.team) &&
+        (F.status === '전체' || r.status === F.status) &&
+        (F.type === '전체' || r.type === F.type) &&
+        (F.scope === '전체' || r.scope === F.scope) &&
+        (F.ptrm === '전체' || r.ptrm === F.ptrm) &&
+        (!F.name || r.name.indexOf(F.name) >= 0) &&
+        (!F.from || r.plan.replace(/\./g, '-') >= F.from) &&
+        (!F.to || r.plan.replace(/\./g, '-') <= F.to);
+    });
+    var per = TTM.perPage;
+    var pages = Math.max(1, Math.ceil(rows.length / per));
+    var page = Math.min(state.ttPage || 1, pages);
+    return rows.slice((page - 1) * per, (page - 1) * per + per);
+  }
 
   // 현재 페이지에 보이는 부품공정배치 행 (전체선택 토글 대상)
   function PPRows(state) {
@@ -187,6 +208,12 @@
     ppSub: 'reg', // 기본운영방안 서브탭(v3 ppSub)
     cmpSel: { modRegion: '전체', partPlant: '전체' }, // 공장별 현황비교 선택값(v3 cmpSel)
     cmpApplied: { modRegion: '전체', partPlant: '전체' }, // 조회로 확정된 값(v3 cmpApplied)
+    ttF: $.extend({}, global.PNDES.mock.tt.F0), // 기술과제 계획관리 필터(v3 ttF)
+    ttApplied: $.extend({}, global.PNDES.mock.tt.F0), // 조회로 확정된 필터(v3 ttApplied)
+    ttPage: 1, // 목록 페이지(15건/page)
+    ttSel: {}, // 행 체크 상태(v3 ttSel)
+    ttModalId: null, // 상세 팝업 대상 행 id
+    ttTab: 'detail', // 상세 팝업 탭(기술과제 상세 / 결재현황)
     mmPicker: null, // 조회 선택 팝업 종류: council | trm
     mmPk: { sel: '', filter: { a: '', b: '' }, applied: { a: '', b: '' } }, // 조회 선택 팝업 필터/선택 상태(v3 pk*)
     mmPickedCouncil: '', mmPickedTrm: '',
@@ -821,6 +848,54 @@
         case 'pp-toast':
           showToast(String($el.data('m')));
           break;
+        case 'tt-search':
+          setState(function (st) { return { ttApplied: $.extend({}, st.ttF), ttPage: 1, ttSel: {} }; });
+          showToast('조회 조건이 적용되었습니다.');
+          break;
+        case 'tt-reset':
+          setState({ ttF: $.extend({}, TTM.F0), ttApplied: $.extend({}, TTM.F0), ttPage: 1, ttSel: {} });
+          break;
+        case 'tt-page':
+          setState({ ttPage: Math.max(1, Number($el.data('page'))) });
+          break;
+        case 'tt-open':
+          if ($(e.target).closest('[data-action="tt-check"]').length) break;
+          setState({ ttModalId: String($el.data('id')), ttTab: 'detail' });
+          break;
+        case 'tt-close':
+          if ($el.hasClass('rm-modal-overlay') && e.target !== this) break;
+          setState({ ttModalId: null });
+          break;
+        case 'tt-tab':
+          setState({ ttTab: String($el.data('tab')) });
+          break;
+        case 'tt-check': {
+          var ttId = String($el.data('id'));
+          setState(function (st) {
+            var c = $.extend({}, st.ttSel);
+            c[ttId] = !c[ttId];
+            return { ttSel: c };
+          });
+          break;
+        }
+        case 'tt-toggle-all': {
+          var ttView = TTView(state);
+          var ttAll = ttView.length > 0 && ttView.every(function (r) { return state.ttSel[r.id]; });
+          setState(function (st) {
+            var c = $.extend({}, st.ttSel);
+            ttView.forEach(function (r) { c[r.id] = !ttAll; });
+            return { ttSel: c };
+          });
+          break;
+        }
+        case 'tt-act': {
+          var ttLabel = String($el.data('label'));
+          if (ttLabel === 'EXCEL') { showToast('조회 결과를 엑셀로 내려받습니다.'); break; }
+          if (ttLabel === '등록') { showToast('기술과제 계획등록 팝업을 엽니다.'); break; }
+          var ttIds = Object.keys(state.ttSel).filter(function (k) { return state.ttSel[k]; });
+          showToast(ttIds.length ? ttIds.length + '건을 ' + ttLabel + ' 처리했습니다.' : '대상 과제를 선택하세요.');
+          break;
+        }
         case 'cmp-search':
           setState(function (st) { return { cmpApplied: $.extend({}, st.cmpSel) }; });
           showToast('조회되었습니다.');
@@ -1377,6 +1452,14 @@
 
     // 모듈공정배치 필터 입력 — 조회 버튼을 눌러야 적용된다(v3 mpF -> mpApplied)
     // 부품공정배치 필터 입력 — 조회 버튼을 눌러야 적용된다(v3 ppF -> ppApplied)
+    $(document).on('input change', '[data-tt-field]', function () {
+      var $i = $(this);
+      var key = $i.data('ttField');
+      var patch = {};
+      patch[key] = $i.val();
+      state.ttF = $.extend({}, state.ttF, patch);
+    });
+
     $(document).on('change', '[data-cmp-field]', function () {
       var key = $(this).data('cmpField');
       var val = $(this).val();
