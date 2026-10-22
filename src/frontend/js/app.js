@@ -108,6 +108,8 @@
     videoProcess: null, // SCR-001 "현재=자동"/SCR-003 "기술현황=●" 클릭 시 자동화 설비 동영상 모달에 표시할 공정/작업명
     videoKind: 'part', // 동영상 모달 제목 접두어 구분: 'part'(부품) / 'module'(모듈)
     techPrDetailIndex: null, // SCR-009/MTRM-MAIN Tech PR 카드 클릭 시 표시할 커스텀 상세 오버레이 인덱스
+    techPrDetailCard: null, // 클릭한 카드 좌표(gi/fi/ci) — 상세 오버레이가 카드 필드를 그대로 표시
+    tpdIdx: 0, // 상세 오버레이 슬라이드 인덱스(0~2)
     toast: null, // 화면 우상단(하단) 토스트 알림 메시지, showToast()로 세팅 후 일정 시간 뒤 자동 소멸
     masterPage: 1, // SCR-002 표준공정 마스터 관리 페이지네이션
     scr002Rows: global.PNDES.mock.scr002Rows.slice(), // mock을 state로 복제 — 등록/수정/삭제가 실제로 목록에 반영되도록
@@ -470,7 +472,19 @@
           break;
         }
         case 'open-techpr-detail':
-          setState({ techPrDetailIndex: Number($el.data('index')) });
+          // v3: 상세 오버레이는 클릭한 카드 자체(제목/적용처/개발기간/배지)를 표시하고,
+          // 이미지/동영상은 3장 슬라이드(tpdIdx)로 전환한다.
+          setState({
+            techPrDetailIndex: Number($el.data('index')),
+            techPrDetailCard: { gi: Number($el.data('gi')), fi: Number($el.data('fi')), ci: Number($el.data('ci')) },
+            tpdIdx: 0,
+          });
+          break;
+        case 'tpd-go':
+          setState({ tpdIdx: Number($el.data('idx')) });
+          break;
+        case 'tpd-step':
+          setState({ tpdIdx: ((state.tpdIdx || 0) + Number($el.data('d')) + 3) % 3 });
           break;
         case 'close-techpr-detail':
           setState({ techPrDetailIndex: null });

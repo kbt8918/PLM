@@ -1327,7 +1327,8 @@
         : '<span class="tp-badge">' + esc(bd) + '</span>';
     }).join('');
     var tags = TP.tags.map(function (t) { return '<span>' + esc(t) + '</span>'; }).join('');
-    return '<div class="tp-card" data-action="open-techpr-detail" data-index="' + detailIndex + '">' +
+    return '<div class="tp-card" data-action="open-techpr-detail" data-index="' + detailIndex + '"' +
+      ' data-gi="' + gi + '" data-fi="' + fi + '" data-ci="' + ci + '">' +
       '<div class="tp-card-thumb">' + (c.kind === 'video' ? '<span class="tp-card-play"><i class="fas fa-play"></i></span>' : '') + '</div>' +
       '<div class="tp-card-bar">' +
         '<div class="tp-card-dots"><span class="is-active"></span><span></span><span></span></div>' +
@@ -1379,46 +1380,52 @@
   }
 
   // SCR-009 카드 클릭 시 열리는 커스텀 상세 오버레이 (공용 activeModal 모달 시스템과 별도)
-  function renderTechPrDetailOverlay(index) {
-    var c = D.techPrCards[index];
-    if (!c) return '';
-    var typeInfo = TECH_PR_TYPE[c.type];
-    var body;
-    if (c.type === 'video') {
-      body = '<div class="techpr-video-frame"><div class="play-btn" style="width:64px;height:64px;font-size:24px">&#9658;</div></div>' +
-        '<div class="techpr-desc">' + esc(c.desc) + '</div>';
-    } else if (c.type === 'file') {
-      body = '<div class="techpr-file-row">' +
-        '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#B45309" stroke-width="1.5"><path d="M6 3h9l5 5v13a1 1 0 01-1 1H6a1 1 0 01-1-1V4a1 1 0 011-1z"></path><path d="M15 3v5h5"></path></svg>' +
-        '<div class="techpr-file-meta"><div class="techpr-file-name">' + esc(c.fileName) + '</div><div class="techpr-file-size">' + esc(c.fileSize) + '</div></div>' +
-        '<button type="button" class="btn btn-primary">다운로드</button>' +
-      '</div>';
-    } else if (c.type === 'text') {
-      body = '<div class="techpr-desc" style="white-space:pre-line">' + esc(c.body) + '</div>';
-    } else {
-      body = c.items.map(function (it) {
-        var itInfo = TECH_PR_TYPE[it.type];
-        var inner = it.type === 'video'
-          ? '<div class="techpr-video-frame" style="margin-bottom:10px"><div class="play-btn" style="width:52px;height:52px;font-size:20px">&#9658;</div></div><div class="techpr-desc">' + esc(it.desc) + '</div>'
-          : it.type === 'file'
-            ? '<div class="techpr-file-row"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#B45309" stroke-width="1.6"><path d="M6 3h9l5 5v13a1 1 0 01-1 1H6a1 1 0 01-1-1V4a1 1 0 011-1z"></path><path d="M15 3v5h5"></path></svg><div class="techpr-file-meta"><div class="techpr-file-name">' + esc(it.fileName) + '</div><div class="techpr-file-size">' + esc(it.fileSize) + '</div></div><button type="button" class="btn btn-primary">다운로드</button></div>'
-            : '<div class="techpr-desc">' + esc(it.body) + '</div>';
-        return '<div class="techpr-multi-item"><span class="tech-pr-type-badge" style="color:' + itInfo.color + ';background:' + itInfo.bg + '">' + esc(itInfo.label) + '</span>' + inner + '</div>';
-      }).join('');
+  // v3 기준 재구현: 기존 type(video/file/text/multi)별 본문 대신,
+  // 클릭한 카드의 배지/제목/태그 + 3장 슬라이드(점·좌우 화살표) + 적용처/개발기간/첨부 메타를 표시한다.
+  // 근거: design-import/생기포털 v3.dc.html techPrDetailOpen 블록 및 tpd* 바인딩(tpdBadges/tpdTitle/tpdTags/tpdDots/tpdPlace/tpdPeriod/tpdFile/tpdIsVideo).
+  var TPD_KINDS = ['video', 'image', 'image']; // 슬라이드 3장의 종류(0번만 동영상) — v3 kinds 배열과 동일
+  var TPD_FILE = '[2026년 2분기] 제조 신기술 동향.pdf';
+
+  function renderTechPrDetailOverlay(index, state) {
+    var card = null;
+    var co = (state || {}).techPrDetailCard;
+    if (co) {
+      var g = TP.groups[co.gi];
+      var f = g && g.factories[co.fi];
+      card = f && f.cards[co.ci];
     }
+    if (!card) card = TP.detailItems[index]; // 좌표가 없는 경로(초기 ?modal= 진입 등) 폴백
+    if (!card) return '';
+    var idx = (state || {}).tpdIdx || 0;
+    var badges = (card.badges || ['동영상', '기술자료']).map(function (b) {
+      return '<span class="tpd-badge' + (b === '연관과제' ? ' is-task' : '') + '">' + esc(b) + '</span>';
+    }).join('');
+    var tags = TP.tags.map(function (t) { return '<span class="tpd-tag">' + esc(t) + '</span>'; }).join('');
+    var dots = [0, 1, 2].map(function (i) {
+      return '<button type="button" class="tpd-dot' + (i === idx ? ' is-active' : '') +
+        '" data-action="tpd-go" data-idx="' + i + '" aria-label="슬라이드 ' + (i + 1) + '"></button>';
+    }).join('');
     return (
       '<div class="techpr-overlay">' +
-        '<div class="techpr-overlay-box">' +
-          '<div class="techpr-overlay-head">' +
-            '<span class="tech-pr-type-badge" style="color:' + typeInfo.color + ';background:' + typeInfo.bg + '">' + esc(typeInfo.label) + '</span>' +
-            '<div class="modal-title" style="flex:1">' + esc(c.title) + '</div>' +
-            '<div class="modal-close" data-action="close-techpr-detail">&#10005;</div>' +
+        '<div class="tpd-box">' +
+          '<button type="button" class="tpd-close" data-action="close-techpr-detail" title="닫기">&#10005;</button>' +
+          '<div class="tpd-card">' +
+            '<div class="tpd-badges">' + badges + '</div>' +
+            '<div class="tpd-title-row"><div class="tpd-title">' + esc(card.title) + '</div></div>' +
+            '<div class="tpd-tags">' + tags + '</div>' +
+            '<div class="tpd-meta">' +
+              '<div class="tpd-dots">' + dots + '</div>' +
+              '<p class="tpd-place">' + esc(card.place) + ' / ' + esc(card.period) + '</p>' +
+              '<p class="tpd-file">' + esc(TPD_FILE) + '</p>' +
+            '</div>' +
+            '<div class="tpd-stage-wrap">' +
+              '<div class="tpd-stage">' +
+                (TPD_KINDS[idx] === 'video' ? '<span class="tpd-play"><i class="fas fa-play"></i></span>' : '') +
+                '<button type="button" class="tpd-arrow tpd-arrow-prev" data-action="tpd-step" data-d="-1" aria-label="이전">&#10094;</button>' +
+                '<button type="button" class="tpd-arrow tpd-arrow-next" data-action="tpd-step" data-d="1" aria-label="다음">&#10095;</button>' +
+              '</div>' +
+            '</div>' +
           '</div>' +
-          '<div class="techpr-overlay-body">' +
-            '<div class="techpr-overlay-meta">분과 &middot; ' + esc(c.section) + ' &nbsp; 등록일 &middot; ' + esc(c.date) + ' &nbsp; 담당자 &middot; ' + esc(c.owner) + '</div>' +
-            body +
-          '</div>' +
-          '<div class="modal-footer"><button type="button" class="btn btn-secondary" style="height:36px" data-action="close-techpr-detail">닫기</button></div>' +
         '</div>' +
       '</div>'
     );
@@ -2781,7 +2788,7 @@
     },
     modal: renderModal,
     techPrDetail: function (state) {
-      return state.techPrDetailIndex != null ? renderTechPrDetailOverlay(state.techPrDetailIndex) : '';
+      return state.techPrDetailIndex != null ? renderTechPrDetailOverlay(state.techPrDetailIndex, state) : '';
     },
     toast: function (state) {
       if (!state.toast) return '';

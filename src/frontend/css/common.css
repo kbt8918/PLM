@@ -345,6 +345,31 @@ table.data-table.sticky-head thead tr:nth-child(2) th { position: sticky; top: 3
 .techpr-multi-item { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--color-table-row-border); }
 .techpr-multi-item:last-child { border-bottom: none; }
 
+/* v3 Tech PR 상세 오버레이 — 카드형(배지/제목/태그/슬라이드). 근거: 생기포털 v3.dc.html techPrDetailOpen 블록 */
+.tpd-box { position: relative; width: 640px; max-width: 92vw; }
+.tpd-close { position: absolute; right: -40px; top: 0; background: none; border: 0; color: #fff; font-size: 26px; line-height: 1; cursor: pointer; padding: 0; }
+.tpd-close:hover { color: #e5e7eb; }
+.tpd-card { background: var(--color-surface); border-radius: 16px; box-shadow: 0 20px 50px rgba(0,0,0,0.35); overflow: hidden; display: flex; flex-direction: column; max-height: 92vh; }
+.tpd-badges { display: flex; flex-wrap: wrap; gap: 6px; padding: 16px 20px 0; }
+.tpd-badge { font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: 4px; border: 1px solid #93c5fd; background: #fff; color: #1d4ed8; white-space: nowrap; }
+.tpd-badge.is-task { border-color: #f87171; color: #dc2626; }
+.tpd-title-row { display: flex; justify-content: center; padding: 8px 20px 0; }
+.tpd-title { min-width: 60%; max-width: 100%; border: 1px solid #8fb4e3; border-radius: 8px; padding: 10px 24px; text-align: center; font-size: 15px; color: #111827; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+.tpd-tags { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; padding: 10px 20px 0; }
+.tpd-tag { font-size: 11px; color: #4b5563; background: #eef0f4; border: 1px solid #d5d9e2; border-radius: 4px; padding: 1px 8px; white-space: nowrap; }
+.tpd-meta { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; padding: 16px 20px 8px; }
+.tpd-dots { display: flex; align-items: center; gap: 6px; }
+.tpd-dot { height: 8px; width: 8px; border: 0; padding: 0; border-radius: 999px; background: #d1d5db; cursor: pointer; transition: all .15s; }
+.tpd-dot.is-active { width: 20px; background: #3b78c4; }
+.tpd-place { font-size: 12px; color: #374151; white-space: nowrap; margin: 0; }
+.tpd-file { font-size: 11px; color: #2f5aa8; text-align: right; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tpd-stage-wrap { padding: 0 16px 16px; }
+.tpd-stage { position: relative; height: 360px; border-radius: 12px; overflow: hidden; background: #1b2230; display: flex; align-items: center; justify-content: center; }
+.tpd-play { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); width: 56px; height: 56px; border-radius: 999px; background: rgba(0,0,0,0.6); color: #fff; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+.tpd-arrow { position: absolute; top: 50%; transform: translateY(-50%); background: none; border: 0; color: #fff; font-size: 22px; cursor: pointer; padding: 8px; filter: drop-shadow(0 1px 2px rgba(0,0,0,.6)); }
+.tpd-arrow-prev { left: 4px; }
+.tpd-arrow-next { right: 4px; }
+
 /* ---------- Admin 전용 구분: 상단 "관리자" 뱃지(.badge-admin-top)로만 표시. 좌측 컬러 바는 제거(design-style-guide.md 3.5 갱신) ---------- */
 .admin-screen {}
 
