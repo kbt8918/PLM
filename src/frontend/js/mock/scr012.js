@@ -176,10 +176,17 @@
     { dept: '로봇', main: '한로봇 책임 (지능화기술팀)', sub: '유코봇 매니저 (지능화기술팀)' },
   ];
 
+  // v3 신규: mTRM 업데이트 이력 팝업 행. 근거: 생기포털 v3.dc.html updHistRows.
+  var updHistRows = [
+    { no: 3, kind: '변경', dept: '물류', mtrm: '물류 mTRM', link: '물류 mTRM 협의체', date: '2026-10-14', ver: 'v1.2' },
+    { no: 2, kind: '변경', dept: 'AI', mtrm: '연계 mTRM', link: 'AI mTRM 협의체', date: '2026-09-09', ver: 'v1.1' },
+    { no: 1, kind: '신규', dept: 'AI', mtrm: '자체 mTRM', link: 'AI mTRM 협의체', date: '2026-01-05', ver: 'v1.0' },
+  ];
+
   global.PNDES = global.PNDES || {};
   global.PNDES.mock = global.PNDES.mock || {};
   global.PNDES.mock.scr012 = {
-    tasks: tasks, infos: infos, depts: depts,
+    tasks: tasks, infos: infos, depts: depts, updHistRows: updHistRows,
     registrant: registrant, regDate: regDate, regDeptOptions: regDeptOptions, pickerRows: pickerRows,
     versions: versions, versionSnaps: versionSnaps, versionFields: versionFields,
     sumDepts: sumDepts, sumStatusDef: sumStatusDef, sumStatusShown: sumStatusShown, sumPhases: sumPhases, sumCards: sumCards,

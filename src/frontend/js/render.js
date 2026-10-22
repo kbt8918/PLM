@@ -2272,6 +2272,37 @@
     );
   }
 
+  // v3: mTRM 정보 "협의체" 컬럼 — 상태가 완료/확정인 행만 "<분과> mTRM 협의체"를 표시한다.
+  // 근거: design-import/생기포털 v3.dc.html mmInfoRows의 council 계산식.
+  function mmCouncil(r) {
+    return (r.status === '완료' || r.status === '확정') ? r.dept + ' mTRM 협의체' : '';
+  }
+
+  // v3 신규: mTRM 업데이트 이력 팝업 (기존 "버전관리" 버튼이 이 팝업을 연다).
+  // 근거: design-import/생기포털 v3.dc.html updHistOpen 블록 / updHistRows.
+  function renderMmUpdHistModal() {
+    var rows = MM.updHistRows.map(function (u) {
+      return '<tr><td>' + esc(String(u.no)) + '</td><td class="mm-nowrap">' + esc(u.kind) + '</td><td>' + esc(u.dept) + '</td>' +
+        '<td>' + esc(u.mtrm) + '</td><td>' + esc(u.link) + '</td>' +
+        '<td class="mm-nowrap">' + esc(u.date) + '</td><td>' + esc(u.ver) + '</td></tr>';
+    }).join('');
+    return (
+      '<div class="rm-modal-overlay" data-action="mm-close-modal">' +
+        '<div class="rm-modal-box mm-updhist-modal">' +
+          '<div class="rm-modal-header-navy"><h3>mTRM 업데이트 이력</h3>' +
+            '<button type="button" class="rm-modal-close" data-action="mm-close-modal"><i class="fas fa-times"></i></button></div>' +
+          '<div class="rm-modal-body">' +
+            '<div class="mm-updhist-actions"><button type="button" class="btn-navy tpa-btn-sm" data-action="mm-close-modal">닫기</button></div>' +
+            '<div class="mm-scroll"><table class="tpa-table mm-table mm-updhist-table"><thead>' +
+              '<tr><th style="width:56px">No</th><th style="width:80px">구분</th><th style="width:96px">분과</th>' +
+                '<th>mTRM</th><th>mTRM 협의체 링크</th><th style="width:112px">일자</th><th style="width:80px">버전</th></tr>' +
+            '</thead><tbody>' + rows + '</tbody></table></div>' +
+          '</div>' +
+        '</div>' +
+      '</div>'
+    );
+  }
+
   function renderSCR012(state) {
     var f = state.mmFilter;
     var a = state.mmApplied;
@@ -2288,14 +2319,18 @@
       if ((!f.dept || r.dept === f.dept) && roadmapOptions.indexOf(r.roadmap) < 0) roadmapOptions.push(r.roadmap);
     });
 
+    var unlinked = state.mmUnlinked || [];
     var taskRows = tasks.map(function (t, i) {
       var idx = MM.tasks.indexOf(t);
+      if (unlinked.indexOf(t.task) >= 0) t = $.extend({}, t, { linked: '' }); // 해제된 연계과제는 비워서 표시
       return '<tr><td class="mm-muted">' + (tasks.length - i) + '</td><td>' + esc(t.dept) + '</td>' +
         '<td><button type="button" class="mm-link" data-action="mm-go-roadmap"><strong>' + esc(t.roadmap) + '</strong></button></td>' +
         '<td class="mm-left mm-cell-task"><button type="button" class="mm-link mm-link-block" data-action="mm-task-detail" data-kind="task" data-index="' + idx + '"><strong>' + esc(t.task) + '</strong></button></td>' +
         '<td class="mm-left mm-cell-linked"><div class="mm-linked">' +
           '<button type="button" class="tpa-icon-btn mm-icon-btn" data-action="mm-linked-search" title="연계과제 조회"><i class="fas fa-search"></i></button>' +
-          '<button type="button" class="mm-link mm-link-trunc" data-action="mm-task-detail" data-kind="linked" data-index="' + idx + '">' + esc(t.linked) + '</button></div></td>' +
+          '<button type="button" class="mm-link mm-link-trunc" data-action="mm-task-detail" data-kind="linked" data-index="' + idx + '">' + esc(t.linked) + '</button>' +
+          (t.linked ? '<button type="button" class="mm-unlink" data-action="mm-unlink" data-task="' + esc(t.task) + '" title="연계과제 해제"><i class="far fa-rectangle-xmark"></i></button>' : '') +
+        '</div></td>' +
         '<td>' + mmStateBadge(t.state) + '</td><td class="mm-phase-text">' + esc(t.phase) + '</td></tr>';
     }).join('') || mmEmptyRow(7);
 
@@ -2306,8 +2341,9 @@
           '<button type="button" class="tpa-icon-btn mm-icon-btn" data-action="mm-info-detail-open" data-index="' + infoIdx + '" title="mTRM 정보 상세"><i class="fas fa-magnifying-glass-plus"></i></button>' +
           '<button type="button" class="mm-link" data-action="mm-go-roadmap"><strong>' + esc(r.roadmap) + '</strong></button></div></td>' +
         '<td class="mm-nowrap">' + esc(r.period) + '</td><td class="mm-link-text">' + esc(r.prev) + '</td><td class="mm-link-text">' + esc(r.next) + '</td>' +
+        '<td class="mm-link-text">' + esc(mmCouncil(r)) + '</td>' +
         '<td class="mm-muted mm-nowrap">' + esc(r.reg) + '</td><td class="mm-muted mm-nowrap">' + esc(r.modDate) + '</td><td>' + mmStateBadge(r.status) + '</td></tr>';
-    }).join('') || mmEmptyRow(9);
+    }).join('') || mmEmptyRow(10);
 
     var deptRows = depts.map(function (d) {
       return '<tr><td><button type="button" class="mm-link mm-link-underline" data-action="mm-open-modal" data-modal="deptHead"><strong>' + esc(d.dept) + '</strong></button></td>' +
@@ -2321,6 +2357,7 @@
     else if (state.mmModal === 'deptChange') modal = renderMmDeptChangeModal();
     else if (state.mmModal === 'deptHead') modal = renderMmDeptHeadModal();
     else if (state.mmModal === 'infoDetail') modal = renderMmInfoDetailModal(state);
+    else if (state.mmModal === 'updHist') modal = renderMmUpdHistModal();
 
     return (
       '<div class="admin-screen" data-screen-label="SCR-012 mTRM 관리">' +
@@ -2346,11 +2383,11 @@
         '</section>' +
         '<section class="tpa-section">' +
           '<div class="tpa-section-head"><h3><i class="fas fa-caret-right"></i>mTRM 정보 <span class="mm-count">총 ' + infos.length + '건</span></h3>' +
-            '<div class="mm-head-btns"><button type="button" class="btn-navy tpa-btn-sm" data-action="mm-open-modal" data-modal="version">버전관리</button>' +
+            '<div class="mm-head-btns"><button type="button" class="btn-navy tpa-btn-sm" data-action="mm-open-modal" data-modal="updHist">버전관리</button>' +
               '<button type="button" class="btn-navy tpa-btn-sm" data-action="mm-open-modal" data-modal="summary" data-mode="roadmap">요약</button></div></div>' +
           '<div class="mm-scroll" style="max-height:176px"><table class="tpa-table mm-table" style="min-width:960px"><thead>' +
             '<tr><th rowspan="2" style="width:56px">순번</th><th rowspan="2" style="width:80px">분과</th><th rowspan="2" style="min-width:180px">로드맵</th><th rowspan="2" style="min-width:150px">기간</th>' +
-              '<th colspan="2">연계 mTRM</th><th rowspan="2">등록일</th><th rowspan="2">수정일</th><th rowspan="2" style="width:80px">상태</th></tr>' +
+              '<th colspan="2">연계 mTRM</th><th rowspan="2" style="min-width:130px">협의체</th><th rowspan="2">등록일</th><th rowspan="2">수정일</th><th rowspan="2" style="width:80px">상태</th></tr>' +
             '<tr><th>前</th><th>後</th></tr>' +
           '</thead><tbody>' + infoRows + '</tbody></table></div>' +
         '</section>' +

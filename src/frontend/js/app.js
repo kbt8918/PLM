@@ -108,6 +108,7 @@
     videoProcess: null, // SCR-001 "현재=자동"/SCR-003 "기술현황=●" 클릭 시 자동화 설비 동영상 모달에 표시할 공정/작업명
     videoKind: 'part', // 동영상 모달 제목 접두어 구분: 'part'(부품) / 'module'(모듈)
     techPrDetailIndex: null, // SCR-009/MTRM-MAIN Tech PR 카드 클릭 시 표시할 커스텀 상세 오버레이 인덱스
+    mmUnlinked: [], // SCR-012에서 연계과제를 해제한 과제명 목록(v3 mmUnlinked)
     techPrDetailCard: null, // 클릭한 카드 좌표(gi/fi/ci) — 상세 오버레이가 카드 필드를 그대로 표시
     tpdIdx: 0, // 상세 오버레이 슬라이드 인덱스(0~2)
     toast: null, // 화면 우상단(하단) 토스트 알림 메시지, showToast()로 세팅 후 일정 시간 뒤 자동 소멸
@@ -926,6 +927,13 @@
         }
         case 'mm-linked-search':
           showToast('연계과제 선택 팝업 (기술과제 목록)');
+          break;
+        case 'mm-unlink':
+          // v3: 해제한 과제명을 mmUnlinked에 쌓아두고 렌더 시 연계과제를 비운다.
+          setState(function (st) {
+            return { mmUnlinked: (st.mmUnlinked || []).concat([String($el.data('task'))]) };
+          });
+          showToast('연계과제가 해제되었습니다.');
           break;
         case 'mm-open-modal': {
           var mmPatch = { mmModal: String($el.data('modal')) };
