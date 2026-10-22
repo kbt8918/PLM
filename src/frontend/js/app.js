@@ -20,6 +20,25 @@
   var MM = global.PNDES.mock.scr012;
   var TR = global.PNDES.mock.scr014;
   var MPM = global.PNDES.mock.mp;
+  var PPM = global.PNDES.mock.pp;
+
+  // 현재 페이지에 보이는 부품공정배치 행 (전체선택 토글 대상)
+  function PPRows(state) {
+    var A = state.ppApplied;
+    var rows = PPM.rows.filter(function (r) {
+      return (A.region === '전체' || r.region === A.region) &&
+        (A.plant === '전체' || r.plant === A.plant) &&
+        (A.line === '전체' || r.line === A.line) &&
+        (A.car === '전체' || r.car === A.car) &&
+        (!A.carTxt || r.car.indexOf(A.carTxt) >= 0) &&
+        (A.product === '전체' || r.product === A.product) &&
+        (!A.kw || [r.car, r.plant, r.line, r.product].some(function (x) { return x.indexOf(A.kw) >= 0; }));
+    });
+    var per = PPM.perPage;
+    var pages = Math.max(1, Math.ceil(rows.length / per));
+    var page = Math.min(state.ppPage || 1, pages);
+    return rows.slice((page - 1) * per, (page - 1) * per + per);
+  }
   // SCR-014 등록 팝업 초기값(v3 ttImages/ttFiles/ttTags/TT_MAIL_*). editIndex가 있으면 수정 모드
   function newTrendForm(open, editIndex, row) {
     var withId = function (list, make) { return list.map(function (x, i) { return make(x, i + 1); }); };
@@ -159,6 +178,13 @@
     mpCols: $.extend({}, global.PNDES.mock.mp.COLS0), // 공정배치 탭 컬럼 토글(v3 mpCols)
     mpModalId: null, // 상세 팝업 대상 행 id(v3 mpModal)
     mpTab: 'basic', // 상세 팝업 탭(v3 mpTab)
+    ppF: $.extend({}, global.PNDES.mock.pp.F0), // 부품공정배치 필터 입력값(v3 ppF)
+    ppApplied: $.extend({}, global.PNDES.mock.pp.F0), // 조회로 확정된 필터(v3 ppApplied)
+    ppPage: 1, // 부품공정배치 목록 페이지(15건/page)
+    ppChecked: {}, // 행 체크박스 선택 상태(v3 ppChecked)
+    ppModalId: null, // 상세 팝업 대상 행 id(v3 ppModal)
+    ppTab: 'basic', // 상세 팝업 탭(v3 ppTab)
+    ppSub: 'reg', // 기본운영방안 서브탭(v3 ppSub)
     mmPicker: null, // 조회 선택 팝업 종류: council | trm
     mmPk: { sel: '', filter: { a: '', b: '' }, applied: { a: '', b: '' } }, // 조회 선택 팝업 필터/선택 상태(v3 pk*)
     mmPickedCouncil: '', mmPickedTrm: '',
@@ -739,6 +765,58 @@
         case 'mp-toast':
           showToast(String($el.data('m')));
           break;
+        case 'pp-search':
+          setState(function (st) { return { ppApplied: $.extend({}, st.ppF), ppPage: 1 }; });
+          showToast('조회 조건이 적용되었습니다.');
+          break;
+        case 'pp-reset':
+          setState({ ppF: $.extend({}, PPM.F0), ppApplied: $.extend({}, PPM.F0), ppPage: 1 });
+          break;
+        case 'pp-page':
+          setState({ ppPage: Math.max(1, Number($el.data('page'))) });
+          break;
+        case 'pp-open':
+          // 위임은 조상에서도 발동한다 — 체크 칸(td[data-action=pp-check])에서 시작된
+          // 클릭이 행의 상세 열기까지 발동하지 않도록 차단한다.
+          if ($(e.target).closest('[data-action="pp-check"]').length) break;
+          setState({ ppModalId: String($el.data('id')), ppTab: 'basic', ppSub: 'reg' });
+          break;
+        case 'pp-close':
+          if ($el.hasClass('rm-modal-overlay') && e.target !== this) break;
+          setState({ ppModalId: null });
+          break;
+        case 'pp-tab':
+          setState({ ppTab: String($el.data('tab')) });
+          break;
+        case 'pp-sub':
+          setState({ ppSub: String($el.data('sub')) });
+          break;
+        case 'pp-check': {
+          // 행 클릭(상세 열기)과 겹치지 않도록 체크 칸은 별도 액션으로 처리한다.
+          var ppId = String($el.data('id'));
+          setState(function (st) {
+            var c = $.extend({}, st.ppChecked);
+            c[ppId] = !c[ppId];
+            return { ppChecked: c };
+          });
+          break;
+        }
+        case 'pp-toggle-all': {
+          var ppRows = PPRows(state);
+          var ppAll = ppRows.length > 0 && ppRows.every(function (r) { return state.ppChecked[r.id]; });
+          setState(function (st) {
+            var c = $.extend({}, st.ppChecked);
+            ppRows.forEach(function (r) { c[r.id] = !ppAll; });
+            return { ppChecked: c };
+          });
+          break;
+        }
+        case 'pp-copy':
+          showToast('선택한 공정배치를 복사합니다.');
+          break;
+        case 'pp-toast':
+          showToast(String($el.data('m')));
+          break;
         case 'pm-manual':
           showToast('Web Manual을 엽니다.');
           break;
@@ -1284,6 +1362,16 @@
     });
 
     // 모듈공정배치 필터 입력 — 조회 버튼을 눌러야 적용된다(v3 mpF -> mpApplied)
+    // 부품공정배치 필터 입력 — 조회 버튼을 눌러야 적용된다(v3 ppF -> ppApplied)
+    $(document).on('input change', '[data-pp-field]', function () {
+      var $i = $(this);
+      var key = $i.data('ppField');
+      var val = $i.is(':checkbox') ? $i.prop('checked') : $i.val();
+      var patch = {};
+      patch[key] = val;
+      state.ppF = $.extend({}, state.ppF, patch);
+    });
+
     $(document).on('input change', '[data-mp-field]', function () {
       var $i = $(this);
       var key = $i.data('mpField');

@@ -1615,6 +1615,176 @@
     );
   }
 
+  // ---------- 공법 관리 > 부품공정배치 관리 (bp-gk 생기 / bp-sc 생산) ----------
+  // 근거: design-import/생기포털 v3.dc.html isPpList 블록 / ppVals / ppRowsAll.
+  // mp와 달리 페이지네이션(15건)·행 체크박스·탭 안의 서브탭 구조를 가진다.
+  var PP = global.PNDES.mock.pp;
+
+  function ppUniq(key) {
+    var seen = [];
+    PP.rows.forEach(function (r) { if (seen.indexOf(r[key]) < 0) seen.push(r[key]); });
+    return seen;
+  }
+
+  function ppFilterRows(A) {
+    return PP.rows.filter(function (r) {
+      return (A.region === '전체' || r.region === A.region) &&
+        (A.plant === '전체' || r.plant === A.plant) &&
+        (A.line === '전체' || r.line === A.line) &&
+        (A.car === '전체' || r.car === A.car) &&
+        (!A.carTxt || r.car.indexOf(A.carTxt) >= 0) &&
+        (A.product === '전체' || r.product === A.product) &&
+        (!A.kw || [r.car, r.plant, r.line, r.product].some(function (x) { return x.indexOf(A.kw) >= 0; }));
+    });
+  }
+
+  function ppSelect(key, value, options, cls) {
+    return '<select data-pp-field="' + key + '" class="' + (cls || '') + '"><option value="전체">전체</option>' +
+      options.map(function (o) {
+        return '<option value="' + esc(o) + '"' + (o === value ? ' selected' : '') + '>' + esc(o) + '</option>';
+      }).join('') + '</select>';
+  }
+
+  function ppText(key, value, cls) {
+    return '<input type="text" data-pp-field="' + key + '" value="' + esc(value) + '" class="' + (cls || '') + '" />';
+  }
+
+  function renderPpFilter(f) {
+    var th = function (t) { return '<th>' + esc(t) + '</th>'; };
+    return '<div class="mp-filter"><table class="mp-filter-table">' +
+      '<tr>' + th('지역') + '<td>' + ppSelect('region', f.region, ppUniq('region')) + '</td>' +
+        th('공장') + '<td>' + ppSelect('plant', f.plant, ppUniq('plant')) + '</td>' +
+        th('라인') + '<td>' + ppSelect('line', f.line, ppUniq('line')) + '</td></tr>' +
+      '<tr>' + th('자종연식') + '<td><div class="mp-cell-pair">' + ppSelect('car', f.car, ppUniq('car'), 'mp-sel-sm') + ppText('carTxt', f.carTxt) + '</div></td>' +
+        '<td colspan="2"></td>' +
+        th('제품') + '<td><div class="mp-cell-pair">' + ppSelect('product', f.product, ppUniq('product'), 'mp-sel-sm') + ppText('productTxt', f.productTxt) + '</div></td></tr>' +
+      '<tr>' + th('담당') + '<td><label class="mp-check"><input type="checkbox" data-pp-field="mine"' + (f.mine ? ' checked' : '') + ' />본인 담당</label></td>' +
+        th('검색어') + '<td><div class="mp-cell-pair">' +
+          '<select data-pp-field="kwField" class="mp-sel-xs"><option value="전체"' + (f.kwField === '전체' ? ' selected' : '') + '>전체</option>' +
+          '<option value="라인"' + (f.kwField === '라인' ? ' selected' : '') + '>라인</option></select>' +
+          ppText('kw', f.kw) + '</div></td>' +
+        th('품번') + '<td>' + ppText('partNo', f.partNo) + '</td></tr>' +
+      '</table>' +
+      '<div class="mp-filter-acts">' +
+        '<button type="button" class="btn-dark tpa-btn-sm" data-action="pp-search"><i class="fas fa-search" style="font-size:10px"></i>조회</button>' +
+        '<button type="button" class="btn-outline-sm" data-action="pp-reset">초기화</button>' +
+        '<button type="button" class="btn-outline-sm" data-action="pp-toast" data-m="상세검색 조건을 엽니다.">상세검색</button>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function renderPpList(state, view) {
+    var sc = view === 'bp-sc';
+    var rows = ppFilterRows(state.ppApplied);
+    var per = PP.perPage;
+    var pages = Math.max(1, Math.ceil(rows.length / per));
+    var page = Math.min(state.ppPage || 1, pages);
+    var st0 = (page - 1) * per;
+    var pageRows = rows.slice(st0, st0 + per);
+    var checked = state.ppChecked || {};
+    var allOn = pageRows.length > 0 && pageRows.every(function (r) { return checked[r.id]; });
+    var body = pageRows.length
+      ? pageRows.map(function (r, i) {
+          return '<tr class="mp-row" data-action="pp-open" data-id="' + esc(r.id) + '">' +
+            '<td data-action="pp-check" data-id="' + esc(r.id) + '"><input type="checkbox" class="pp-box"' + (checked[r.id] ? ' checked' : '') + ' /></td>' +
+            '<td>' + (st0 + i + 1) + '</td><td>' + esc(r.region) + '</td><td>' + esc(r.car) + '</td>' +
+            '<td class="mp-left">' + esc(r.plant) + '</td><td class="mp-left">' + esc(r.line) + '</td><td>' + esc(r.product) + '</td>' +
+            '<td>' + (r.std ? '●' : '○') + '</td><td>' + esc(r.ct) + '</td><td>' + esc(r.work) + '</td>' +
+            '<td>' + esc(r.direct) + '</td><td>' + esc(r.semi) + '</td><td>' + (r.reg ? '●' : '○') + '</td>' +
+            '<td>' + esc(r.rev) + '</td><td class="mp-nowrap">' + esc(r.mod) + '</td><td>' + esc(r.writer) + '</td>' +
+            '<td></td><td></td><td></td><td></td><td></td></tr>';
+        }).join('')
+      : '<tr><td colspan="21" class="mm-empty">조회된 데이터가 없습니다.</td></tr>';
+    var pgBtns = '';
+    for (var pi = 1; pi <= pages; pi++) {
+      pgBtns += '<button type="button" class="pp-pg' + (pi === page ? ' is-active' : '') + '" data-action="pp-page" data-page="' + pi + '">' + pi + '</button>';
+    }
+    return (
+      '<div class="admin-screen mp-screen" data-screen-label="' + (sc ? '생산부품공정배치 관리' : '생기부품공정배치 관리') + '">' +
+        '<div class="mp-head">' +
+          '<h2 class="mp-title">' + (sc ? '생산부품공정배치 관리' : '생기부품공정배치 관리') + '</h2>' +
+          '<div class="mp-head-btns">' +
+            '<button type="button" class="btn-navy tpa-btn-sm" data-action="pp-copy">복사</button>' +
+            '<button type="button" class="btn-excel" data-action="pp-toast" data-m="조회 결과를 엑셀로 내려받습니다.">엑셀</button>' +
+          '</div>' +
+        '</div>' +
+        renderPpFilter(state.ppF) +
+        '<p class="mp-total">총 <b>' + rows.length + '</b>건</p>' +
+        '<div class="mp-scroll"><table class="tpa-table mp-table"><thead>' +
+          '<tr><th rowspan="2"><input type="checkbox" class="pp-box" data-action="pp-toggle-all"' + (allOn ? ' checked' : '') + ' /></th>' +
+            '<th rowspan="2">순번</th><th rowspan="2">지역</th><th rowspan="2">자종연식</th><th rowspan="2">공장</th>' +
+            '<th rowspan="2">라인</th><th rowspan="2">제품</th><th rowspan="2">표준<br />라인</th><th rowspan="2">C/T(초)</th>' +
+            '<th rowspan="2">수작업시간</th><th rowspan="2">직접인원<br />(명)</th><th rowspan="2">준직접인원<br />(명)</th>' +
+            '<th rowspan="2">준직접표준<br />등록여부</th><th rowspan="2">Rev</th><th rowspan="2">수정일</th>' +
+            '<th colspan="6">작성부서</th></tr>' +
+          '<tr><th>작성</th><th>검토</th><th>승인</th><th>부서명</th><th>배포일</th><th>작성</th></tr>' +
+        '</thead><tbody>' + body + '</tbody></table></div>' +
+        '<div class="pp-pager">' +
+          '<button type="button" class="pp-pg" data-action="pp-page" data-page="1">&laquo;</button>' +
+          '<button type="button" class="pp-pg" data-action="pp-page" data-page="' + (page - 1) + '">&lsaquo;</button>' +
+          pgBtns +
+          '<button type="button" class="pp-pg" data-action="pp-page" data-page="' + (page + 1) + '">&rsaquo;</button>' +
+          '<button type="button" class="pp-pg" data-action="pp-page" data-page="' + pages + '">&raquo;</button>' +
+        '</div>' +
+        (state.ppModalId ? renderPpDetailModal(state, sc) : '') +
+      '</div>'
+    );
+  }
+
+  // 상세 팝업 — 3탭(기본운영방안/산출물/STD), 기본운영방안 안에 서브탭 4개.
+  // "부품공정배치계획" 서브탭만 표(PP_PLAN)를 그리고 나머지는 자리표시 영역이다.
+  function renderPpDetailModal(state, sc) {
+    var d = null;
+    PP.rows.forEach(function (r) { if (r.id === state.ppModalId) d = r; });
+    if (!d) return '';
+    var tab = state.ppTab || 'basic';
+    var sub = state.ppSub || 'reg';
+    var title = (sc ? '생산부품공정배치 작성 [' : '생기부품공정배치 작성 [') + d.plant + ' ' + d.product + ' ' + d.car + ',Rev : ' + d.rev + ']';
+    var tabsHtml = PP.tabs.map(function (t) {
+      return '<button type="button" class="mp-tab' + (tab === t[0] ? ' is-active' : '') + '" data-action="pp-tab" data-tab="' + t[0] + '">' + esc(t[1]) + '</button>';
+    }).join('');
+    var pane;
+    if (tab === 'basic') {
+      var subsHtml = PP.subs.map(function (t) {
+        return '<button type="button" class="pp-sub' + (sub === t[0] ? ' is-active' : '') + '" data-action="pp-sub" data-sub="' + t[0] + '">' + esc(t[1]) + '</button>';
+      }).join('');
+      var inner;
+      if (sub === 'plan') {
+        inner = '<table class="tpa-table mp-grid-table"><thead><tr>' +
+          '<th>공정</th><th>표준공정명</th><th>공정명</th><th>설비명</th></tr></thead><tbody>' +
+          PP.plan.map(function (r) {
+            return '<tr><td>' + esc(r[0]) + '</td><td class="mp-left">' + esc(r[1]) + '</td>' +
+              '<td class="mp-left">' + esc(r[2]) + '</td><td class="mp-left">' + esc(r[3]) + '</td></tr>';
+          }).join('') + '</tbody></table>';
+      } else {
+        var subName = '';
+        PP.subs.forEach(function (t) { if (t[0] === sub) subName = t[1]; });
+        inner = '<div class="mp-pane-empty">' + esc(subName) + ' 영역은 상세 설계 확정 후 연결됩니다.</div>';
+      }
+      pane = '<div class="pp-subs">' + subsHtml + '</div>' + inner;
+    } else {
+      var label = '';
+      PP.tabs.forEach(function (t) { if (t[0] === tab) label = t[1]; });
+      pane = '<div class="mp-pane-empty">' + esc(label) + ' 영역은 상세 설계 확정 후 연결됩니다.</div>';
+    }
+    return (
+      '<div class="rm-modal-overlay" data-action="pp-close">' +
+        '<div class="rm-modal-box mp-modal">' +
+          '<div class="rm-modal-header-navy"><h3>' + esc(title) + '</h3>' +
+            '<button type="button" class="rm-modal-close" data-action="pp-close"><i class="fas fa-times"></i></button></div>' +
+          '<div class="rm-modal-body">' +
+            '<table class="tpa-table mp-info-table"><tbody>' +
+              '<tr><th>공장</th><td>' + esc(d.plant) + '</td><th>라인</th><td>' + esc(d.line) + '</td></tr>' +
+              '<tr><th>제품</th><td>' + esc(d.product) + '</td><th>자종연식</th><td>' + esc(d.car) + '</td></tr>' +
+              '<tr><th>C/T(초)</th><td>' + esc(d.ct) + '</td><th>Rev</th><td>' + esc(d.rev) + '</td></tr>' +
+            '</tbody></table>' +
+            '<div class="mp-tabs">' + tabsHtml + '</div>' + pane +
+          '</div>' +
+        '</div>' +
+      '</div>'
+    );
+  }
+
   // ---------- SCR-010 Tech PR 관리자 ----------
   // 근거: design-import/생기포털 v3.dc.html isTechPrAdmin — 필터(분과/BU/적용공장/기술태그) + "Tech PR 등록" 표 +
   // "기술태그 Master Table" + 신규등록 팝업 + 기술태그 추가 팝업. (README #11은 이전 화면 설명이라 v3를 따름)
@@ -3164,6 +3334,8 @@
     'MTRM-MAIN': renderMTRMMAIN,
     'mp-gk': function (state) { return renderMpList(state, 'mp-gk'); },
     'mp-sc': function (state) { return renderMpList(state, 'mp-sc'); },
+    'bp-gk': function (state) { return renderPpList(state, 'bp-gk'); },
+    'bp-sc': function (state) { return renderPpList(state, 'bp-sc'); },
   };
 
   global.PNDES.render = {
