@@ -2331,6 +2331,66 @@
     );
   }
 
+  // v3 신규: 연관과제 검색 팝업 — mTRM 기술과제 목록에서 연계과제를 골라 연결한다.
+  // 근거: design-import/생기포털 v3.dc.html lkOpen 블록 / lkRows(담당자·과제명 2단 필터 + 단일선택).
+  var MM_LK_OWNER = { AI: '자동화기술팀 / 김의왕 매니저', 물류: '물류기술팀 / 박생기 책임', 로봇: '지능화기술팀 / 한로봇 책임' };
+
+  function mmLkAll() {
+    return MM.tasks.map(function (t) {
+      return { owner: MM_LK_OWNER[t.dept] || MM_LK_OWNER.AI, name: t.task };
+    });
+  }
+
+  function renderMmLinkPickerModal(state) {
+    var lk = state.lk;
+    var all = mmLkAll();
+    var rows = all.filter(function (r) {
+      return (!lk.applied.owner || r.owner === lk.applied.owner) && (!lk.applied.name || r.name === lk.applied.name);
+    });
+    var uniq = function (key) {
+      var seen = [];
+      all.forEach(function (r) { if (seen.indexOf(r[key]) < 0) seen.push(r[key]); });
+      return seen;
+    };
+    var opts = function (list, cur) {
+      return '<option value="">전체</option>' + list.map(function (v) {
+        return '<option value="' + esc(v) + '"' + (v === cur ? ' selected' : '') + '>' + esc(v) + '</option>';
+      }).join('');
+    };
+    var body = rows.length
+      ? rows.map(function (r, i) {
+          return '<tr><td><input type="checkbox" data-action="lk-pick" data-name="' + esc(r.name) + '"' +
+            (lk.sel === r.name ? ' checked' : '') + ' /></td>' +
+            '<td>' + (i + 1) + '</td><td class="mm-left">' + esc(r.owner) + '</td>' +
+            '<td class="mm-left">' + esc(r.name) + '</td></tr>';
+        }).join('')
+      : '<tr><td colspan="4" class="mm-empty">데이터가 없습니다.</td></tr>';
+    return (
+      '<div class="rm-modal-overlay" data-action="lk-close">' +
+        '<div class="rm-modal-box mm-lk-modal">' +
+          '<div class="rm-modal-header-navy"><h3>연관과제 검색</h3>' +
+            '<button type="button" class="rm-modal-close" data-action="lk-close"><i class="fas fa-times"></i></button></div>' +
+          '<div class="rm-modal-topbar tpa-topbar">' +
+            '<button type="button" class="btn-navy tpa-btn-sm" data-action="lk-choose">선택</button>' +
+            '<button type="button" class="btn-navy tpa-btn-sm" data-action="lk-close">닫기</button>' +
+          '</div>' +
+          '<div class="rm-modal-body">' +
+            '<div class="mm-lk-filter">' +
+              '<span class="mm-lk-label">담당자</span>' +
+              '<select class="mm-lk-sel" data-lk-field="owner">' + opts(uniq('owner'), lk.filter.owner) + '</select>' +
+              '<span class="mm-lk-label">과제명</span>' +
+              '<select class="mm-lk-sel mm-lk-sel-wide" data-lk-field="name">' + opts(uniq('name'), lk.filter.name) + '</select>' +
+              '<button type="button" class="btn-dark tpa-btn-sm" data-action="lk-search"><i class="fas fa-search"></i>조회</button>' +
+            '</div>' +
+            '<table class="tpa-table mm-table mm-lk-table"><thead><tr>' +
+              '<th style="width:48px">선택</th><th style="width:48px">NO</th><th style="width:34%">담당자</th><th>과제명</th>' +
+            '</tr></thead><tbody>' + body + '</tbody></table>' +
+          '</div>' +
+        '</div>' +
+      '</div>'
+    );
+  }
+
   function renderSCR012(state) {
     var f = state.mmFilter;
     var a = state.mmApplied;
@@ -2348,14 +2408,16 @@
     });
 
     var unlinked = state.mmUnlinked || [];
+    var linkMap = state.mmLinkMap || {};
     var taskRows = tasks.map(function (t, i) {
       var idx = MM.tasks.indexOf(t);
-      if (unlinked.indexOf(t.task) >= 0) t = $.extend({}, t, { linked: '' }); // 해제된 연계과제는 비워서 표시
+      if (linkMap[t.task]) t = $.extend({}, t, { linked: linkMap[t.task] }); // 검색 팝업으로 새로 연결한 과제
+      else if (unlinked.indexOf(t.task) >= 0) t = $.extend({}, t, { linked: '' }); // 해제된 연계과제는 비워서 표시
       return '<tr><td class="mm-muted">' + (tasks.length - i) + '</td><td>' + esc(t.dept) + '</td>' +
         '<td><button type="button" class="mm-link" data-action="mm-go-roadmap"><strong>' + esc(t.roadmap) + '</strong></button></td>' +
         '<td class="mm-left mm-cell-task"><button type="button" class="mm-link mm-link-block" data-action="mm-task-detail" data-kind="task" data-index="' + idx + '"><strong>' + esc(t.task) + '</strong></button></td>' +
         '<td class="mm-left mm-cell-linked"><div class="mm-linked">' +
-          '<button type="button" class="tpa-icon-btn mm-icon-btn" data-action="mm-linked-search" title="연계과제 조회"><i class="fas fa-search"></i></button>' +
+          '<button type="button" class="tpa-icon-btn mm-icon-btn" data-action="mm-linked-search" data-task="' + esc(t.task) + '" title="연계과제 조회"><i class="fas fa-search"></i></button>' +
           '<button type="button" class="mm-link mm-link-trunc" data-action="mm-task-detail" data-kind="linked" data-index="' + idx + '">' + esc(t.linked) + '</button>' +
           (t.linked ? '<button type="button" class="mm-unlink" data-action="mm-unlink" data-task="' + esc(t.task) + '" title="연계과제 해제"><i class="far fa-rectangle-xmark"></i></button>' : '') +
         '</div></td>' +
@@ -2386,6 +2448,7 @@
     else if (state.mmModal === 'deptHead') modal = renderMmDeptHeadModal(state);
     else if (state.mmModal === 'infoDetail') modal = renderMmInfoDetailModal(state);
     else if (state.mmModal === 'updHist') modal = renderMmUpdHistModal();
+    if (state.lk && state.lk.open) modal += renderMmLinkPickerModal(state);
 
     return (
       '<div class="admin-screen" data-screen-label="SCR-012 mTRM 관리">' +

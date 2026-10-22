@@ -1434,3 +1434,14 @@ button.cm-round-btn { cursor: pointer; }
 .mm-dept-person { display: flex; align-items: center; gap: 6px; }
 .mm-dept-person .mm-icon-btn { flex-shrink: 0; }
 .mm-req { color: #c0392b; }
+
+
+/* v3 신규: 연관과제 검색 팝업. 근거: 생기포털 v3.dc.html lkOpen 블록 */
+.mm-lk-modal { max-width: 860px; }
+.mm-lk-filter { display: flex; align-items: center; gap: 12px; padding-right: 12px; margin-bottom: 12px; border: 1px solid var(--color-border); border-top: 2px solid #2f5aa8; background: #f6f7f9; }
+.mm-lk-label { background: #eef0f4; border-right: 1px solid var(--color-border); padding: 7px 16px; font-weight: 700; white-space: nowrap; font-size: 12px; }
+.mm-lk-filter .mm-lk-label + .mm-lk-sel { margin-left: 0; }
+.mm-lk-sel { width: 208px; height: 24px; border: 1px solid #aeb5c1; background: #fff; padding: 0 4px; font-size: 12px; }
+.mm-lk-sel-wide { flex: 1; min-width: 0; width: auto; }
+.mm-lk-table { text-align: center; }
+.mm-lk-table .mm-left { text-align: left; }

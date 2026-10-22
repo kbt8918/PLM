@@ -112,6 +112,8 @@
     deptRowSeq: MM.deptHeadRows.length, // 신규 행 id 시퀀스
     trendMailOpen: false, // SCR-014 신규 등록 시 먼저 뜨는 알림메일 팝업(v3 trendMailOpen)
     mmUnlinked: [], // SCR-012에서 연계과제를 해제한 과제명 목록(v3 mmUnlinked)
+    mmLinkMap: {}, // 연관과제 검색으로 새로 연결한 과제명 매핑(v3 mmLinkMap)
+    lk: { open: false, target: '', sel: '', filter: { owner: '', name: '' }, applied: { owner: '', name: '' } }, // 연관과제 검색 팝업(v3 lk*)
     techPrDetailCard: null, // 클릭한 카드 좌표(gi/fi/ci) — 상세 오버레이가 카드 필드를 그대로 표시
     tpdIdx: 0, // 상세 오버레이 슬라이드 인덱스(0~2)
     toast: null, // 화면 우상단(하단) 토스트 알림 메시지, showToast()로 세팅 후 일정 시간 뒤 자동 소멸
@@ -931,7 +933,37 @@
           break;
         }
         case 'mm-linked-search':
-          showToast('연계과제 선택 팝업 (기술과제 목록)');
+          setState({ lk: { open: true, target: String($el.data('task')), sel: '', filter: { owner: '', name: '' }, applied: { owner: '', name: '' } } });
+          break;
+        case 'lk-close':
+          // 이벤트 위임은 버블링 경로상의 모든 data-action에서 발동한다.
+          // 오버레이(배경)에 걸린 닫기이므로, 실제로 배경을 직접 클릭했을 때만 닫는다
+          // (내부 "선택"/"조회" 버튼 클릭이 함께 닫아버리는 것을 방지).
+          if ($el.hasClass('rm-modal-overlay') && e.target !== this) break;
+          setState(function (st) { return { lk: $.extend({}, st.lk, { open: false }) }; });
+          break;
+        case 'lk-pick': {
+          var lkName = String($el.data('name'));
+          setState(function (st) {
+            return { lk: $.extend({}, st.lk, { sel: st.lk.sel === lkName ? '' : lkName }) };
+          });
+          break;
+        }
+        case 'lk-search':
+          setState(function (st) { return { lk: $.extend({}, st.lk, { applied: $.extend({}, st.lk.filter), sel: '' }) }; });
+          break;
+        case 'lk-choose':
+          if (!state.lk.sel) { showToast('연관과제를 선택해주세요.'); break; }
+          setState(function (st) {
+            var map = $.extend({}, st.mmLinkMap);
+            map[st.lk.target] = st.lk.sel;
+            return {
+              lk: $.extend({}, st.lk, { open: false }),
+              mmLinkMap: map,
+              mmUnlinked: (st.mmUnlinked || []).filter(function (x) { return x !== st.lk.target; }),
+            };
+          });
+          showToast('연관과제가 연결되었습니다.');
           break;
         case 'dept-toggle': {
           var dtId = Number($el.data('id'));
@@ -1177,6 +1209,16 @@
     // SCR-014 등록 팝업 입력값: state에 보관하고 발송 미리보기 조각과 글자 수만 갱신한다(포커스 유지)
     // 분과장 관리 그리드 입력 — 타이핑 중 재렌더로 포커스를 잃지 않도록 state만 갱신한다
     // (저장/행추가 시점에 setState로 다시 그린다). data-trm-field 패턴과 동일.
+    $(document).on('change', '[data-lk-field]', function () {
+      var key = $(this).data('lkField');
+      var val = $(this).val();
+      setState(function (st) {
+        var f = $.extend({}, st.lk.filter);
+        f[key] = val;
+        return { lk: $.extend({}, st.lk, { filter: f }) };
+      });
+    });
+
     $(document).on('input change', '[data-dept-field]', function () {
       var $i = $(this);
       var id = Number($i.data('id'));
