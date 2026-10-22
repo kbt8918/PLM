@@ -2629,6 +2629,44 @@
     );
   }
 
+  // v3 신규: 기술동향 "신규 등록" 저장 시 먼저 뜨는 알림메일 팝업. "발송"을 눌러야 실제 등록된다.
+  // 근거: design-import/생기포털 v3.dc.html trendMailOpen 블록 / saveTechTrend(신규일 때 trendMailOpen).
+  function renderTrendMailModal(state) {
+    var f = state.trendForm;
+    var files = f.files || [];
+    var fileHtml = files.length
+      ? files.map(function (x) { return '<p class="tm-file">' + esc(x.name) + '</p>'; }).join('')
+      : '<span class="tm-nofile">첨부파일 없음</span>';
+    return (
+      '<div class="rm-modal-overlay" data-action="trend-mail-close">' +
+        '<div class="rm-modal-box tm-modal">' +
+          '<div class="rm-modal-header-navy"><h3>알림메일</h3>' +
+            '<span class="tm-to">받는 사람 : 메일알림대상 담당자</span></div>' +
+          '<div class="rm-modal-body">' +
+            '<div class="tm-sheet">' +
+              '<p class="tm-from">PNDES에서 알립니다.</p>' +
+              '<p class="tm-lead">&lt;신규기술 동향&gt;이 <strong>등록</strong>되었습니다.</p>' +
+              '<table class="tm-table"><tbody>' +
+                '<tr><td class="tm-th">제목</td><td colspan="3">' + esc(f.title.trim() || '-') + '</td></tr>' +
+                '<tr><td class="tm-th">등록자</td><td>[' + esc(TR.registrant.dept) + '] ' + esc(TR.registrant.owner) + '</td>' +
+                  '<td class="tm-th">등록일</td><td class="tm-nowrap">' + esc(TR.mailDate) + '</td></tr>' +
+                '<tr><td class="tm-th">첨부파일</td><td colspan="3">' + fileHtml + '</td></tr>' +
+                '<tr><td class="tm-th">바로가기</td><td colspan="3"><span class="tm-link">기술동향 공유 리스트 바로가기 링크</span></td></tr>' +
+              '</tbody></table>' +
+            '</div>' +
+            '<div class="tm-foot"><span class="tm-brand">PNDES</span>' +
+              '<p>관리자 : 디지털 생기팀 오봉훈 과장(TEL : 02-586-5475 HP : 010-5869-6886)<br />' +
+              '요청사항 및 건의 사항 : 디지털 생기팀 PNDES관리 담당자앞 (obh@mobis.co.kr)</p></div>' +
+            '<div class="tm-actions">' +
+              '<button type="button" class="btn-navy tpa-btn-sm" data-action="trm-save">발송</button>' +
+              '<button type="button" class="btn-navy tpa-btn-sm" data-action="trend-mail-close">닫기</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>'
+    );
+  }
+
   function renderSCR014(state) {
     var f = state.trendFilter;
     var list = trFilterRows(state);
@@ -2670,6 +2708,7 @@
         renderPagination(list.length, page, pageSize, 'techTrendPage') +
         (state.trendDetailIndex != null ? renderTrendDetailOverlay(state) : '') +
         (state.trendForm.open ? renderTrendRegisterModal(state) : '') +
+        (state.trendMailOpen ? renderTrendMailModal(state) : '') +
         renderMailTargetLayer(state) +
       '</div>'
     );

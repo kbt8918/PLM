@@ -108,6 +108,7 @@
     videoProcess: null, // SCR-001 "현재=자동"/SCR-003 "기술현황=●" 클릭 시 자동화 설비 동영상 모달에 표시할 공정/작업명
     videoKind: 'part', // 동영상 모달 제목 접두어 구분: 'part'(부품) / 'module'(모듈)
     techPrDetailIndex: null, // SCR-009/MTRM-MAIN Tech PR 카드 클릭 시 표시할 커스텀 상세 오버레이 인덱스
+    trendMailOpen: false, // SCR-014 신규 등록 시 먼저 뜨는 알림메일 팝업(v3 trendMailOpen)
     mmUnlinked: [], // SCR-012에서 연계과제를 해제한 과제명 목록(v3 mmUnlinked)
     techPrDetailCard: null, // 클릭한 카드 좌표(gi/fi/ci) — 상세 오버레이가 카드 필드를 그대로 표시
     tpdIdx: 0, // 상세 오버레이 슬라이드 인덱스(0~2)
@@ -602,8 +603,10 @@
           // 제목·유형을 필수로 보고, 담당자는 팝업에 표시된 등록자로 저장한다.
           var trf = state.trendForm;
           if (!trf.title.trim() || !trf.type) { global.alert('필수 항목을 모두 입력해주세요.'); break; }
-          var trRows = state.trendRows.slice();
           var trEdit = trf.editIndex != null;
+          // v3: 신규 등록은 저장 전에 알림메일 팝업을 먼저 띄우고, "발송"을 눌러야 실제 저장된다.
+          if (!trEdit && !state.trendMailOpen) { setState({ trendMailOpen: true }); break; }
+          var trRows = state.trendRows.slice();
           if (trEdit) {
             trRows[trf.editIndex] = $.extend({}, trRows[trf.editIndex], { title: trf.title.trim(), kind: trf.type });
           } else {
@@ -614,8 +617,8 @@
               period: trToday[0] + ' ' + Math.ceil(Number(trToday[1]) / 3) + '분기', content: '',
             });
           }
-          setState({ trendRows: trRows, trendForm: $.extend({}, trf, { open: false }), techTrendPage: trEdit ? state.techTrendPage : 1 });
-          showToast(trEdit ? '기술동향이 수정되었습니다.' : '기술동향이 등록되었습니다.');
+          setState({ trendRows: trRows, trendForm: $.extend({}, trf, { open: false }), techTrendPage: trEdit ? state.techTrendPage : 1, trendMailOpen: false });
+          showToast(trEdit ? '기술동향이 수정되었습니다.' : '담당자에게 알림 이메일을 발송했습니다.');
           break;
         }
         case 'logout':
@@ -927,6 +930,9 @@
         }
         case 'mm-linked-search':
           showToast('연계과제 선택 팝업 (기술과제 목록)');
+          break;
+        case 'trend-mail-close':
+          setState({ trendMailOpen: false });
           break;
         case 'mm-unlink':
           // v3: 해제한 과제명을 mmUnlinked에 쌓아두고 렌더 시 연계과제를 비운다.
