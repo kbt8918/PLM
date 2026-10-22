@@ -703,8 +703,19 @@
         case 'todo-card':
           showToast($el.data('label') + ' 목록으로 이동합니다.');
           break;
-        case 'week-card':
-          if ($el.data('label') === '기술과제') { gnbGo('SCR-013'); } else { showToast($el.data('label') + ' 업무 목록'); }
+        case 'pm-manual':
+          showToast('Web Manual을 엽니다.');
+          break;
+        case 'pm-refresh':
+          showToast('시간을 새로고침했습니다.');
+          break;
+        case 'week-card-prog':
+          // v3: 진행중 건수는 항상 안내 토스트
+          showToast($el.data('label') + ' 진행중 업무 목록');
+          break;
+        case 'week-card-delay':
+          // v3: 지연 건수는 기술과제일 때만 해당 화면으로 이동
+          if ($el.data('label') === '기술과제') { gnbGo('SCR-013'); } else { showToast($el.data('label') + ' 지연 업무 목록'); }
           break;
         case 'todo-delay-tech':
           gnbGo('SCR-013');

@@ -1455,3 +1455,16 @@ button.cm-round-btn { cursor: pointer; }
 .mm-pk-filter input[type="text"] { flex: 1; min-width: 0; border: 0; border-right: 1px solid var(--color-border); padding: 0 8px; font-size: 12px; background: #fff; }
 .mm-pk-filter .btn-dark { margin: 4px 6px; flex-shrink: 0; }
 .mm-pk-box { pointer-events: none; }
+
+
+/* v3: 주간 카드의 진행중/지연 건수가 각각 클릭 가능한 버튼이 됐다. 근거: 생기포털 v3.dc.html wc.onProg/wc.onDelay */
+.week-card-num { background: none; border: 0; padding: 0 2px; font-weight: 700; font-size: 14px; color: #111827; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; font-family: inherit; }
+.week-card-num:hover { color: #2e5ea8; }
+
+.todo-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 12px 0 4px; }
+.todo-footer-tools { display: flex; align-items: center; gap: 6px; }
+.todo-foot-btn { display: flex; align-items: center; gap: 4px; height: 22px; padding: 0 8px; border: 1px solid #aeb5c1; background: #fff; font-size: 11px; color: #333; cursor: pointer; font-family: inherit; }
+.todo-foot-btn:hover { background: #f1f3f7; }
+.todo-foot-sel { height: 22px; border: 1px solid #aeb5c1; background: #fff; padding: 0 6px; font-size: 11px; color: #333; }
+.todo-foot-icon { width: 24px; height: 22px; border: 1px solid #aeb5c1; background: #fff; color: #555; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 10px; }
+.todo-foot-icon:hover { background: #f1f3f7; }

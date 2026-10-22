@@ -177,6 +177,8 @@
 
   // ---------- 포털 홈 (todo-main) ----------
   // 근거: design-import/생기포털 v3.dc.html isTodoMain 블록(검색 히어로 + TO DO + 금주 내 업무 + 내 업무/Q&A + 공지사항).
+  var PM_CLOCK = '한국 : 2026-10-20 07:45'; // v3 pmClock (프로토타입 고정값)
+
   function renderTodoMain(state) {
     var D = global.PNDES.mock.todoMain;
     var mult = D.todoScopeMult;
@@ -212,17 +214,25 @@
       var prog = w.prog * mc, delay = w.delay * mc;
       var isDelay = delay > 0;
       var pct = (prog + delay) ? (delay / (prog + delay)) * 100 : 0;
-      return '<button type="button" class="week-card' + (isDelay ? ' is-delay' : '') + '" data-action="week-card" data-label="' + esc(w.label) + '">' +
+      // v3: 카드 전체가 아니라 "진행중"/"지연" 건수가 각각 별도 버튼이다(wc.onProg / wc.onDelay).
+      // 지연은 기술과제 카드일 때만 해당 화면으로 이동하고, 나머지는 안내 토스트.
+      // 카드를 button으로 두면 버튼 중첩이 되므로 div로 바꾼다.
+      return '<div class="week-card' + (isDelay ? ' is-delay' : '') + '">' +
         '<div class="week-card-head">' +
           '<span>' + esc(w.label) + '</span>' +
           (isDelay ? '<span class="week-card-delay-badge">지연 발생</span>' : '') +
         '</div>' +
         '<div class="week-card-body">' +
-          '<div class="week-card-row"><span class="week-card-dot" style="background:#1a63e0"></span>진행중<b>' + prog + '</b><span class="week-card-unit">건</span></div>' +
-          '<div class="week-card-row"><span class="week-card-dot" style="background:#d6264a"></span>지연<b style="color:' + (isDelay ? '#d6264a' : '#111827') + '">' + delay + '</b><span class="week-card-unit">건</span></div>' +
+          '<div class="week-card-row"><span class="week-card-dot" style="background:#1a63e0"></span>진행중' +
+            '<button type="button" class="week-card-num" data-action="week-card-prog" data-label="' + esc(w.label) + '">' + prog + '</button>' +
+            '<span class="week-card-unit">건</span></div>' +
+          '<div class="week-card-row"><span class="week-card-dot" style="background:#d6264a"></span>지연' +
+            '<button type="button" class="week-card-num" data-action="week-card-delay" data-label="' + esc(w.label) + '"' +
+              ' style="color:' + (isDelay ? '#d6264a' : '#111827') + '">' + delay + '</button>' +
+            '<span class="week-card-unit">건</span></div>' +
           '<div class="week-card-bar-track"><div class="week-card-bar-fill" style="width:' + pct + '%"></div></div>' +
         '</div>' +
-      '</button>';
+      '</div>';
     }).join('');
     var weekDotsHtml = '';
     for (var wi = 0; wi < weekPages; wi++) {
@@ -336,7 +346,16 @@
             '<table class="todo-plain-table"><thead><tr><th>내용</th><th style="width:140px">등록일자</th></tr></thead><tbody>' + noticeRowsHtml + '</tbody></table>' +
           '</section>' +
 
-          '<p class="todo-footer-copy">&copy; 생산기술업무 · All rights reserved.</p>' +
+          // v3: 단순 저작권 한 줄 → 저작권 + Web Manual / Family Site / 시계 / 새로고침 바
+          '<div class="todo-footer">' +
+            '<span class="todo-footer-copy">COPYRIGHT (C) 2015 HYUNDAI MOBIS CO.,LTD. ALL RIGHTS RESERVED.</span>' +
+            '<div class="todo-footer-tools">' +
+              '<button type="button" class="todo-foot-btn" data-action="pm-manual"><i class="far fa-file-lines"></i>Web Manual</button>' +
+              '<select class="todo-foot-sel" aria-label="Family Site"><option>Family Site</option><option>One MOBIS</option></select>' +
+              '<select class="todo-foot-sel" aria-label="서버 시간"><option>' + esc(PM_CLOCK) + '</option></select>' +
+              '<button type="button" class="todo-foot-icon" data-action="pm-refresh" title="새로고침"><i class="fas fa-rotate-right"></i></button>' +
+            '</div>' +
+          '</div>' +
         '</div>' +
       '</div>'
     );
