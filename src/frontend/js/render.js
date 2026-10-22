@@ -1785,6 +1785,102 @@
     );
   }
 
+  // ---------- 공법 관리 > 공장별 현황비교 (mod-cmp 모듈 / part-cmp 부품) ----------
+  // 근거: design-import/생기포털 v3.dc.html isModCmp/isPartCmp 블록 / cmpVals.
+  // 그룹(권역·공장) 헤더가 컬럼을 colspan으로 묶고, 상단 통계행 + 하단 과제 매트릭스를 그린다.
+  var CMP = global.PNDES.mock.cmp;
+
+  // 선택된 그룹만 남겨 컬럼·통계·과제행을 다시 계산한다(v3 build()).
+  function cmpBuild(groupsDef, colsDef, stat, tasks, selVal, isPart) {
+    var groups = groupsDef.filter(function (g) { return selVal === '전체' || g[0] === selVal; });
+    var cols = groups.reduce(function (a, g) { return a.concat(g[1]); }, []);
+    var idx = cols.map(function (c) { return colsDef.indexOf(c); });
+    var trs = tasks.filter(function (t) {
+      return selVal === '전체' || cols.some(function (c) { return t[1][c]; });
+    });
+    return {
+      groups: groups.map(function (g) { return { label: g[0], span: g[1].length }; }),
+      cols: cols,
+      n: cols.length,
+      stats: stat.map(function (r) {
+        return { label: r[0], bp: r[1], all: r[2], hl: !!r[4], cells: idx.map(function (i) { return r[3][i]; }) };
+      }),
+      tasks: trs.map(function (t, i) {
+        return {
+          no: i + 1, name: t[0],
+          cells: cols.map(function (c) {
+            var v = t[1][c] || (isPart ? '-' : '');
+            return { t: v, bold: v === '●' || v === 'X', faint: v === '-', fill: !isPart && !!v };
+          }),
+        };
+      }),
+      empty: trs.length === 0,
+    };
+  }
+
+  function renderCmp(state, view) {
+    var mod = view === 'mod-cmp';
+    var sel = state.cmpSel || { modRegion: '전체', partPlant: '전체' };
+    var applied = state.cmpApplied || { modRegion: '전체', partPlant: '전체' };
+    var d = mod
+      ? cmpBuild(CMP.modGroups, CMP.modCols, CMP.modStat, CMP.modTasks, applied.modRegion, false)
+      : cmpBuild(CMP.partGroups, CMP.partCols, CMP.partStat, CMP.partTasks, applied.partPlant, true);
+    var selKey = mod ? 'modRegion' : 'partPlant';
+    var opts = ['전체'].concat((mod ? CMP.modGroups : CMP.partGroups).map(function (g) { return g[0]; }));
+    var selHtml = '<select data-cmp-field="' + selKey + '">' + opts.map(function (o) {
+      return '<option value="' + esc(o) + '"' + (o === sel[selKey] ? ' selected' : '') + '>' + esc(o) + '</option>';
+    }).join('') + '</select>';
+
+    var groupHead = d.groups.map(function (g) {
+      return '<th colspan="' + g.span + '">' + esc(g.label) + '</th>';
+    }).join('');
+    var colHead = d.cols.map(function (c) { return '<th>' + esc(c) + '</th>'; }).join('');
+    var statRows = d.stats.map(function (r) {
+      return '<tr' + (r.hl ? ' class="cmp-hl"' : '') + '>' +
+        '<td class="cmp-left">' + esc(r.label) + '</td><td>' + esc(String(r.bp)) + '</td><td>' + esc(String(r.all)) + '</td>' +
+        r.cells.map(function (t) { return '<td>' + esc(String(t == null ? '' : t)) + '</td>'; }).join('') +
+      '</tr>';
+    }).join('');
+    var taskRows = d.empty
+      ? '<tr><td colspan="' + (d.n + 2) + '" class="mm-empty">조회된 데이터가 없습니다.</td></tr>'
+      : d.tasks.map(function (t) {
+          return '<tr><td>' + t.no + '</td><td class="cmp-left">' + esc(t.name) + '</td>' +
+            t.cells.map(function (c) {
+              var cls = (c.bold ? 'cmp-b ' : '') + (c.faint ? 'cmp-faint ' : '') + (c.fill ? 'cmp-fill' : '');
+              return '<td class="' + cls.trim() + '">' + esc(c.t) + '</td>';
+            }).join('') + '</tr>';
+        }).join('');
+
+    return (
+      '<div class="admin-screen mp-screen" data-screen-label="' + (mod ? '모듈 공장별 현황비교' : '부품 공장별 현황비교') + '">' +
+        '<div class="mp-head">' +
+          '<h2 class="mp-title">' + (mod ? '[모듈] 공장별 현황 비교' : '공장별 현황 비교') + '</h2>' +
+          '<div class="mp-head-btns">' +
+            '<button type="button" class="btn-excel" data-action="cmp-excel">엑셀</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="mp-filter"><table class="mp-filter-table cmp-filter-table"><tr>' +
+          '<th>제품군</th><td><select><option>' + (mod ? '모듈' : '부품') + '</option></select></td>' +
+          '<th>제품</th><td><select><option>전체</option></select></td>' +
+          '<th>' + (mod ? '권역' : '공장') + '</th><td>' + selHtml + '</td>' +
+        '</tr></table>' +
+        '<div class="mp-filter-acts">' +
+          '<button type="button" class="btn-dark tpa-btn-sm" data-action="cmp-search"><i class="fas fa-search" style="font-size:10px"></i>조회</button>' +
+          '<button type="button" class="btn-outline-sm" data-action="cmp-reset">초기화</button>' +
+        '</div></div>' +
+        '<div class="mp-scroll"><table class="tpa-table cmp-table"><thead>' +
+          '<tr><th rowspan="2" class="cmp-corner">구분</th><th rowspan="2">B/P</th><th rowspan="2">전체</th>' + groupHead + '</tr>' +
+          '<tr>' + colHead + '</tr>' +
+        '</thead><tbody>' + statRows + '</tbody></table></div>' +
+        '<p class="cmp-caption">자동화 과제별 적용 현황</p>' +
+        '<div class="mp-scroll"><table class="tpa-table cmp-table"><thead>' +
+          '<tr><th rowspan="2" style="width:48px">NO</th><th rowspan="2" class="cmp-corner">과제명</th>' + groupHead + '</tr>' +
+          '<tr>' + colHead + '</tr>' +
+        '</thead><tbody>' + taskRows + '</tbody></table></div>' +
+      '</div>'
+    );
+  }
+
   // ---------- SCR-010 Tech PR 관리자 ----------
   // 근거: design-import/생기포털 v3.dc.html isTechPrAdmin — 필터(분과/BU/적용공장/기술태그) + "Tech PR 등록" 표 +
   // "기술태그 Master Table" + 신규등록 팝업 + 기술태그 추가 팝업. (README #11은 이전 화면 설명이라 v3를 따름)
@@ -3336,6 +3432,8 @@
     'mp-sc': function (state) { return renderMpList(state, 'mp-sc'); },
     'bp-gk': function (state) { return renderPpList(state, 'bp-gk'); },
     'bp-sc': function (state) { return renderPpList(state, 'bp-sc'); },
+    'mod-cmp': function (state) { return renderCmp(state, 'mod-cmp'); },
+    'part-cmp': function (state) { return renderCmp(state, 'part-cmp'); },
   };
 
   global.PNDES.render = {

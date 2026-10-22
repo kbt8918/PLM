@@ -25,3 +25,8 @@ AP-Lecture-01-main/
 .http-server.log
 __pycache__/
 *.pyc
+
+# Claude Design 핸드오프 번들(압축/해제본) — 권위 파일은 design-import/생기포털 v3.dc.html 하나만 추적한다
+src/frontend/design-import/*-handoff/
+src/frontend/design-import/*-handoff.zip
+src/frontend/support.js

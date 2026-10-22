@@ -1470,7 +1470,7 @@ button.cm-round-btn { cursor: pointer; }
 .todo-foot-icon:hover { background: #f1f3f7; }
 
 
-/* 공법 관리 > 공정배치 관리(mp-*/bp-*) — 근거: 생기포털 v3.dc.html isMpList/isPpList 블록 */
+/* 공법 관리 > 공정배치 관리(mp / bp 화면) — 근거: 생기포털 v3.dc.html isMpList/isPpList 블록 */
 .mp-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 .mp-title { font-size: 18px; font-weight: 700; color: var(--color-text); margin: 0; white-space: nowrap; }
 .mp-head-btns { display: flex; gap: 6px; }
@@ -1518,3 +1518,20 @@ button.cm-round-btn { cursor: pointer; }
 .pp-subs { display: flex; gap: 0; margin-bottom: 8px; }
 .pp-sub { height: 26px; padding: 0 16px; font-size: 11px; border: 1px solid #c9ced8; background: #f6f7f9; color: #555; cursor: pointer; white-space: nowrap; font-family: inherit; }
 .pp-sub.is-active { background: #fff; color: #c0392b; border-color: #c0392b; font-weight: 700; }
+
+/* 공장별 현황비교 — 근거: 생기포털 v3.dc.html isModCmp/isPartCmp */
+.cmp-table { min-width: 1100px; font-size: 11px; text-align: center; }
+.cmp-table th { background: #e9edf4; border: 1px solid #b6bfce; font-weight: 700; padding: 5px 4px; white-space: nowrap; }
+.cmp-table td { border: 1px solid #d5dae3; padding: 4px; }
+.cmp-corner { min-width: 220px; }
+.cmp-left { text-align: left; }
+.cmp-hl td { background: #e8ecb2; font-weight: 700; }
+.cmp-b { font-weight: 700; }
+.cmp-faint { color: var(--color-text-faint); }
+.cmp-fill { background: #eceef2; }
+.cmp-caption { font-size: 12px; font-weight: 700; color: var(--color-text); margin: 16px 0 6px; }
+
+/* 현황비교는 필터가 1행뿐이라 라벨/입력 폭을 고정해 과도하게 늘어나지 않게 한다 */
+.cmp-filter-table th { width: 80px; }
+.cmp-filter-table td { width: auto; }
+.cmp-filter-table select { max-width: 220px; }

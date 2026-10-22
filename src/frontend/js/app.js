@@ -185,6 +185,8 @@
     ppModalId: null, // 상세 팝업 대상 행 id(v3 ppModal)
     ppTab: 'basic', // 상세 팝업 탭(v3 ppTab)
     ppSub: 'reg', // 기본운영방안 서브탭(v3 ppSub)
+    cmpSel: { modRegion: '전체', partPlant: '전체' }, // 공장별 현황비교 선택값(v3 cmpSel)
+    cmpApplied: { modRegion: '전체', partPlant: '전체' }, // 조회로 확정된 값(v3 cmpApplied)
     mmPicker: null, // 조회 선택 팝업 종류: council | trm
     mmPk: { sel: '', filter: { a: '', b: '' }, applied: { a: '', b: '' } }, // 조회 선택 팝업 필터/선택 상태(v3 pk*)
     mmPickedCouncil: '', mmPickedTrm: '',
@@ -766,11 +768,11 @@
           showToast(String($el.data('m')));
           break;
         case 'pp-search':
-          setState(function (st) { return { ppApplied: $.extend({}, st.ppF), ppPage: 1 }; });
+          setState(function (st) { return { ppApplied: $.extend({}, st.ppF), ppPage: 1, ppChecked: {} }; });
           showToast('조회 조건이 적용되었습니다.');
           break;
         case 'pp-reset':
-          setState({ ppF: $.extend({}, PPM.F0), ppApplied: $.extend({}, PPM.F0), ppPage: 1 });
+          setState({ ppF: $.extend({}, PPM.F0), ppApplied: $.extend({}, PPM.F0), ppPage: 1, ppChecked: {} });
           break;
         case 'pp-page':
           setState({ ppPage: Math.max(1, Number($el.data('page'))) });
@@ -779,7 +781,7 @@
           // 위임은 조상에서도 발동한다 — 체크 칸(td[data-action=pp-check])에서 시작된
           // 클릭이 행의 상세 열기까지 발동하지 않도록 차단한다.
           if ($(e.target).closest('[data-action="pp-check"]').length) break;
-          setState({ ppModalId: String($el.data('id')), ppTab: 'basic', ppSub: 'reg' });
+          setState({ ppModalId: String($el.data('id')), ppTab: 'std', ppSub: 'plan' });
           break;
         case 'pp-close':
           if ($el.hasClass('rm-modal-overlay') && e.target !== this) break;
@@ -811,11 +813,23 @@
           });
           break;
         }
-        case 'pp-copy':
-          showToast('선택한 공정배치를 복사합니다.');
+        case 'pp-copy': {
+          var ppSel = Object.keys(state.ppChecked).filter(function (k) { return state.ppChecked[k]; });
+          showToast(ppSel.length ? ppSel.length + '건을 복사했습니다.' : '복사할 행을 선택하세요.');
           break;
+        }
         case 'pp-toast':
           showToast(String($el.data('m')));
+          break;
+        case 'cmp-search':
+          setState(function (st) { return { cmpApplied: $.extend({}, st.cmpSel) }; });
+          showToast('조회되었습니다.');
+          break;
+        case 'cmp-reset':
+          setState({ cmpSel: { modRegion: '전체', partPlant: '전체' }, cmpApplied: { modRegion: '전체', partPlant: '전체' } });
+          break;
+        case 'cmp-excel':
+          showToast('조회 결과를 엑셀로 내려받습니다.');
           break;
         case 'pm-manual':
           showToast('Web Manual을 엽니다.');
@@ -1363,6 +1377,16 @@
 
     // 모듈공정배치 필터 입력 — 조회 버튼을 눌러야 적용된다(v3 mpF -> mpApplied)
     // 부품공정배치 필터 입력 — 조회 버튼을 눌러야 적용된다(v3 ppF -> ppApplied)
+    $(document).on('change', '[data-cmp-field]', function () {
+      var key = $(this).data('cmpField');
+      var val = $(this).val();
+      setState(function (st) {
+        var o = $.extend({}, st.cmpSel);
+        o[key] = val;
+        return { cmpSel: o };
+      });
+    });
+
     $(document).on('input change', '[data-pp-field]', function () {
       var $i = $(this);
       var key = $i.data('ppField');
