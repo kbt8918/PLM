@@ -1874,26 +1874,61 @@
   }
 
   // 조회 선택 팝업 (결정 협의체 / 연계 mTRM) — 신규등록 팝업 위에 겹쳐 뜬다
+  // v3: 조회 선택 팝업이 "검색어 1칸 + 행 클릭 즉시 선택"에서
+  // "라벨 2칸 필터 + 체크박스 단일선택 + 선택 버튼 확정"으로 바뀌었다.
+  // 근거: design-import/생기포털 v3.dc.html pickerOpen 블록 / pkLabelA·pkLabelB·pkConfirm·pkClear.
+  var MM_PK_LABEL = {
+    council: { title: 'mTRM 협의체 검색', a: '회의번호', b: '회의제목' },
+    trm: { title: '연계 mTRM 검색', a: '분과', b: 'mTRM' },
+  };
+
+  // 코드(좌측 열) — 협의체는 회의번호, mTRM은 분과명을 쓴다.
+  function mmPkCode(kind, r, i) {
+    return kind === 'council' ? 'MT-2026-00' + (i + 1) : String(r.name).split(' ')[0];
+  }
+
   function renderMmPickerModal(state) {
     var kind = state.mmPicker;
-    var rows = MM.pickerRows[kind].map(function (r) {
-      return '<tr class="mm-row-pick" data-action="mm-picker-choose" data-name="' + esc(r.name) + '">' +
-        '<td class="mm-center"><input type="radio" name="mmPickerPick" /></td>' +
-        '<td class="mm-pick-name">' + esc(r.name) + '</td><td>' + esc(r.sub) + '</td></tr>';
+    var L = MM_PK_LABEL[kind] || MM_PK_LABEL.trm;
+    var pk = state.mmPk || { sel: '', filter: { a: '', b: '' }, applied: { a: '', b: '' } };
+    var all = MM.pickerRows[kind].map(function (r, i) {
+      return { no: i + 1, code: mmPkCode(kind, r, i), name: r.name, sub: r.sub };
+    });
+    var A = pk.applied;
+    var rows = all.filter(function (r) {
+      return (!A.a || r.code.indexOf(A.a) >= 0) && (!A.b || r.name.indexOf(A.b) >= 0);
+    });
+    var body = rows.map(function (r) {
+      // 주의: tr과 내부 체크박스 양쪽에 data-action을 달면 위임이 두 번 발동해 토글이 상쇄된다.
+      // 액션은 tr에만 두고 체크박스는 표시 전용(pointer-events 차단)으로 둔다.
+      return '<tr class="mm-row-pick" data-action="mm-pk-pick" data-name="' + esc(r.name) + '">' +
+        '<td class="mm-center"><input type="checkbox" class="mm-pk-box"' +
+          (pk.sel === r.name ? ' checked' : '') + ' /></td>' +
+        '<td>' + r.no + '</td><td class="mm-left">' + esc(r.code) + '</td>' +
+        '<td class="mm-left mm-pick-name">' + esc(r.name) + '</td></tr>';
     }).join('');
     return (
       '<div class="rm-modal-overlay mm-overlay-center">' +
         '<div class="rm-modal-box mm-picker-box">' +
-          '<div class="rm-modal-header-navy mm-picker-head"><h3>' + (kind === 'council' ? '결정 협의체 조회' : '연계 mTRM 조회') + '</h3>' +
+          '<div class="rm-modal-header-navy mm-picker-head"><h3>' + esc(L.title) + '</h3>' +
             '<button type="button" class="rm-modal-close" data-action="mm-picker-close"><i class="fas fa-times"></i></button></div>' +
           '<div class="mm-picker-body">' +
-            '<div class="mm-picker-search"><input type="text" placeholder="검색어를 입력하세요" />' +
-              '<button type="button" class="btn-dark"><i class="fas fa-search" style="font-size:10px"></i>조회</button></div>' +
-            '<div class="mm-scroll" style="max-height:256px"><table class="tpa-table mm-table mm-picker-table"><thead><tr>' +
-              '<th style="width:48px">선택</th><th class="mm-left">명칭</th><th class="mm-left">정보</th>' +
-            '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
+            '<div class="mm-pk-acts">' +
+              '<button type="button" class="btn-navy tpa-btn-sm" data-action="mm-pk-confirm"' + (pk.sel ? '' : ' disabled') + '>선택</button>' +
+              '<button type="button" class="btn-navy tpa-btn-sm" data-action="mm-picker-close">닫기</button>' +
+            '</div>' +
+            '<div class="mm-pk-filter">' +
+              '<span class="mm-pk-label">' + esc(L.a) + '</span>' +
+              '<input type="text" data-pk-field="a" value="' + esc(pk.filter.a) + '" />' +
+              '<span class="mm-pk-label">' + esc(L.b) + '</span>' +
+              '<input type="text" data-pk-field="b" value="' + esc(pk.filter.b) + '" />' +
+              '<button type="button" class="btn-dark tpa-btn-sm" data-action="mm-pk-search"><i class="fas fa-search" style="font-size:10px"></i>조회</button>' +
+            '</div>' +
+            '<div class="mm-scroll" style="max-height:340px;min-height:160px"><table class="tpa-table mm-table mm-picker-table"><thead><tr>' +
+              '<th style="width:40px"><input type="checkbox" data-action="mm-pk-clear"' + (pk.sel ? '' : ' checked') + ' /></th>' +
+              '<th style="width:56px">순번</th><th class="mm-left" style="width:144px">' + esc(L.a) + '</th><th class="mm-left">' + esc(L.b) + '</th>' +
+            '</tr></thead><tbody>' + (body || mmEmptyRow(4)) + '</tbody></table></div>' +
           '</div>' +
-          '<div class="mm-picker-foot"><button type="button" class="btn-outline-sm mm-btn-outline" data-action="mm-picker-close">닫기</button></div>' +
         '</div>' +
       '</div>'
     );

@@ -1445,3 +1445,13 @@ button.cm-round-btn { cursor: pointer; }
 .mm-lk-sel-wide { flex: 1; min-width: 0; width: auto; }
 .mm-lk-table { text-align: center; }
 .mm-lk-table .mm-left { text-align: left; }
+
+
+/* v3: 조회 선택 팝업(2단 필터 + 체크박스 확정). 근거: 생기포털 v3.dc.html pickerOpen 블록 */
+.mm-pk-acts { display: flex; justify-content: flex-end; gap: 6px; margin-bottom: 12px; }
+.mm-pk-acts button[disabled] { opacity: .45; cursor: default; }
+.mm-pk-filter { display: flex; align-items: stretch; gap: 0; border: 1px solid var(--color-border); border-top: 2px solid #2f5aa8; background: #f6f7f9; margin-bottom: 12px; }
+.mm-pk-label { background: #eef0f4; border-right: 1px solid var(--color-border); padding: 8px 12px; font-weight: 700; font-size: 12px; white-space: nowrap; width: 96px; text-align: center; display: flex; align-items: center; justify-content: center; }
+.mm-pk-filter input[type="text"] { flex: 1; min-width: 0; border: 0; border-right: 1px solid var(--color-border); padding: 0 8px; font-size: 12px; background: #fff; }
+.mm-pk-filter .btn-dark { margin: 4px 6px; flex-shrink: 0; }
+.mm-pk-box { pointer-events: none; }

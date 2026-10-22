@@ -153,6 +153,7 @@
     mailTarget: { open: false, target: null, query: { room: '', team: '' }, selected: [] },
     mmForm: newMmForm(), // 신규등록 팝업 입력값
     mmPicker: null, // 조회 선택 팝업 종류: council | trm
+    mmPk: { sel: '', filter: { a: '', b: '' }, applied: { a: '', b: '' } }, // 조회 선택 팝업 필터/선택 상태(v3 pk*)
     mmPickedCouncil: '', mmPickedTrm: '',
     mmVerPicked: null, mmVerCompare: false, // 버전관리 팝업: 선택한 버전 인덱스 / 차이점 비교 패널
     mmSummaryMode: 'task', mmSumDept: '', mmSumStatus: '', // 요약 팝업: task | roadmap, 상세 표 필터
@@ -1106,14 +1107,29 @@
           break;
         }
         case 'mm-picker-open':
-          setState({ mmPicker: String($el.data('kind')) });
+          setState({ mmPicker: String($el.data('kind')), mmPk: { sel: '', filter: { a: '', b: '' }, applied: { a: '', b: '' } } });
           break;
         case 'mm-picker-close':
           setState({ mmPicker: null });
           break;
-        case 'mm-picker-choose': {
+        case 'mm-pk-pick': {
+          // v3: 체크박스 단일선택 — 같은 행을 다시 누르면 해제된다.
+          var pkName = String($el.data('name'));
+          setState(function (st) {
+            return { mmPk: $.extend({}, st.mmPk, { sel: st.mmPk.sel === pkName ? '' : pkName }) };
+          });
+          break;
+        }
+        case 'mm-pk-clear':
+          setState(function (st) { return { mmPk: $.extend({}, st.mmPk, { sel: '' }) }; });
+          break;
+        case 'mm-pk-search':
+          setState(function (st) { return { mmPk: $.extend({}, st.mmPk, { applied: $.extend({}, st.mmPk.filter), sel: '' }) }; });
+          break;
+        case 'mm-pk-confirm': {
+          if (!state.mmPk.sel) break; // 선택 없으면 버튼이 disabled
           var pickPatch = { mmPicker: null };
-          pickPatch[state.mmPicker === 'council' ? 'mmPickedCouncil' : 'mmPickedTrm'] = String($el.data('name'));
+          pickPatch[state.mmPicker === 'council' ? 'mmPickedCouncil' : 'mmPickedTrm'] = state.mmPk.sel;
           setState(pickPatch);
           break;
         }
@@ -1209,6 +1225,17 @@
     // SCR-014 등록 팝업 입력값: state에 보관하고 발송 미리보기 조각과 글자 수만 갱신한다(포커스 유지)
     // 분과장 관리 그리드 입력 — 타이핑 중 재렌더로 포커스를 잃지 않도록 state만 갱신한다
     // (저장/행추가 시점에 setState로 다시 그린다). data-trm-field 패턴과 동일.
+    // 조회 선택 팝업 필터 입력 — Enter로도 조회된다(v3 pkOnKey)
+    $(document).on('input', '[data-pk-field]', function () {
+      var key = $(this).data('pkField');
+      var val = $(this).val();
+      state.mmPk = $.extend({}, state.mmPk, { filter: $.extend({}, state.mmPk.filter, (function () { var o = {}; o[key] = val; return o; })()) });
+    });
+    $(document).on('keydown', '[data-pk-field]', function (ev) {
+      if (ev.key !== 'Enter') return;
+      setState(function (st) { return { mmPk: $.extend({}, st.mmPk, { applied: $.extend({}, st.mmPk.filter), sel: '' }) }; });
+    });
+
     $(document).on('change', '[data-lk-field]', function () {
       var key = $(this).data('lkField');
       var val = $(this).val();
