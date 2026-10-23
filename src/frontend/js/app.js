@@ -332,6 +332,12 @@
   }
 
   // 근거: README "좁은 화면/터치(폭 < 1024px 또는 hover 불가): hover 비활성, 클릭으로만 열림."
+  // 메가메뉴를 "닫기" 클릭한 직후, setState가 헤더 DOM을 통째로 교체하면서
+  // 마우스 아래에 새 요소가 생겨 mouseenter가 다시 발동한다(React와 달리 .html()로
+  // 교체하는 구조라 발생). 그대로 두면 닫은 패널이 즉시 다시 열려 클릭으로 닫을 수 없다.
+  // 재렌더 1회당 mouseenter가 여러 번 오므로 횟수가 아니라 짧은 시간 창으로 억제한다.
+  var gnbHoverBlockUntil = 0;
+
   function isTouchOrNarrow() {
     return global.innerWidth < 1024 || !global.matchMedia('(hover: hover) and (pointer: fine)').matches;
   }
@@ -728,10 +734,6 @@
           // TODO: README #16 업무프로세스 가이드 화면 구현 단계에서 gnbGo('guide')로 교체
           showToast('업무프로세스 가이드는 준비중입니다.');
           break;
-        case 'gnb-enter':
-          // 메가메뉴 호버 오픈: 터치/좁은 화면(<1024px)에서는 비활성, 이미 클릭으로 고정(pin)된 상태면 호버로 다른 메뉴를 바꾸지 않음
-          if (!state.gnbPinned && !isTouchOrNarrow()) setState({ gnbOpen: $el.data('menuId') });
-          break;
         case 'gnb-click': {
           var menuId = $el.data('menuId');
           var hasPanel = $el.data('hasPanel');
@@ -739,9 +741,11 @@
           if (menuId === 'myjob') { gnbGo('todo-main'); break; }
           if (landing && !hasPanel) { gnbGo(landing); break; }
           if (!hasPanel) { setState({ gnbOpen: '' }); showToast("'" + $el.text().trim() + "' 메뉴는 준비중입니다."); break; }
+          var wasPinnedSame = (state.gnbOpen === menuId && state.gnbPinned);
+          if (wasPinnedSame) gnbHoverBlockUntil = Date.now() + 300;
           setState({
-            gnbOpen: (state.gnbOpen === menuId && state.gnbPinned) ? '' : menuId,
-            gnbPinned: !(state.gnbOpen === menuId && state.gnbPinned),
+            gnbOpen: wasPinnedSame ? '' : menuId,
+            gnbPinned: !wasPinnedSame,
           });
           break;
         }
@@ -1773,6 +1777,24 @@
 
     // SCR-006 mTRM 로드맵 바 hover 요약 팝오버 — v3.dc.html rmHoverEnter/rmHoverLeave(150ms 지연 닫기) 포팅
     var rmHoverTimer = null;
+    // GNB 메가메뉴 호버 오픈 — 소스(v3)의 onMouseEnter 대응.
+    // data-action="gnb-enter"는 클릭 위임 스위치에만 있어 호버로는 발동하지 않았다(기능 누락).
+    // 터치/좁은 화면(<1024px)에서는 비활성, 클릭 고정(pin) 상태면 다른 메뉴로 바뀌지 않는다.
+    $(document).on('mouseenter', '[data-action="gnb-enter"]', function () {
+      if (state.gnbPinned || isTouchOrNarrow()) return;
+      if (Date.now() < gnbHoverBlockUntil) return; // 닫기 클릭 직후 재오픈 방지(위 주석 참고)
+      var id = $(this).data('menuId');
+      var menu = null;
+      PNDES.GNB_MENUS.forEach(function (m) { if (m.id === id) menu = m; });
+      // 패널(cols)이 없는 메뉴에 호버하면 열려 있던 패널을 닫는다(소스 동작과 동일)
+      var next = (menu && menu.cols) ? id : '';
+      // 상태가 그대로면 setState를 호출하지 않는다 — 이 구현은 setState마다 전체를
+      // 재렌더하므로, 같은 메뉴 위에서 마우스가 움직일 때마다 DOM이 교체되어
+      // 버튼 클릭이 먹지 않는 문제가 생긴다.
+      if (state.gnbOpen === next) return;
+      setState({ gnbOpen: next });
+    });
+
     $(document).on('mouseenter', '[data-action="rm-bar-enter"]', function () {
       clearTimeout(rmHoverTimer);
       var rect = this.getBoundingClientRect();
