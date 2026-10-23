@@ -179,182 +179,177 @@
   // 근거: design-import/생기포털 v3.dc.html isTodoMain 블록(검색 히어로 + TO DO + 금주 내 업무 + 내 업무/Q&A + 공지사항).
   var PM_CLOCK = '한국 : 2026-10-20 07:45'; // v3 pmClock (프로토타입 고정값)
 
+  // ---------- My Job (포털 홈) ----------
+  // 근거: design-import/생기포털 v3.dc.html isTodoMain 블록 / pmVals().
+  // 구성(소스 순서): ① TO DO 카드 3종 + 내 업무 + 업무 지연 현황(3컬럼)
+  //                  ② 금주 내 업무(카드 3종) + 생산제조기술 공유(요약 3종)
+  //                  ③ MY Q&A/FAQ 탭 + 공지사항
+  // 범위 라디오(개인/팀/실)는 영역별로 독립이며(a: 내 업무, b: 지연현황, c: 금주 업무),
+  // 선택에 따라 표/카드 수치가 바뀐다.
+  var PM = global.PNDES.mock.todoMain;
+
+  // 상단 3px 액센트 바를 가진 카드 섹션 공통 틀
+  function pmSection(inner, extraCls) {
+    return '<section class="pm-card' + (extraCls ? ' ' + extraCls : '') + '">' +
+      '<div class="pm-card-accent"></div>' +
+      '<div class="pm-card-body">' + inner + '</div>' +
+    '</section>';
+  }
+
+  // 범위 선택 라디오 (개인/팀/실)
+  function pmScope(key, current) {
+    return '<div class="pm-scope">' + PM.scopes.map(function (l) {
+      return '<label class="pm-scope-item">' +
+        '<input type="radio" name="pm-' + key + '" data-action="pm-scope" data-key="' + key + '" data-value="' + esc(l) + '"' +
+        (l === current ? ' checked' : '') + ' />' + esc(l) +
+      '</label>';
+    }).join('') + '</div>';
+  }
+
+  function pmHeading(label) {
+    return '<h3 class="pm-h3"><span class="pm-h3-dot"></span>' + esc(label) + '</h3>';
+  }
+
   function renderTodoMain(state) {
-    var D = global.PNDES.mock.todoMain;
-    var mult = D.todoScopeMult;
     var scope = state.todoScope || { a: '개인', b: '개인', c: '개인' };
-    var ma = mult[scope.a], mb = mult[scope.b], mc = mult[scope.c];
+    var week = state.weekSel === '차주' ? '차주' : '금주';
+    var qaTab = state.qaTab === 'faq' ? 'faq' : 'qa';
 
-    function scopeToggle(key) {
-      return D.todoScopeOptions.map(function (l) {
-        var active = scope[key] === l;
-        return '<button type="button" class="todo-scope-btn' + (active ? ' active' : '') + '" data-action="todo-scope" data-scope-key="' + key + '" data-scope-val="' + esc(l) + '">' + esc(l) + '</button>';
-      }).join('');
-    }
-
-    var todoCardsHtml = D.todoCards.map(function (c) {
-      return '<button type="button" class="todo-hero-card" data-action="todo-card" data-label="' + esc(c.label) + '">' +
-        '<div class="todo-hero-card-head"><span>' + esc(c.label) + '</span><i class="' + c.icon + '"></i></div>' +
-        '<div class="todo-hero-card-value"><b>' + c.value + '</b><span>건</span></div>' +
+    // ① TO DO 카드 — 좌측 네이비 라벨 + 우측 흰 배경 건수
+    var cardsHtml = PM.cards.map(function (c) {
+      return '<button type="button" class="pm-todo-card" data-action="pm-toast" data-m="' + esc(c[0]) + ' 목록으로 이동합니다.">' +
+        '<span class="pm-todo-label"><i class="' + esc(c[2]) + '"></i><span>' + esc(c[0]) + '</span></span>' +
+        '<span class="pm-todo-value"><span class="pm-todo-num">' + c[1] + '</span><span class="pm-todo-unit">건</span></span>' +
       '</button>';
     }).join('');
 
-    var delayTechV = D.todoDelayTechBase * mb;
+    // 내 업무 — 일정/시작일/종료일 5행
+    var myData = PM.MY[scope.a] || PM.MY['개인'];
+    var myRows = PM.myRowLabels.map(function (label, i) {
+      return '<tr><td>' + esc(label) + '</td>' +
+        '<td><button type="button" class="pm-num" data-action="pm-toast" data-m="' + esc(label) + ' 업무 목록">' + myData[i][0] + '</button><span class="pm-unit">건</span></td>' +
+        '<td><button type="button" class="pm-num" data-action="pm-toast" data-m="' + esc(label) + ' 업무 목록">' + myData[i][1] + '</button><span class="pm-unit">건</span></td></tr>';
+    }).join('');
 
-    var weekAll = D.weekAllBase;
-    var weekPageSize = 4;
-    var weekPages = Math.ceil(weekAll.length / weekPageSize);
-    var weekPage = Math.min(state.weekPage || 0, weekPages - 1);
-    var weekSum = {
-      prog: weekAll.reduce(function (a, w) { return a + w.prog; }, 0) * mc,
-      delay: weekAll.reduce(function (a, w) { return a + w.delay; }, 0) * mc,
-      total: weekAll.length,
-    };
-    var weekCardsHtml = weekAll.slice(weekPage * weekPageSize, weekPage * weekPageSize + weekPageSize).map(function (w) {
-      var prog = w.prog * mc, delay = w.delay * mc;
-      var isDelay = delay > 0;
-      var pct = (prog + delay) ? (delay / (prog + delay)) * 100 : 0;
-      // v3: 카드 전체가 아니라 "진행중"/"지연" 건수가 각각 별도 버튼이다(wc.onProg / wc.onDelay).
-      // 지연은 기술과제 카드일 때만 해당 화면으로 이동하고, 나머지는 안내 토스트.
-      // 카드를 button으로 두면 버튼 중첩이 되므로 div로 바꾼다.
-      return '<div class="week-card' + (isDelay ? ' is-delay' : '') + '">' +
-        '<div class="week-card-head">' +
-          '<span>' + esc(w.label) + '</span>' +
-          (isDelay ? '<span class="week-card-delay-badge">지연 발생</span>' : '') +
+    // 업무 지연 현황 — 기술과제는 해당 화면으로 이동, 나머지는 토스트
+    var delayRows = (PM.DELAY[scope.b] || PM.DELAY['개인']).map(function (d) {
+      var act = d[0] === '기술과제'
+        ? ' data-action="select-screen" data-screen-id="SCR-013"'
+        : ' data-action="pm-toast" data-m="' + esc(d[0]) + ' 지연 목록"';
+      return '<tr><td>' + esc(d[0]) + '</td>' +
+        '<td><button type="button" class="pm-num"' + act + '>' + d[1] + '</button><span class="pm-unit">건</span></td></tr>';
+    }).join('');
+
+    var topHtml = pmSection(
+      '<div class="pm-top-grid">' +
+        '<div class="pm-todo-cards">' + cardsHtml + '</div>' +
+        '<div class="pm-col">' +
+          '<div class="pm-col-head">' + pmHeading('내 업무') + pmScope('a', scope.a) + '</div>' +
+          '<table class="pm-table"><thead><tr><th>일정</th><th>시작일</th><th>종료일</th></tr></thead>' +
+          '<tbody>' + myRows + '</tbody></table>' +
         '</div>' +
-        '<div class="week-card-body">' +
-          '<div class="week-card-row"><span class="week-card-dot" style="background:#1a63e0"></span>진행중' +
-            '<button type="button" class="week-card-num" data-action="week-card-prog" data-label="' + esc(w.label) + '">' + prog + '</button>' +
-            '<span class="week-card-unit">건</span></div>' +
-          '<div class="week-card-row"><span class="week-card-dot" style="background:#d6264a"></span>지연' +
-            '<button type="button" class="week-card-num" data-action="week-card-delay" data-label="' + esc(w.label) + '"' +
-              ' style="color:' + (isDelay ? '#d6264a' : '#111827') + '">' + delay + '</button>' +
-            '<span class="week-card-unit">건</span></div>' +
-          '<div class="week-card-bar-track"><div class="week-card-bar-fill" style="width:' + pct + '%"></div></div>' +
+        '<div class="pm-col">' +
+          '<div class="pm-col-head">' + pmHeading('업무 지연 현황') + pmScope('b', scope.b) + '</div>' +
+          '<table class="pm-table"><thead><tr><th>업무</th><th>지연건</th></tr></thead>' +
+          '<tbody>' + delayRows + '</tbody></table>' +
+        '</div>' +
+      '</div>'
+    );
+
+    // ② 금주 내 업무 — 카드 3종(진행중/지연 각각 클릭 가능)
+    var weekData = (PM.WEEK[week] || {})[scope.c] || PM.WEEK['금주']['개인'];
+    var weekCards = PM.weekCardLabels.map(function (label, i) {
+      var prog = weekData[i][0];
+      var delay = weekData[i][1];
+      var delayAct = label === '기술과제'
+        ? ' data-action="select-screen" data-screen-id="SCR-013"'
+        : ' data-action="pm-toast" data-m="' + esc(label) + ' 지연 업무 목록"';
+      return '<div class="pm-week-card">' +
+        '<div class="pm-week-head">' + esc(label) + '</div>' +
+        '<div class="pm-week-row pm-week-row-top">' +
+          '<span class="pm-week-key"><span class="pm-dot pm-dot-blue"></span>진행중</span>' +
+          '<span><button type="button" class="pm-num" data-action="pm-toast" data-m="' + esc(label) + ' 진행중 업무 목록">' + prog + '</button><span class="pm-unit">건</span></span>' +
+        '</div>' +
+        '<div class="pm-week-row">' +
+          '<span class="pm-week-key"><span class="pm-dot pm-dot-red"></span>지연</span>' +
+          '<span><button type="button" class="pm-num"' + delayAct + '>' + delay + '</button><span class="pm-unit">건</span></span>' +
         '</div>' +
       '</div>';
     }).join('');
-    var weekDotsHtml = '';
-    for (var wi = 0; wi < weekPages; wi++) {
-      weekDotsHtml += '<button type="button" class="week-dot' + (wi === weekPage ? ' active' : '') + '" data-action="week-page" data-page="' + wi + '" aria-label="page"></button>';
-    }
 
-    var todoMyRowsHtml = D.todoMyRowsBase.map(function (r) {
-      return '<tr><td class="todo-my-label">' + esc(r.label) + '</td>' +
-        '<td><button type="button" class="todo-my-link" data-action="todo-card" data-label="' + esc(r.label) + '">' + (r.start * ma) + '건</button></td>' +
-        '<td><button type="button" class="todo-my-link" data-action="todo-card" data-label="' + esc(r.label) + '">' + (r.end * ma) + '건</button></td>' +
-      '</tr>';
-    }).join('');
+    var weekSelHtml = '<select class="pm-week-sel" data-action="pm-week-sel">' +
+      ['금주', '차주'].map(function (w) {
+        return '<option value="' + w + '"' + (w === week ? ' selected' : '') + '>' + w + '</option>';
+      }).join('') + '</select>';
 
-    var qaTab = state.qaTab || 'qa';
-    var qaRowsHtml = D.qaRowsByTab[qaTab].map(function (r) {
-      var stCls = r.state === '종료' ? 'qa-state qa-state-closed' : (qaTab === 'faq' ? 'qa-state qa-state-faq' : 'qa-state qa-state-open');
-      return '<tr><td class="muted" style="white-space:nowrap">' + esc(r.no) + '</td><td class="truncate">' + esc(r.title) + '</td><td style="white-space:nowrap" class="muted">' + esc(r.date) + '</td><td><span class="' + stCls + '">' + esc(r.state) + '</span></td></tr>';
-    }).join('');
+    var weekHtml = pmSection(
+      '<div class="pm-sec-head">' +
+        '<p class="pm-sec-title">금주 내 업무</p>' +
+        '<div class="pm-sec-tools">' + pmScope('c', scope.c) + weekSelHtml + '</div>' +
+      '</div>' +
+      '<div class="pm-week-grid">' + weekCards + '</div>'
+    );
 
-    var noticeRowsHtml = D.noticeRows.map(function (n) {
-      return '<tr><td class="truncate">' + esc(n.title) + '</td><td style="white-space:nowrap" class="muted">' + esc(n.date) + '</td></tr>';
-    }).join('');
-
-    var quickMenusHtml = (global.PNDES.QUICK_MENUS || []).map(function (q) {
-      return '<button type="button" class="quick-menu-btn" data-action="gnb-quick" data-menu-id="' + q[0] + '" data-label="' + esc(q[1]) + '">' +
-        '<span class="quick-menu-icon"><i class="' + q[2] + '"></i></span>' +
-        '<span class="quick-menu-label">' + esc(q[1]) + '</span>' +
+    // 생산제조기술 공유 — 요약 3종(클릭 시 Tech PR로 이동)
+    var shareCards = PM.share.map(function (sh) {
+      return '<button type="button" class="pm-share-card" data-action="select-screen" data-screen-id="SCR-009">' +
+        '<span class="pm-share-label">' + esc(sh[0]) + '</span>' +
+        '<span class="pm-share-value"><span class="pm-todo-num">' + sh[1] + '</span><span class="pm-todo-unit">건</span></span>' +
       '</button>';
     }).join('');
+    var shareHtml = pmSection(
+      '<div class="pm-sec-head"><p class="pm-sec-title">생산제조기술 공유</p></div>' +
+      '<div class="pm-share-grid">' + shareCards + '</div>'
+    );
+
+    // ③ MY Q&A / FAQ
+    var qaRows = (qaTab === 'faq' ? PM.faq : PM.qa).map(function (q) {
+      return '<tr data-action="pm-toast" data-m="' + esc(q[0]) + ' 상세 화면으로 이동합니다.">' +
+        '<td class="pm-qa-no">' + esc(q[0]) + '</td>' +
+        '<td class="pm-qa-title">' + esc(q[1]) + '</td>' +
+        '<td class="pm-qa-date">' + esc(q[2]) + '</td>' +
+        '<td class="pm-qa-state">' + (q[3] ? '<span class="pm-state-badge">' + esc(q[3]) + '</span>' : '') + '</td></tr>';
+    }).join('');
+    var qaTabs = [['qa', 'MY Q&A'], ['faq', 'FAQ']].map(function (t) {
+      return '<button type="button" class="pm-qa-tab' + (qaTab === t[0] ? ' is-active' : '') + '" data-action="pm-qa-tab" data-tab="' + t[0] + '">' + esc(t[1]) + '</button>';
+    }).join('');
+    var qaHtml = pmSection(
+      '<div class="pm-qa-head">' +
+        '<div class="pm-qa-tabs">' + qaTabs + '</div>' +
+        '<div class="pm-icon-btns">' +
+          '<button type="button" class="pm-icon-btn" data-action="pm-toast" data-m="Q&A 등록 화면으로 이동합니다." title="Q&A 등록"><i class="fas fa-pen-to-square"></i></button>' +
+          '<button type="button" class="pm-icon-btn" data-action="pm-toast" data-m="Q&A 전체 목록으로 이동합니다." title="Q&A 조회"><i class="fas fa-magnifying-glass"></i></button>' +
+        '</div>' +
+      '</div>' +
+      '<table class="pm-table pm-qa-table"><tbody>' + qaRows + '</tbody></table>'
+    );
+
+    // 공지사항
+    var noticeRows = PM.notices.map(function (n) {
+      return '<tr data-action="pm-toast" data-m="공지사항 상세 화면으로 이동합니다.">' +
+        '<td class="pm-notice-title">' + esc(n[0]) + '</td>' +
+        '<td class="pm-qa-date">' + esc(n[1]) + '</td></tr>';
+    }).join('');
+    var noticeHtml = pmSection(
+      '<div class="pm-sec-head">' +
+        '<p class="pm-sec-title">공지사항</p>' +
+        '<button type="button" class="pm-icon-btn" data-action="pm-toast" data-m="공지사항 전체 목록으로 이동합니다." title="공지사항 조회"><i class="fas fa-magnifying-glass"></i></button>' +
+      '</div>' +
+      '<table class="pm-table pm-qa-table"><tbody>' + noticeRows + '</tbody></table>'
+    );
 
     return (
-      '<div class="todo-main">' +
-        '<div class="todo-hero">' +
-          '<div class="todo-hero-grid">' +
-            '<div class="todo-hero-left">' +
-              '<p class="todo-hero-eyebrow">PRODUCTION ENGINEERING PORTAL</p>' +
-              '<h1 class="todo-hero-title">생산기술 포털에서<br />필요한 업무를 찾아보세요.</h1>' +
-              '<div class="todo-hero-search">' +
-                '<span class="todo-hero-search-label">통합조회</span>' +
-                '<input type="text" placeholder="조회할 내용을 입력하세요" />' +
-                '<button type="button" data-action="gnb-search"><i class="fas fa-magnifying-glass"></i>조회</button>' +
-              '</div>' +
-            '</div>' +
-            '<div class="todo-hero-right">' +
-              '<p class="todo-hero-right-title">TO DO LIST</p>' +
-              '<div class="todo-hero-cards">' + todoCardsHtml + '</div>' +
-              '<div class="todo-hero-delay">' +
-                '<i class="fa-regular fa-clock"></i>' +
-                '<span class="todo-hero-delay-label">업무 지연 현황</span>' +
-                '<div class="todo-scope-group">' + scopeToggle('b') + '</div>' +
-                '<div class="todo-hero-delay-right">' +
-                  '<span>기술과제</span>' +
-                  '<button type="button" class="todo-hero-delay-btn" data-action="todo-delay-tech">지연 ' + delayTechV + '건</button>' +
-                '</div>' +
-              '</div>' +
-            '</div>' +
-          '</div>' +
-        '</div>' +
-
-        '<div class="todo-body">' +
-          '<section class="todo-quick-menus">' + quickMenusHtml + '</section>' +
-
-          '<section class="todo-section">' +
-            '<div class="todo-section-head">' +
-              '<h2>금주 내 업무</h2>' +
-              '<span class="todo-chip todo-chip-info">진행중 ' + weekSum.prog + '건</span>' +
-              '<span class="todo-chip todo-chip-danger">지연 ' + weekSum.delay + '건</span>' +
-              '<span class="todo-section-sub">전체 ' + weekSum.total + '개 업무</span>' +
-              '<div class="todo-section-head-right">' +
-                '<div class="todo-scope-group">' + scopeToggle('c') + '</div>' +
-                '<select class="todo-week-select" data-action="week-sel-input"><option value="금주"' + (state.weekSel === '금주' ? ' selected' : '') + '>금주</option><option value="차주"' + (state.weekSel === '차주' ? ' selected' : '') + '>차주</option></select>' +
-                '<span class="todo-section-sep"></span>' +
-                '<span class="todo-section-sub">' + (weekPage + 1) + ' / ' + weekPages + '</span>' +
-                '<button type="button" class="todo-pager-btn" data-action="week-page" data-page="' + Math.max(0, weekPage - 1) + '"' + (weekPage === 0 ? ' disabled' : '') + '><i class="fas fa-chevron-left"></i></button>' +
-                '<button type="button" class="todo-pager-btn" data-action="week-page" data-page="' + Math.min(weekPages - 1, weekPage + 1) + '"' + (weekPage === weekPages - 1 ? ' disabled' : '') + '><i class="fas fa-chevron-right"></i></button>' +
-              '</div>' +
-            '</div>' +
-            '<div class="week-card-grid">' + weekCardsHtml + '</div>' +
-            '<div class="week-dots">' + weekDotsHtml + '</div>' +
-          '</section>' +
-
-          '<div class="todo-two-col">' +
-            '<section class="todo-section todo-section-narrow">' +
-              '<div class="todo-section-head">' +
-                '<h2>내 업무</h2>' +
-                '<div class="todo-scope-group">' + scopeToggle('a') + '</div>' +
-              '</div>' +
-              '<table class="todo-plain-table"><thead><tr><th>일정</th><th>시작일</th><th>종료일</th></tr></thead><tbody>' + todoMyRowsHtml + '</tbody></table>' +
-            '</section>' +
-
-            '<section class="todo-section todo-section-wide">' +
-              '<div class="todo-section-head todo-qa-head">' +
-                '<div class="todo-qa-tabs">' +
-                  '<button type="button" class="todo-qa-tab' + (qaTab === 'qa' ? ' active' : '') + '" data-action="qa-tab" data-tab="qa">MY Q&amp;A</button>' +
-                  '<button type="button" class="todo-qa-tab' + (qaTab === 'faq' ? ' active' : '') + '" data-action="qa-tab" data-tab="faq">FAQ</button>' +
-                '</div>' +
-                '<div class="todo-section-head-right">' +
-                  '<button type="button" class="btn btn-secondary" data-action="qa-register">등록</button>' +
-                  '<button type="button" class="btn btn-secondary" data-action="qa-more">보기</button>' +
-                '</div>' +
-              '</div>' +
-              '<table class="todo-plain-table todo-qa-table"><thead><tr><th style="width:140px">구분</th><th>내용</th><th style="width:110px">등록일자</th><th style="width:80px">상태</th></tr></thead><tbody>' + qaRowsHtml + '</tbody></table>' +
-            '</section>' +
-          '</div>' +
-
-          '<section class="todo-section">' +
-            '<div class="todo-section-head">' +
-              '<h2>공지사항</h2>' +
-              '<div class="todo-section-head-right"><button type="button" class="btn btn-secondary" data-action="notice-more">보기</button></div>' +
-            '</div>' +
-            '<table class="todo-plain-table"><thead><tr><th>내용</th><th style="width:140px">등록일자</th></tr></thead><tbody>' + noticeRowsHtml + '</tbody></table>' +
-          '</section>' +
-
-          // v3: 단순 저작권 한 줄 → 저작권 + Web Manual / Family Site / 시계 / 새로고침 바
-          '<div class="todo-footer">' +
-            '<span class="todo-footer-copy">COPYRIGHT (C) 2015 HYUNDAI MOBIS CO.,LTD. ALL RIGHTS RESERVED.</span>' +
-            '<div class="todo-footer-tools">' +
-              '<button type="button" class="todo-foot-btn" data-action="pm-manual"><i class="far fa-file-lines"></i>Web Manual</button>' +
-              '<select class="todo-foot-sel" aria-label="Family Site"><option>Family Site</option><option>One MOBIS</option></select>' +
-              '<select class="todo-foot-sel" aria-label="서버 시간"><option>' + esc(PM_CLOCK) + '</option></select>' +
-              '<button type="button" class="todo-foot-icon" data-action="pm-refresh" title="새로고침"><i class="fas fa-rotate-right"></i></button>' +
-            '</div>' +
+      '<div class="pm-wrap" data-screen-label="My Job">' +
+        topHtml +
+        '<div class="pm-grid-2">' + weekHtml + shareHtml + '</div>' +
+        '<div class="pm-grid-2">' + qaHtml + noticeHtml + '</div>' +
+        '<div class="todo-footer">' +
+          '<span class="todo-footer-copy">COPYRIGHT (C) 2015 HYUNDAI MOBIS CO.,LTD. ALL RIGHTS RESERVED.</span>' +
+          '<div class="todo-footer-tools">' +
+            '<button type="button" class="todo-foot-btn" data-action="pm-toast" data-m="Web Manual을 엽니다."><i class="far fa-file-lines"></i>Web Manual</button>' +
+            '<select class="todo-foot-sel" aria-label="Family Site"><option>Family Site</option><option>One MOBIS</option></select>' +
+            '<select class="todo-foot-sel" aria-label="서버 시간"><option>' + esc(PM.clock) + '</option></select>' +
+            '<button type="button" class="todo-foot-icon" data-action="pm-toast" data-m="시간을 새로고침했습니다." title="새로고침"><i class="fas fa-rotate-right"></i></button>' +
           '</div>' +
         '</div>' +
       '</div>'

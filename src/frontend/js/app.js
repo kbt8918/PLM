@@ -146,7 +146,8 @@
     gnbPinned: false, // 클릭으로 고정 오픈된 상태(호버로 연 패널은 mouseleave 시 자동 닫힘)
     gnbTab: 0, // GNB 패널 내 상단 탭(예: 공법 관리 > 조립공법시스템/DEPS/DEPS 설계) 선택 인덱스
     qaTab: 'qa', // 포털 홈 "MY Q&A" / "FAQ" 탭
-    weekSel: '금주', // 포털 홈 "금주 내 업무" 셀렉트(금주/차주)
+    weekSel: '금주',
+    qaTab: 'qa', // My Job MY Q&A / FAQ 탭 // 포털 홈 "금주 내 업무" 셀렉트(금주/차주)
     weekPage: 0, // 포털 홈 "금주 내 업무" 카드 4개씩 페이지네이션
     todoScope: { a: '개인', b: '개인', c: '개인' }, // 포털 홈 내 업무/업무지연/금주 내 업무 범위(개인/팀/실) 토글
     dashExpandedRoadmaps: [], // MTRM-MAIN 통합 로드맵 미니 간트에서 아코디언으로 펼쳐진 로드맵명 목록
@@ -1034,6 +1035,26 @@
         case 'cmp-excel':
           showToast('조회 결과를 엑셀로 내려받습니다.');
           break;
+        case 'pm-toast':
+          showToast(String($el.data('m')));
+          break;
+        case 'pm-scope': {
+          // 내 업무(a) / 지연현황(b) / 금주 업무(c) 범위 라디오는 서로 독립이다.
+          var pmKey = String($el.data('key'));
+          var pmVal = String($el.data('value'));
+          setState(function (st) {
+            var sc = $.extend({}, st.todoScope);
+            sc[pmKey] = pmVal;
+            return { todoScope: sc };
+          });
+          break;
+        }
+        case 'pm-week-sel':
+          setState({ weekSel: $el.val() });
+          break;
+        case 'pm-qa-tab':
+          setState({ qaTab: String($el.data('tab')) });
+          break;
         case 'pm-manual':
           showToast('Web Manual을 엽니다.');
           break;
@@ -1653,6 +1674,11 @@
       var patch = {};
       patch[key] = val;
       state.ppF = $.extend({}, state.ppF, patch);
+    });
+
+    // 금주/차주 셀렉트는 click 위임으로 잡히지 않아 change로 별도 바인딩한다
+    $(document).on('change', '[data-action="pm-week-sel"]', function () {
+      setState({ weekSel: $(this).val() });
     });
 
     $(document).on('input change', '[data-mp-field]', function () {

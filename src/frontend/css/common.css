@@ -1560,3 +1560,83 @@ button.cm-round-btn { cursor: pointer; }
 .sm-pop { max-width: 560px; }
 .sm-pop .mp-info-table th { width: 170px; text-align: left; }
 .sm-pop .mp-info-table input[type="text"], .sm-pop .mp-info-table select { width: 100%; height: 26px; border: 1px solid #aeb5c1; font-size: 12px; padding: 0 6px; }
+
+
+/* ===== My Job (포털 홈) — 근거: 생기포털 v3.dc.html isTodoMain 블록 ===== */
+.pm-wrap { font-size: 12px; color: #222; display: flex; flex-direction: column; gap: 14px; }
+.pm-card { background: #fff; border: 1px solid #c5ccd8; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,.05); overflow: hidden; }
+.pm-card-accent { height: 3px; background: linear-gradient(90deg,#d6382f 0,#d6382f 14%,#b9bfca 14%); }
+.pm-card-body { padding: 16px; }
+.pm-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+/* 상단 3컬럼: TO DO 카드 / 내 업무 / 업무 지연 현황 */
+.pm-top-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; align-items: start; }
+.pm-todo-cards { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.pm-todo-card { display: flex; align-items: stretch; height: 54px; flex: 0 0 54px; width: 100%; border: 1px solid #c5ccd8; border-radius: 6px; overflow: hidden; background: none; padding: 0; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,.05); font-family: inherit; }
+.pm-todo-label { width: 46%; background: #2e4a8d; color: #fff; display: flex; align-items: center; gap: 8px; padding: 0 12px; }
+.pm-todo-card:hover .pm-todo-label { background: #263f7a; }
+.pm-todo-label i { font-size: 22px; opacity: .4; }
+.pm-todo-label span { flex: 1; text-align: center; font-weight: 700; font-size: 15px; white-space: nowrap; }
+.pm-todo-value { flex: 1; background: #fff; display: flex; align-items: center; justify-content: center; gap: 4px; white-space: nowrap; }
+.pm-todo-num { font-size: 26px; font-weight: 700; text-decoration: underline; text-underline-offset: 4px; line-height: 1; color: #111; }
+.pm-todo-unit { font-size: 11px; }
+
+.pm-col { min-width: 0; }
+.pm-col-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.pm-h3 { font-weight: 700; font-size: 13px; display: flex; align-items: center; gap: 6px; white-space: nowrap; margin: 0; }
+.pm-h3-dot { width: 6px; height: 6px; background: #2e4a8d; display: inline-block; }
+.pm-scope { display: flex; align-items: center; gap: 10px; font-size: 11px; }
+.pm-scope-item { display: flex; align-items: center; gap: 4px; cursor: pointer; white-space: nowrap; }
+.pm-scope-item input { width: 12px; height: 12px; }
+
+.pm-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.pm-table th { background: #eef0f4; border: 1px solid #c5ccd8; font-weight: 700; padding: 5px 8px; text-align: center; white-space: nowrap; }
+.pm-table td { border: 1px solid #d5dae3; padding: 5px 8px; text-align: center; }
+.pm-table tbody tr[data-action] { cursor: pointer; }
+.pm-table tbody tr[data-action]:hover td { background: #f4f7fc; }
+.pm-num { background: none; border: 0; padding: 0; font-weight: 700; color: #111; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; font-family: inherit; font-size: 12px; }
+.pm-num:hover { color: #2e5ea8; }
+.pm-unit { font-size: 10px; margin-left: 2px; color: #333; }
+
+/* 금주 내 업무 / 생산제조기술 공유 */
+.pm-sec-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+.pm-sec-title { font-weight: 700; font-size: 13px; white-space: nowrap; margin: 0; }
+.pm-sec-tools { display: flex; align-items: center; gap: 12px; }
+.pm-week-sel { border: 1px solid #aeb5c1; background: #fff; height: 22px; padding: 0 6px; font-size: 11px; border-radius: 2px; }
+.pm-week-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px; }
+.pm-week-card { border: 1px solid #c5ccd8; border-radius: 6px; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,.05); background: #fff; }
+.pm-week-head { background: #c5d1e5; text-align: center; font-weight: 700; font-size: 12px; padding: 6px; white-space: nowrap; }
+.pm-week-row { padding: 8px 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.pm-week-row-top { border-bottom: 1px solid #e1e5ec; }
+.pm-week-key { display: flex; align-items: center; gap: 6px; white-space: nowrap; font-size: 11px; }
+.pm-dot { width: 8px; height: 8px; border-radius: 999px; display: inline-block; }
+.pm-dot-blue { background: #2f7be0; }
+.pm-dot-red { background: #d6382f; }
+
+.pm-share-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px; }
+.pm-share-card { border: 1px solid #c5ccd8; border-radius: 6px; background: #fff; padding: 10px 12px; display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; font-family: inherit; box-shadow: 0 1px 2px rgba(0,0,0,.05); }
+.pm-share-card:hover { background: #f4f7fc; }
+.pm-share-label { font-size: 12px; font-weight: 700; white-space: nowrap; color: #333; }
+.pm-share-value { display: flex; align-items: baseline; gap: 2px; }
+
+/* MY Q&A / 공지사항 */
+.pm-qa-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.pm-qa-tabs { display: flex; gap: 4px; }
+.pm-qa-tab { padding: 0 20px; height: 26px; font-size: 12px; font-weight: 700; border: 1px solid #c5ccd8; border-bottom: 0; border-radius: 4px 4px 0 0; background: #eef0f4; color: #555; white-space: nowrap; cursor: pointer; font-family: inherit; }
+.pm-qa-tab:hover { background: #fff; }
+.pm-qa-tab.is-active { background: #2e4a8d; color: #fff; border-color: #2e4a8d; }
+.pm-icon-btns { display: flex; gap: 4px; }
+.pm-icon-btn { width: 24px; height: 24px; border: 1px solid #aeb5c1; background: #fff; color: #555; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 11px; border-radius: 2px; }
+.pm-icon-btn:hover { background: #f1f3f7; }
+.pm-qa-table td { text-align: left; }
+.pm-qa-no { width: 120px; font-weight: 700; white-space: nowrap; }
+.pm-qa-title { }
+.pm-qa-date { width: 100px; text-align: center; white-space: nowrap; color: #57606b; }
+.pm-qa-state { width: 60px; text-align: center; }
+.pm-state-badge { display: inline-block; font-size: 11px; padding: 1px 8px; border: 1px solid #c5ccd8; border-radius: 3px; background: #eef0f4; color: #555; white-space: nowrap; }
+.pm-notice-title { }
+
+@media (max-width: 1280px) {
+  .pm-top-grid { grid-template-columns: 1fr; }
+  .pm-grid-2 { grid-template-columns: 1fr; }
+}
