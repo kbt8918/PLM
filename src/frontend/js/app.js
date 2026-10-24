@@ -274,8 +274,25 @@
     }, 2600);
   }
 
+  // 드롭다운형 GNB 패널(mTRM 등)을 해당 1차 메뉴 버튼 바로 아래에 붙인다.
+  // 패널은 position:absolute이고 기준이 #gnb-top이므로, 버튼의 좌측 오프셋을
+  // CSS 변수(--gnb-drop-left)로 넘겨 left를 잡는다.
+  function positionGnbDrop() {
+    var $panel = $('.gnb-panel-drop');
+    if (!$panel.length) return;
+    var $btn = $('[data-action="gnb-click"][data-menu-id="' + state.gnbOpen + '"]');
+    if (!$btn.length) return;
+    var base = $panel.offsetParent().offset() || { left: 0 };
+    var left = $btn.offset().left - base.left;
+    // 패널이 화면 오른쪽으로 넘치면 안쪽으로 당긴다
+    var over = (left + $panel.outerWidth()) - $(window).width();
+    if (over > 0) left = Math.max(0, left - over - 8);
+    $panel.css('--gnb-drop-left', left + 'px');
+  }
+
   function renderAll() {
     $('#gnb-top').html(render.gnbTop(state));
+    positionGnbDrop();
     var isTodoMain = state.currentScreen === 'todo-main';
     $('#content').toggleClass('content-flush', isTodoMain).html(render.screen(state));
 

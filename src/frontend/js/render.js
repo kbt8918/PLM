@@ -120,21 +120,34 @@
           return '<button type="button" class="gnb-panel-tab' + (i === (state.gnbTab || 0) ? ' active' : '') + '" data-action="gnb-tab" data-tab-index="' + i + '">' + esc(t) + '</button>';
         }).join('') + '</div>';
       }
+      // layout: 'drop' — 1차 메뉴 바로 아래에 내용 폭만큼만 붙는 좁은 드롭다운.
+      // 컬럼 제목 아래 ∨ 표시, 항목은 "- 라벨" 형태로 표기하고 (A) 배지는 쓰지 않는다.
+      // 근거: 사용자 제공 mTRM 메뉴 캡처(2026-10-24).
+      var isDrop = openMenu.layout === 'drop';
       var colsHtml = openMenu.cols.map(function (c) {
         var itemsHtml = c.items.map(function (it) {
           var label = it[0], view = it[1], admin = it[2], sub = it[3];
           var isCurrent = view && view === currentScreen;
           var leafCls = 'gnb-panel-leaf' + (sub ? ' gnb-panel-leaf-sub' : '') + (isCurrent ? ' active' : '');
           return '<button type="button" class="' + leafCls + '" data-action="gnb-leaf"' + (view ? ' data-view="' + esc(view) + '"' : '') + '>' +
-            '<span>' + (sub ? 'ㄴ ' : '') + esc(label) + '</span>' +
-            (admin ? '<span class="gnb-panel-admin">A</span>' : '') +
+            '<span>' + (isDrop ? '- ' : (sub ? 'ㄴ ' : '')) + esc(label) + '</span>' +
+            (admin && !isDrop ? '<span class="gnb-panel-admin">A</span>' : '') +
           '</button>';
         }).join('');
-        return '<div class="gnb-panel-col"><div class="gnb-panel-col-title">' + esc(c.title) + '</div><div class="gnb-panel-col-items">' + itemsHtml + '</div></div>';
+        return '<div class="gnb-panel-col"><div class="gnb-panel-col-title">' + esc(c.title) +
+          (isDrop ? '<span class="gnb-panel-col-caret">&#9662;</span>' : '') + '</div>' +
+          '<div class="gnb-panel-col-items">' + itemsHtml + '</div></div>';
       }).join('');
-      panelHtml = '<div class="gnb-panel"><div class="gnb-panel-inner">' + tabsHtml +
-        '<div class="gnb-panel-grid" style="grid-template-columns:repeat(' + openMenu.cols.length + ',minmax(180px,1fr))">' + colsHtml + '</div>' +
-      '</div></div>';
+      if (isDrop) {
+        // 드롭다운은 해당 1차 메뉴 버튼 기준으로 위치를 잡는다(좌표는 app.js가 CSS 변수로 전달).
+        panelHtml = '<div class="gnb-panel gnb-panel-drop"><div class="gnb-panel-inner">' + tabsHtml +
+          '<div class="gnb-panel-grid gnb-panel-grid-drop">' + colsHtml + '</div>' +
+        '</div></div>';
+      } else {
+        panelHtml = '<div class="gnb-panel"><div class="gnb-panel-inner">' + tabsHtml +
+          '<div class="gnb-panel-grid" style="grid-template-columns:repeat(' + openMenu.cols.length + ',minmax(180px,1fr))">' + colsHtml + '</div>' +
+        '</div></div>';
+      }
     }
 
     var backdrop = gnbPinned ? '<div class="gnb-backdrop"></div>' : '';

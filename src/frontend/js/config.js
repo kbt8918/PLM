@@ -68,7 +68,7 @@
     { id: 'pilot', label: '파이롯트' },
     { id: 'datamap', label: '데이터맵' },
     {
-      id: 'mtrm', label: 'mTRM',
+      id: 'mtrm', label: 'mTRM', layout: 'drop',
       cols: [
         {
           title: '로드맵', items: [

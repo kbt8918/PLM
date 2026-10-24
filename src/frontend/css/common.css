@@ -1682,3 +1682,15 @@ button.cm-round-btn { cursor: pointer; }
 .tt-file-body { flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 12px; flex-wrap: wrap; }
 .mp-colchks-label { font-weight: 700; color: #333; margin-right: 4px; white-space: nowrap; }
 .tr-page-title { font-size: 20px; font-weight: 700; color: #111827; white-space: nowrap; margin: 0 0 12px; }
+
+/* mTRM 드롭다운형 GNB 패널 — 근거: 사용자 제공 캡처(2026-10-24).
+   전체 폭 메가메뉴 대신 1차 메뉴 바로 아래에 내용 폭만큼만 붙는다. */
+.gnb-panel-drop { left: var(--gnb-drop-left, 0); right: auto; padding: 0; }
+.gnb-panel-drop .gnb-panel-inner { border-radius: 0; border: 1px solid #c9d2e3; box-shadow: 0 6px 16px rgba(15,30,70,.14); padding: 10px 0 12px; }
+.gnb-panel-grid-drop { display: flex; gap: 0; }
+.gnb-panel-grid-drop .gnb-panel-col { min-width: 132px; padding: 0 14px; }
+.gnb-panel-grid-drop .gnb-panel-col + .gnb-panel-col { border-left: 1px solid #e3e8f0; }
+.gnb-panel-grid-drop .gnb-panel-col-title { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 0 0 6px; margin-bottom: 6px; border-bottom: 0; font-size: 13px; color: #1f2937; }
+.gnb-panel-col-caret { font-size: 10px; color: #6b7280; line-height: 1; }
+.gnb-panel-grid-drop .gnb-panel-leaf { padding: 4px 6px; font-size: 12px; justify-content: flex-start; white-space: nowrap; }
+.gnb-panel-grid-drop .gnb-panel-leaf.active { color: var(--gnb-brand); font-weight: 700; }
