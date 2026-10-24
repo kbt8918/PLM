@@ -982,7 +982,7 @@
     return (
       '<div class="rm-modal-overlay" data-action="rm-close-task-detail">' +
         '<div class="rm-modal-box" data-action="rm-modal-stop">' +
-          '<div class="rm-modal-header-dark"><h3>상세 과제</h3></div>' +
+          '<div class="rm-modal-header-dark"><h3>상세 과제 로드맵</h3></div>' +
           '<div class="rm-modal-topbar"><button type="button" class="btn-dark" data-action="rm-close-task-detail">닫기</button></div>' +
           '<div class="rm-modal-body">' +
             '<table class="rm-info-table"><tbody>' +
@@ -1968,9 +1968,10 @@
       '</tr>';
     }).join('');
     var taskRows = d.empty
-      ? '<tr><td colspan="' + (d.n + 2) + '" class="mm-empty">조회된 데이터가 없습니다.</td></tr>'
+      ? '<tr><td colspan="' + (d.n + 4) + '" class="mm-empty">해당 조건의 작업이 없습니다.</td></tr>'
       : d.tasks.map(function (t) {
           return '<tr><td>' + t.no + '</td><td class="cmp-left">' + esc(t.name) + '</td>' +
+            '<td></td><td></td>' +
             t.cells.map(function (c) {
               var cls = (c.bold ? 'cmp-b ' : '') + (c.faint ? 'cmp-faint ' : '') + (c.fill ? 'cmp-fill' : '');
               return '<td class="' + cls.trim() + '">' + esc(c.t) + '</td>';
@@ -1985,23 +1986,38 @@
             '<button type="button" class="btn-excel" data-action="cmp-excel">엑셀</button>' +
           '</div>' +
         '</div>' +
-        '<div class="mp-filter"><table class="mp-filter-table cmp-filter-table"><tr>' +
-          '<th>제품군</th><td><select><option>' + (mod ? '모듈' : '부품') + '</option></select></td>' +
-          '<th>제품</th><td><select><option>전체</option></select></td>' +
-          '<th>' + (mod ? '권역' : '공장') + '</th><td>' + selHtml + '</td>' +
-        '</tr></table>' +
+        '<div class="mp-filter"><table class="mp-filter-table cmp-filter-table">' +
+          '<tr>' +
+            '<th>제품군</th><td><select><option>' + (mod ? '모듈' : '부품') + '</option></select></td>' +
+            '<th>제품</th><td><select><option>전체</option></select></td>' +
+            '<th>' + (mod ? '권역' : '공장') + '</th><td>' + selHtml + '</td>' +
+          '</tr>' +
+          '<tr>' +
+            '<th>' + (mod ? '공장' : '라인') + '</th><td><div class="mp-cell-pair">' +
+              '<select class="mp-sel-sm"><option value="전체">전체</option></select>' +
+              '<input type="text" /></div></td>' +
+            (mod ? '<th>엔진타입</th><td><select><option value="전체">전체</option></select></td>'
+                 : '<td colspan="2"></td>') +
+            '<th>기간</th><td><div class="mp-cell-pair">' +
+              '<input type="date" /><span class="tt-tilde">~</span><input type="date" /></div></td>' +
+          '</tr>' +
+        '</table>' +
         '<div class="mp-filter-acts">' +
           '<button type="button" class="btn-dark tpa-btn-sm" data-action="cmp-search"><i class="fas fa-search" style="font-size:10px"></i>조회</button>' +
           '<button type="button" class="btn-outline-sm" data-action="cmp-reset">초기화</button>' +
         '</div></div>' +
         '<div class="mp-scroll"><table class="tpa-table cmp-table"><thead>' +
-          '<tr><th rowspan="2" class="cmp-corner">구분</th><th rowspan="2">B/P</th><th rowspan="2">전체</th>' + groupHead + '</tr>' +
+          '<tr><th rowspan="2" class="cmp-corner">구분</th><th rowspan="2">Best Practice</th>' +
+            '<th rowspan="2">' + (mod ? '국내/외종합(계)' : '종합( 합계 )') + '</th>' + groupHead + '</tr>' +
           '<tr>' + colHead + '</tr>' +
         '</thead><tbody>' + statRows + '</tbody></table></div>' +
         '<p class="cmp-caption">자동화 과제별 적용 현황</p>' +
         '<div class="mp-scroll"><table class="tpa-table cmp-table"><thead>' +
-          '<tr><th rowspan="2" style="width:48px">NO</th><th rowspan="2" class="cmp-corner">과제명</th>' + groupHead + '</tr>' +
-          '<tr>' + colHead + '</tr>' +
+          '<tr><th rowspan="2" style="width:48px">' + (mod ? 'No' : 'NO') + '</th>' +
+            '<th rowspan="2" class="cmp-corner">' + (mod ? '작업내용' : '공정') + '</th>' +
+            '<th colspan="2">Best Practice</th>' +
+            '<th colspan="' + d.n + '">' + (mod ? '표준 작업 자동화현황' : '확대 전개 계획') + '</th></tr>' +
+          '<tr><th colspan="2">' + (mod ? '상세계획' : '주요내용') + '</th>' + colHead + '</tr>' +
         '</thead><tbody>' + taskRows + '</tbody></table></div>' +
       '</div>'
     );
@@ -2459,7 +2475,7 @@
     return (
       '<div class="rm-modal-overlay" data-action="tpa-close-register">' +
         '<div class="rm-modal-box">' +
-          '<div class="rm-modal-header-dark"><h3>신규등록</h3></div>' +
+          '<div class="rm-modal-header-dark"><h3>Tech PR 신규등록</h3></div>' +
           '<div class="rm-modal-topbar tpa-topbar">' +
             '<button type="button" class="btn-outline-sm"><i class="fas fa-trash" style="font-size:10px;margin-right:4px"></i>중복</button>' +
             '<button type="button" class="btn-navy tpa-btn-sm" data-action="tpa-save-register">수정/저장</button>' +
@@ -2585,7 +2601,7 @@
     return (
       '<div class="rm-modal-overlay">' +
         '<div class="rm-modal-box">' +
-          '<div class="rm-modal-header-dark"><h3>상세현황</h3></div>' +
+          '<div class="rm-modal-header-dark"><h3>mTRM 협의체 상세현황</h3></div>' +
           '<div class="rm-modal-topbar tpa-topbar">' +
             '<button type="button" class="btn-navy tpa-btn-sm">수정</button>' +
             '<button type="button" class="btn-navy tpa-btn-sm">저장</button>' +
@@ -2651,7 +2667,7 @@
     return (
       '<div class="rm-modal-overlay" data-action="council-close-register">' +
         '<div class="rm-modal-box">' +
-          '<div class="rm-modal-header-dark"><h3>신규등록</h3></div>' +
+          '<div class="rm-modal-header-dark"><h3>mTRM 협의체 신규등록</h3></div>' +
           '<div class="rm-modal-topbar tpa-topbar">' +
             '<button type="button" class="btn-navy tpa-btn-sm" data-action="council-save-register">전달</button>' +
             '<button type="button" class="btn-navy tpa-btn-sm" data-action="council-close-register">닫기</button>' +
