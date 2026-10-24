@@ -1586,14 +1586,100 @@
         return (g.main || gi === 0 ? '<tr class="mp-grid-main"><td colspan="' + vis.length + '">' + esc(g.main || '1공정') + '</td></tr>' : '') +
           '<tr>' + cells + '</tr>';
       }).join('');
-      paneHtml = '<div class="mp-colchks">' + checks + '</div>' +
+      var layoutActs = [
+        ['엑셀', '엑셀로 내려받습니다.', 'btn-excel'],
+        ['추가', '공정 행을 추가했습니다.', 'btn-navy tpa-btn-sm'],
+        ['복사', '선택한 행을 복사했습니다.', 'btn-navy tpa-btn-sm'],
+        ['삭제', '삭제할 행을 선택하세요.', 'btn-navy tpa-btn-sm'],
+        ['저장', '저장되었습니다.', 'btn-navy tpa-btn-sm'],
+        ['공수비교', '공수비교 팝업을 엽니다.', 'btn-navy tpa-btn-sm'],
+        ['조공서 도면번호 입력', '도면번호 입력 팝업을 엽니다.', 'btn-navy tpa-btn-sm'],
+        ['첨부파일', '첨부파일 팝업을 엽니다.', 'btn-navy tpa-btn-sm'],
+      ].map(function (a) {
+        return '<button type="button" class="' + a[2] + '" data-action="mp-toast" data-m="' + esc(a[1]) + '">' + esc(a[0]) + '</button>';
+      }).join('');
+      paneHtml = '<div class="mp-pane-head"><p class="mp-pane-title">공정배치계획</p>' +
+        '<div class="mp-pane-acts">' + layoutActs + '</div></div>' +
+        '<div class="mp-colchks">' + checks + '</div>' +
         '<div class="mp-scroll"><table class="tpa-table mp-grid-table"><thead><tr>' + heads + '</tr></thead>' +
         '<tbody>' + gridRows + '</tbody></table></div>';
+    } else if (tab === 'basic') {
+      // 기본운영방안 — 정보 입력표 + 변경이력표. 근거: 소스 mpIsBasic 블록.
+      var ro = function (v) { return '<td>' + esc(v || '') + '</td>'; };
+      var inp = function (v) { return '<td><input type="text" class="mp-grid-inp" value="' + esc(v || '') + '" /></td>'; };
+      var selc = function () { return '<td><select class="mp-grid-sel"><option>선택</option></select></td>'; };
+      paneHtml =
+        '<div class="mp-pane-head">' +
+          '<p class="mp-pane-title">기본운영방안</p>' +
+          '<div class="mp-pane-acts">' +
+            '<label class="mp-check"><input type="checkbox" />표준 라인</label>' +
+            '<button type="button" class="btn-navy tpa-btn-sm" data-action="mp-toast" data-m="저장되었습니다.">저장</button>' +
+            '<button type="button" class="btn-navy tpa-btn-sm" data-action="mp-toast" data-m="첨부파일 팝업을 엽니다.">첨부파일</button>' +
+            '<button type="button" class="btn-excel" data-action="mp-toast" data-m="엑셀로 내려받습니다.">엑셀</button>' +
+          '</div>' +
+        '</div>' +
+        '<table class="tpa-table mp-info-table mp-basic-table"><tbody>' +
+          '<tr><th>생산차종(개발)</th>' + ro(d.dev) + '<th>생산차종(양산)</th>' +
+            '<td colspan="3"><div class="mp-cell-pair"><span>' + esc(d.prod) + '</span>' +
+            '<button type="button" class="btn-outline-sm" data-action="mp-toast" data-m="생산차종 변경 팝업을 엽니다.">변경</button></div></td></tr>' +
+          '<tr><th><span class="mm-req">*</span> EIS프로젝트</th><td colspan="3">' +
+            '<div class="mp-cell-pair"><select class="mp-grid-sel"><option>선택</option></select>' +
+            '<button type="button" class="tpa-icon-btn mm-icon-btn" data-action="mp-toast" data-m="EIS프로젝트 검색"><i class="fas fa-search"></i></button></div></td>' +
+            '<th><span class="mm-req">*</span> G-MDM 라인코드</th>' + selc() + '</tr>' +
+          '<tr><th>생산품</th>' + ro(d.product) + '<th>생산공장</th>' + ro(d.plant + ' ' + d.line) + '<th>납품처</th>' + inp('') + '</tr>' +
+          '<tr><th>생산량</th>' + inp('0') + '<th>물류설비</th>' + selc() + '<th>승상용 구분</th>' + selc() + '</tr>' +
+          '<tr><th>연간작업시간</th>' + inp('0') + '<th>혼류</th>' + inp('1') + '<th>UPH</th>' + ro(d.uph) + '</tr>' +
+          '<tr><th>배포단계</th><td><div class="mp-radio-row">' +
+            ['P1', 'M1', '양산', '선행'].map(function (st2, i) {
+              return '<label class="mp-check"><input type="radio" name="mpStage"' + (i === 0 ? ' checked' : '') + ' />' + st2 + '</label>';
+            }).join('') + '</div></td>' +
+            '<th>공정별 최대 작업자수</th><td colspan="3"><div class="mp-cell-pair">' +
+            'LH <select class="mp-grid-sel"><option>1</option><option>2</option></select> ' +
+            'RH <select class="mp-grid-sel"><option>1</option><option>2</option></select></div></td></tr>' +
+          '<tr><th>간접인원(검사)</th>' + inp('0') + '<th>표준 제품명(자동화 반영)</th>' + selc() + '<th>교대 운영</th>' + selc() + '</tr>' +
+          '<tr><th>비고</th><td colspan="5"><textarea class="mp-textarea" rows="2"></textarea></td></tr>' +
+        '</tbody></table>' +
+        '<table class="tpa-table mp-grid-table mp-hist-table"><thead><tr>' +
+          '<th>순번</th><th>기호</th><th>변경근거</th><th>변경내용</th><th>작성</th><th>검토</th><th>승인</th>' +
+        '</tr></thead><tbody><tr><td>1</td>' +
+          '<td><input type="text" class="mp-grid-inp" /></td>' +
+          '<td><input type="text" class="mp-grid-inp" /></td>' +
+          '<td><input type="text" class="mp-grid-inp" /></td>' +
+          '<td>이*영</td><td></td><td></td></tr></tbody></table>';
+    } else if (tab === 'std') {
+      // 표준공수 및 인원산출 — 근거: 소스 mpIsStd 블록(합계행 포함).
+      var stdRows = [
+        ['1공정', 'BSA 수작업 1 (LH)', '42.0', '10%', '0.00', '0'],
+        ['2공정', 'BSA 수작업 2 (LH)', '36.5', '10%', '0.00', '0'],
+      ];
+      paneHtml =
+        '<p class="mp-pane-title">표준공수 및 인원산출</p>' +
+        '<table class="tpa-table mp-grid-table"><thead><tr>' +
+          '<th>공정</th><th>작업명</th><th>표준공수(초)</th><th>보조공수율</th><th>편성효율</th><th>필요인원</th>' +
+        '</tr></thead><tbody>' +
+        stdRows.map(function (r) {
+          return '<tr><td>' + esc(r[0]) + '</td><td class="mp-left">' + esc(r[1]) + '</td>' +
+            '<td>' + esc(r[2]) + '</td><td>' + esc(r[3]) + '</td><td>' + esc(r[4]) + '</td><td>' + esc(r[5]) + '</td></tr>';
+        }).join('') +
+        '<tr class="mp-sum-row"><td colspan="2">합계</td><td>78.5</td><td>-</td><td>0.00</td><td>0</td></tr>' +
+        '</tbody></table>';
     } else {
-      // 나머지 3탭은 디자인에서도 본문이 비어 있는 자리표시 영역이다.
-      var label = '';
-      MP.tabs.forEach(function (t) { if (t[0] === tab) label = t[1]; });
-      paneHtml = '<div class="mp-pane-empty">' + esc(label) + ' 영역은 상세 설계 확정 후 연결됩니다.</div>';
+      // 산출물 — 근거: 소스 mpIsOut 블록.
+      var outRows = [
+        ['1', '공정배치계획서.xlsx', '이*영', '2026.10.16'],
+        ['2', '표준공수 산출서.pdf', '이*영', '2026.10.16'],
+      ];
+      paneHtml =
+        '<p class="mp-pane-title">산출물</p>' +
+        '<table class="tpa-table mp-grid-table"><thead><tr>' +
+          '<th>순번</th><th>산출물명</th><th>등록자</th><th>등록일</th><th>다운로드</th>' +
+        '</tr></thead><tbody>' +
+        outRows.map(function (r) {
+          return '<tr><td>' + esc(r[0]) + '</td><td class="mp-left">' + esc(r[1]) + '</td>' +
+            '<td>' + esc(r[2]) + '</td><td class="mp-nowrap">' + esc(r[3]) + '</td>' +
+            '<td><button type="button" class="tpa-icon-btn mm-icon-btn" data-action="mp-toast" data-m="파일을 내려받습니다." title="다운로드"><i class="fas fa-download"></i></button></td></tr>';
+        }).join('') +
+        '</tbody></table>';
     }
     return (
       '<div class="rm-modal-overlay" data-action="mp-close">' +
@@ -1604,6 +1690,10 @@
             info +
             '<div class="mp-tabs">' + tabsHtml + '</div>' +
             paneHtml +
+            '<div class="mp-modal-foot">' +
+              '<button type="button" class="btn-navy tpa-btn-sm" data-action="mp-toast" data-m="상신되었습니다.">상신</button>' +
+              '<button type="button" class="btn-outline-sm" data-action="mp-close">닫기</button>' +
+            '</div>' +
           '</div>' +
         '</div>' +
       '</div>'
