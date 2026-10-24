@@ -3191,7 +3191,7 @@
     return (
       '<div class="rm-modal-overlay">' +
         '<div class="rm-modal-box" style="max-width:860px">' +
-          '<div class="rm-modal-header-navy"><h3>분과장 관리</h3><button type="button" class="rm-modal-close" data-action="mm-close-modal"><i class="fas fa-times"></i></button></div>' +
+          '<div class="rm-modal-header-navy"><h3>분과 신규등록/변경</h3><button type="button" class="rm-modal-close" data-action="mm-close-modal"><i class="fas fa-times"></i></button></div>' +
           '<div class="rm-modal-topbar tpa-topbar mm-dept-topbar">' +
             '<div class="mm-dept-tools">' +
               '<button type="button" class="mm-dept-tool" data-action="dept-add-row" title="행 추가">+</button>' +
