@@ -1681,3 +1681,4 @@ button.cm-round-btn { cursor: pointer; }
 .tt-file-label { width: 140px; flex-shrink: 0; background: #eef0f4; border-right: 1px solid var(--color-border); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; text-align: center; padding: 8px; }
 .tt-file-body { flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 12px; flex-wrap: wrap; }
 .mp-colchks-label { font-weight: 700; color: #333; margin-right: 4px; white-space: nowrap; }
+.tr-page-title { font-size: 20px; font-weight: 700; color: #111827; white-space: nowrap; margin: 0 0 12px; }

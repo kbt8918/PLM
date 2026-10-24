@@ -3804,6 +3804,7 @@
 
     return (
       '<div data-screen-label="SCR-014 기술동향">' +
+        '<h2 class="tr-page-title">기술 동향</h2>' +
         '<section class="tr-search">' +
           '<select aria-label="년도" data-trm-filter="year">' + trOptions('년도선택', TR.yearOptions, f.year) + '</select>' +
           '<select aria-label="유형" data-trm-filter="kind">' + trOptions('유형선택', TR.kinds.map(function (k) { return k.label; }), f.kind) + '</select>' +
