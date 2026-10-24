@@ -179,6 +179,7 @@
 
   // v3 신규: mTRM 업데이트 이력 팝업 행. 근거: 생기포털 v3.dc.html updHistRows.
   var updHistRows = [
+    { no: 4, kind: '취소', dept: '차체', mtrm: '차체 mTRM', link: '차체 mTRM 협의체', date: '2026-10-20', ver: 'v1.3' },
     { no: 3, kind: '변경', dept: '물류', mtrm: '물류 mTRM', link: '물류 mTRM 협의체', date: '2026-10-14', ver: 'v1.2' },
     { no: 2, kind: '변경', dept: 'AI', mtrm: '연계 mTRM', link: 'AI mTRM 협의체', date: '2026-09-09', ver: 'v1.1' },
     { no: 1, kind: '신규', dept: 'AI', mtrm: '자체 mTRM', link: 'AI mTRM 협의체', date: '2026-01-05', ver: 'v1.0' },

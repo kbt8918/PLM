@@ -11,7 +11,7 @@
   // SCR-010 신규등록 팝업 초기값(v3 state.tpaTasks/tpaMedia/tpaHashTags와 동일)
   function newTpaForm() {
     return {
-      title: '', start: '', end: '',
+      title: '', start: '', end: '', priority: '',
       tasks: TPA.defaultTasks.slice(), bus: ['', '', ''],
       media: TPA.mediaSamples.slice(), hashTags: TPA.defaultHashTags.slice(),
     };
@@ -215,6 +215,10 @@
     // [공통] 메일알림 대상 검색 팝업 — SCR-011 협의체 / SCR-014 기술동향이 공유한다.
     // target: 확인 시 수신자를 반영할 화면 (council | trend)
     mailTarget: { open: false, target: null, query: { room: '', team: '' }, selected: [] },
+    // [공통] 요청자/담당자 검색 팝업 — SCR-009 Tech PR 요청자 / SCR-014 기술동향 담당자가 공유한다.
+    // mode: req(요청자) | owner(담당자). 확정값은 picked에 mode별로 따로 보관한다.
+    personSearch: { open: false, mode: null, sel: '', query: { dept: '', name: '' }, applied: { dept: '', name: '' } },
+    personPicked: { req: null, owner: null },
     mmForm: newMmForm(), // 신규등록 팝업 입력값
     mpF: $.extend({}, global.PNDES.mock.mp.F0), // 모듈공정배치 필터 입력값(v3 mpF)
     mpApplied: $.extend({}, global.PNDES.mock.mp.F0), // 조회 버튼으로 확정된 필터(v3 mpApplied)
@@ -1216,21 +1220,15 @@
         case 'tpa-tag-chip-add':
           addTpaTagChip();
           break;
-        case 'tpa-tag-suggest': {
-          var pick = String($el.data('tag'));
-          if (state.tpaTagAdd.draft.indexOf(pick) === -1) {
-            setState({ tpaTagAdd: $.extend({}, state.tpaTagAdd, { draft: state.tpaTagAdd.draft.concat([pick]) }) });
-          }
-          break;
-        }
         case 'tpa-tag-chip-remove': {
           var rmChipIdx = Number($el.data('index'));
           setState({ tpaTagAdd: $.extend({}, state.tpaTagAdd, { draft: state.tpaTagAdd.draft.filter(function (_, j) { return j !== rmChipIdx; }) }) });
           break;
         }
         case 'tpa-tag-save': {
-          // 근거: v3.dc.html saveTagAdd — 태그 1개 이상 필수, 오늘 날짜로 Master Table 맨 위에 추가
+          // 근거: v3.dc.html saveTagAdd — 태그 1개 이상 + 설명 필수, 오늘 날짜로 Master Table 맨 위에 추가
           if (!state.tpaTagAdd.draft.length) { global.alert('기술태그를 1개 이상 입력해주세요.'); break; }
+          if (!state.tpaTagAdd.desc.trim()) { global.alert('설명을 입력해주세요.'); break; }
           var today = todayDotted();
           setState({
             tpaTagRows: [{ tags: state.tpaTagAdd.draft.slice(), regDate: today, modDate: today }].concat(state.tpaTagRows),
@@ -1499,6 +1497,42 @@
           }
           setState(mtPatch);
           showToast('메일알림 대상 ' + mtTeams.length + '건이 반영되었습니다.');
+          break;
+        }
+        // ---- [공통] 요청자/담당자 검색 팝업 (SCR-009 요청자 / SCR-014 담당자) ----
+        case 'ps-open':
+          setState({ personSearch: {
+            open: true, mode: String($el.data('mode') || 'req'), sel: '',
+            query: { dept: '', name: '' }, applied: { dept: '', name: '' },
+          } });
+          break;
+        case 'ps-close':
+          setState({ personSearch: $.extend({}, state.personSearch, { open: false }) });
+          break;
+        case 'ps-backdrop':
+          if (e.target === this) setState({ personSearch: $.extend({}, state.personSearch, { open: false }) });
+          break;
+        case 'ps-search': {
+          // mt-search와 같은 방식 — 입력 중 리렌더를 피해 조회 시점에 DOM에서 수거한다.
+          var psQ = {
+            dept: String($('[data-ps-field="dept"]').val() || '').trim(),
+            name: String($('[data-ps-field="name"]').val() || '').trim(),
+          };
+          setState({ personSearch: $.extend({}, state.personSearch, { query: psQ, applied: psQ, sel: '' }) });
+          break;
+        }
+        case 'ps-pick':
+          setState({ personSearch: $.extend({}, state.personSearch, { sel: String($el.data('name')) }) });
+          break;
+        case 'ps-choose': {
+          var psMode = state.personSearch.mode || 'req';
+          var psSel = state.personSearch.sel;
+          if (!psSel) { showToast((psMode === 'owner' ? '담당자' : '요청자') + '를 선택해주세요.'); break; }
+          var psPerson = null;
+          PNDES.data.personDirectory.forEach(function (d) { if (d.name === psSel) psPerson = d; });
+          var psPicked = $.extend({}, state.personPicked);
+          psPicked[psMode] = psPerson;
+          setState({ personSearch: $.extend({}, state.personSearch, { open: false }), personPicked: psPicked });
           break;
         }
         case 'mm-picker-open':
@@ -1807,7 +1841,10 @@
       if (key === 'bu') { state.tpaForm.bus[Number($(this).data('index'))] = $(this).val(); } else { state.tpaForm[key] = $(this).val(); }
     });
     $(document).on('input', '[data-tpa-tag-field]', function () {
-      state.tpaTagAdd[$(this).data('tpaTagField')] = $(this).val();
+      var tagKey = $(this).data('tpaTagField');
+      state.tpaTagAdd[tagKey] = $(this).val();
+      // 설명은 v3와 같이 500자 카운터를 즉시 갱신한다(리렌더하면 입력 포커스를 잃으므로 텍스트만 교체).
+      if (tagKey === 'desc') $('.tpa-tag-desc-count').text(state.tpaTagAdd.desc.length + ' / 500');
     });
     // 근거: v3.dc.html onTagKey — Enter 또는 쉼표로 태그 칩 추가
     $(document).on('keydown', '#tpa-tag-input', function (ev) {

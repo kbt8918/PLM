@@ -2476,7 +2476,7 @@
 
     var mediaRows = [0, 1, 2].map(function (i) {
       var name = f.media[i];
-      return '<tr><th>표출 동영상' + (i + 1) + '</th><td><div class="tpa-media-row">' +
+      return '<tr><th>표출 동영상' + (i + 1) + '</th><td colspan="5"><div class="tpa-media-row">' +
         '<button type="button" class="btn-navy tpa-btn-sm" data-action="tpa-media-pick" data-index="' + i + '">파일선택</button>' +
         (name
           ? '<span class="tpa-media-file"><i class="fas fa-film"></i><span>' + esc(name) + '</span><button type="button" data-action="tpa-media-remove" data-index="' + i + '" title="파일 삭제">&#10005;</button></span>'
@@ -2499,12 +2499,28 @@
               '<tr><th>기술명</th><td><input type="text" data-tpa-field="title" value="' + esc(f.title) + '" /></td></tr>' +
             '</tbody></table>' +
             blocks +
-            '<table class="rm-info-table tpa-form-table"><tbody>' +
-              '<tr><th>기술태그</th><td><div class="tpa-chips tpa-chips-left">' + hashTags + '</div></td></tr>' +
-              '<tr><th>일정</th><td><div class="rm-date-range"><input type="date" data-tpa-field="start" value="' + esc(f.start) + '" /><span>-</span><input type="date" data-tpa-field="end" value="' + esc(f.end) + '" /></div></td></tr>' +
+            // table-layout:fixed는 첫 행으로 열 너비를 정하는데 첫 행이 colspan이라,
+            // 디자인 원본의 칸 너비(우선순위 110 / 노출여부 90 / 150px)는 colgroup으로 지정한다.
+            '<table class="rm-info-table tpa-form-table">' +
+              '<colgroup><col style="width:120px" /><col /><col style="width:96px" />' +
+                '<col style="width:110px" /><col style="width:90px" /><col style="width:150px" /></colgroup>' +
+              '<tbody>' +
+              // v3: 기술태그 라벨에 "+" 버튼이 붙어 기술태그 추가 팝업을 연다.
+              '<tr><th><span class="tpa-th-inline">기술태그' +
+                '<button type="button" class="tpa-th-add" data-action="tpa-tag-open" title="기술태그 추가">+</button></span></th>' +
+                '<td colspan="5"><div class="tpa-chips tpa-chips-left">' + hashTags + '</div></td></tr>' +
+              // v3: 일정 / 우선순위 / 노출여부가 한 줄(6칸)을 이룬다.
+              '<tr><th>일정</th>' +
+                '<td><div class="rm-date-range"><input type="date" data-tpa-field="start" value="' + esc(f.start) + '" /><span>-</span><input type="date" data-tpa-field="end" value="' + esc(f.end) + '" /></div></td>' +
+                '<th>우선순위</th>' +
+                '<td><input type="text" data-tpa-field="priority" value="' + esc(f.priority || '') + '" /></td>' +
+                '<th>노출여부</th>' +
+                '<td><div class="tpa-radio-row">' +
+                  '<label><input type="radio" name="tpaExpose" checked />노출</label>' +
+                  '<label><input type="radio" name="tpaExpose" />비노출</label></div></td></tr>' +
               mediaRows +
-              '<tr><th>등록 현황</th><td>표출 동영상 <strong class="tpa-count">' + mediaCount + '</strong> / 3개 &middot; 등록 순서대로 상세 팝업에 최대 3개 노출</td></tr>' +
-              '<tr><th style="vertical-align:top">기존 첨부파일</th><td>' +
+              '<tr><th>등록 현황</th><td colspan="5">표출 동영상 <strong class="tpa-count">' + mediaCount + '</strong> / 3개 &middot; 등록 순서대로 상세 팝업에 최대 3개 노출</td></tr>' +
+              '<tr><th style="vertical-align:top">기존 첨부파일</th><td colspan="5">' +
                 '<div class="tpa-attach-head"><label><input type="checkbox" />전체선택</label>' +
                   '<div class="tpa-attach-tools"><span>총0건 <strong>10G/10G</strong></span>' +
                     '<span class="tpa-icon-btn"><i class="fas fa-plus"></i></span><span class="tpa-icon-btn"><i class="fas fa-download"></i></span>' +
@@ -2524,7 +2540,6 @@
     var chips = t.draft.length
       ? t.draft.map(function (c, i) { return '<span class="tpa-chip tpa-chip-draft">' + esc(c) + '<button type="button" data-action="tpa-tag-chip-remove" data-index="' + i + '" title="태그 삭제">&#10005;</button></span>'; }).join('')
       : '<span class="tpa-muted">입력한 태그가 여기에 표시됩니다.</span>';
-    var suggest = TPA.tagSuggest.map(function (c) { return '<button type="button" class="tpa-suggest" data-action="tpa-tag-suggest" data-tag="' + esc(c) + '">' + esc(c) + '</button>'; }).join('');
     return (
       '<div class="rm-modal-overlay">' +
         '<div class="rm-modal-box" style="max-width:680px">' +
@@ -2540,9 +2555,11 @@
                 '<button type="button" class="btn-outline-sm" data-action="tpa-tag-chip-add">추가</button></div>' +
                 '<div class="tpa-chips tpa-chips-left" style="margin-top:8px;min-height:26px">' + chips + '</div>' +
               '</td></tr>' +
-              '<tr><th>추천 태그</th><td><div class="tpa-chips tpa-chips-left">' + suggest + '</div></td></tr>' +
-              '<tr><th>설명</th><td><textarea rows="3" data-tpa-tag-field="desc" placeholder="태그 용도/적용 범위를 입력하세요.">' + esc(t.desc) + '</textarea></td></tr>' +
-              '<tr><th>사용여부</th><td><div class="tpa-radio-row"><label><input type="radio" name="tpaTagUse" checked />사용</label><label><input type="radio" name="tpaTagUse" />미사용</label></div></td></tr>' +
+              // v3: 추천 태그 행은 삭제되고, 설명이 필수(500자 제한)로 바뀌었다.
+              '<tr><th>설명<span class="tpa-required">*</span>' +
+                '<div class="tpa-tag-desc-count">' + t.desc.length + ' / 500</div></th>' +
+                '<td><textarea rows="5" maxlength="500" data-tpa-tag-field="desc">' + esc(t.desc) + '</textarea></td></tr>' +
+              '<tr><th>사용여부<span class="tpa-required">*</span></th><td><div class="tpa-radio-row"><label><input type="radio" name="tpaTagUse" checked />사용</label><label><input type="radio" name="tpaTagUse" />사용안함</label></div></td></tr>' +
               '<tr><th>등록자</th><td>' + esc(TPA.defaultOwner) + '</td></tr>' +
             '</tbody></table>' +
             '<p class="tpa-muted">※ 저장 시 기술태그 Master Table에 추가되며, Tech PR 등록 시 기술태그 선택지로 사용됩니다.</p>' +
@@ -3277,6 +3294,65 @@
     );
   }
 
+  // [공통] 요청자/담당자 검색 팝업 — SCR-009 Tech PR 요청자 / SCR-014 기술동향 담당자가 공유한다.
+  // 근거: design-import/생기포털 v3.dc.html rqIsOpen 블록(부서(팀)+이름 2단 필터 + 라디오 단일선택).
+  // v3와 동일하게 "책임매니저/수석매니저"는 표시용으로 "매니저"로 축약한다.
+  function personLabel(p) {
+    return p.dept + ' / ' + p.name + ' ' + p.pos.replace('책임매니저', '매니저').replace('수석매니저', '매니저');
+  }
+
+  // 돋보기를 눌러 고르기 전에는 v3와 같은 기본값을 보여준다.
+  function personCurrent(state, mode) {
+    var picked = state.personPicked && state.personPicked[mode];
+    return picked ? personLabel(picked) : '자동화기술팀 / 김의왕 매니저';
+  }
+
+  function renderPersonSearchLayer(state) {
+    return state.personSearch && state.personSearch.open ? renderPersonSearchModal(state) : '';
+  }
+
+  function renderPersonSearchModal(state) {
+    var ps = state.personSearch;
+    var q = ps.query;
+    var a = ps.applied;
+    var owner = ps.mode === 'owner';
+    var label = owner ? '담당자' : '요청자';
+    var rows = PNDES.data.personDirectory.filter(function (d) {
+      return d.dept.indexOf(a.dept) >= 0 && d.name.indexOf(a.name) >= 0;
+    });
+    var body = rows.map(function (d) {
+      var on = ps.sel === d.name;
+      return '<tr class="ps-row' + (on ? ' ps-row-on' : '') + '" data-action="ps-pick" data-name="' + esc(d.name) + '">' +
+        '<td class="mm-center"><input type="radio" name="psPick" tabindex="-1"' + (on ? ' checked' : '') + ' /></td>' +
+        '<td>' + esc(d.name) + '</td><td>' + esc(d.pos) + '</td><td>' + esc(d.dept) + '</td></tr>';
+    }).join('');
+
+    return (
+      '<div class="rm-modal-overlay" data-action="ps-backdrop">' +
+        '<div class="rm-modal-box ps-box" style="max-width:720px">' +
+          '<div class="rm-modal-header-navy"><h3>' + esc(label) + ' 검색</h3>' +
+            '<button type="button" class="rm-modal-close" data-action="ps-close"><i class="fas fa-times"></i></button></div>' +
+          '<div class="rm-modal-topbar tpa-topbar">' +
+            '<button type="button" class="btn-navy tpa-btn-sm" data-action="ps-choose">선택</button>' +
+            '<button type="button" class="btn-navy tpa-btn-sm" data-action="ps-close">닫기</button>' +
+          '</div>' +
+          '<div class="rm-modal-body">' +
+            '<div class="ps-search-row">' +
+              '<label><span>부서(팀)</span><input type="text" class="tpa-input" data-ps-field="dept" value="' + esc(q.dept) + '" /></label>' +
+              '<label><span>' + esc(label) + '</span><input type="text" class="tpa-input" data-ps-field="name" value="' + esc(q.name) + '" /></label>' +
+              '<button type="button" class="btn-dark tpa-btn-sm" data-action="ps-search"><i class="fas fa-search"></i>조회</button>' +
+            '</div>' +
+            '<table class="tpa-table mm-table mm-table-dense ps-table"><thead><tr>' +
+              '<th style="width:48px"></th><th style="width:120px">이름</th><th style="width:140px">직위</th><th>부서(팀)</th>' +
+            '</tr></thead><tbody>' +
+              (rows.length ? body : '<tr><td colspan="4" class="mm-center tpa-muted">데이터가 없습니다.</td></tr>') +
+            '</tbody></table>' +
+          '</div>' +
+        '</div>' +
+      '</div>'
+    );
+  }
+
   // 메일알림 대상 팝업은 SCR-011/012/014가 공유한다 — 각 화면 렌더 말미에서 이 헬퍼를 더한다.
   function renderMailTargetLayer(state) {
     return state.mailTarget && state.mailTarget.open ? renderMailTargetModal(state) : '';
@@ -3346,7 +3422,9 @@
   // 근거: design-import/생기포털 v3.dc.html updHistOpen 블록 / updHistRows.
   function renderMmUpdHistModal() {
     var rows = MM.updHistRows.map(function (u) {
-      return '<tr><td>' + esc(String(u.no)) + '</td><td class="mm-nowrap">' + esc(u.kind) + '</td><td>' + esc(u.dept) + '</td>' +
+      // v3: 구분 "취소"는 빨간 굵은 글씨로 표시한다.
+      var kindCls = 'mm-nowrap' + (u.kind === '취소' ? ' mm-updhist-cancel' : '');
+      return '<tr><td>' + esc(String(u.no)) + '</td><td class="' + kindCls + '">' + esc(u.kind) + '</td><td>' + esc(u.dept) + '</td>' +
         '<td>' + esc(u.mtrm) + '</td><td>' + esc(u.link) + '</td>' +
         '<td class="mm-nowrap">' + esc(u.date) + '</td><td>' + esc(u.ver) + '</td></tr>';
     }).join('');
@@ -3708,7 +3786,7 @@
             '<table class="rm-info-table tpa-form-table tr-form-table"><colgroup><col style="width:112px" /><col style="width:224px" /><col style="width:96px" /><col /></colgroup><tbody>' +
               '<tr><th>제목</th><td colspan="3"><input type="text" data-trm-field="title" value="' + esc(f.title) + '" /></td></tr>' +
               '<tr><th>유형</th><td><select class="tr-type-select" data-trm-field="type">' + trOptions('선택', TR.kinds.map(function (k) { return k.label; }), f.type) + '</select></td>' +
-                '<th>담당자</th><td><span class="tpa-owner"><span class="tpa-icon-btn"><i class="fas fa-search"></i></span>' + esc(TR.registrant.dept + ' / ' + TR.registrant.owner) + '</span></td></tr>' +
+                '<th>담당자</th><td><span class="tpa-owner"><button type="button" class="tpa-icon-btn" data-action="ps-open" data-mode="owner" title="담당자 검색"><i class="fas fa-search"></i></button>' + esc(personCurrent(state, 'owner')) + '</span></td></tr>' +
               '<tr><td colspan="4" class="tr-upload-cell">' +
                 '<div class="tr-drop tr-drop-image" data-action="trm-image-add">' +
                   '<span class="tr-drop-icon"><i class="fas fa-cloud-upload-alt"></i></span>' +
@@ -3838,6 +3916,7 @@
         (state.trendForm.open ? renderTrendRegisterModal(state) : '') +
         (state.trendMailOpen ? renderTrendMailModal(state) : '') +
         renderMailTargetLayer(state) +
+        renderPersonSearchLayer(state) +
       '</div>'
     );
   }
@@ -3846,7 +3925,7 @@
 
   // 근거: README 공통 규칙 "수정 클릭 시 해당 행 데이터가 채워진 등록 모달과 동일한 폼이 오픈".
   // value는 수정 대상 행에서 가져온 해당 필드의 현재 값(state.modalFormValues[label]), 신규 등록 시 undefined.
-  function fieldControl(f, value) {
+  function fieldControl(f, value, state) {
     var fieldAttr = f.field ? ' data-field="' + esc(f.field) + '"' : '';
     var control;
     switch (f.type) {
@@ -3867,6 +3946,12 @@
       case 'number': control = '<input type="number"' + fieldAttr + ' value="' + esc(value != null ? value : '') + '"' + (f.placeholder ? ' placeholder="' + esc(f.placeholder) + '"' : '') + ' />'; break;
       case 'file': control = '<div class="file-drop">파일을 드래그하거나 클릭하여 첨부</div>'; break;
       case 'plaintext': control = '<div class="plaintext">' + esc(value != null ? value : f.value) + '</div>'; break;
+      // v3 신규: 돋보기로 요청자/담당자 검색 팝업을 여는 읽기전용 칸(SCR-009 "요청자").
+      case 'personPick':
+        control = '<div class="plaintext"><span class="tpa-owner">' +
+          '<button type="button" class="tpa-icon-btn" data-action="ps-open" data-mode="' + esc(f.mode || 'req') + '" title="' + esc(f.label) + ' 검색"><i class="fas fa-search"></i></button>' +
+          esc(personCurrent(state, f.mode || 'req')) + '</span></div>';
+        break;
       default: control = '<input type="text"' + fieldAttr + ' value="' + esc(value != null ? value : '') + '"' + (f.placeholder ? ' placeholder="' + esc(f.placeholder) + '"' : '') + ' />';
     }
     return control + (f.hint ? '<div class="field-hint">' + esc(f.hint) + '</div>' : '');
@@ -3943,7 +4028,7 @@
     var isEdit = !!formValues;
     var fields = modal.fields.map(function (f) {
       return '<div class="modal-field"><label>' + esc(f.label) + (f.required ? '<span class="required">*</span>' : '') + '</label>' +
-        '<div class="modal-field-control">' + fieldControl(f, formValues && f.field ? formValues[f.field] : undefined) + '</div></div>';
+        '<div class="modal-field-control">' + fieldControl(f, formValues && f.field ? formValues[f.field] : undefined, state) + '</div></div>';
     }).join('');
     var confirmAttrs = modal.successMessage
       ? ' data-action="confirm-modal" data-message="' + esc(isEdit ? (modal.editSuccessMessage || modal.successMessage) : modal.successMessage) + '"'
@@ -3958,7 +4043,9 @@
           '<button type="button" class="btn btn-secondary" style="height:36px" data-action="close-modal">취소</button>' +
           '<button type="button" class="btn btn-primary" style="height:36px"' + confirmAttrs + '>' + esc(confirmLabel) + '</button>' +
         '</div>' +
-      '</div>'
+      '</div>' +
+      // 요청자/담당자 검색 팝업은 이 모달 위에 겹쳐 뜬다(SCR-009 기술문의/제안의 "요청자").
+      renderPersonSearchLayer(state)
     );
   }
 

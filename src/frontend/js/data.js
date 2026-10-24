@@ -370,7 +370,7 @@
     // 근거: v3.dc.html "기술문의 / 제안" 모달 — 기술명(읽기전용)/요청자/문의·제안 내용 + 안내 문구
     techPrInquiry: { title: '기술문의 / 제안', confirm: '등록', size: 640, successMessage: '문의/제안이 전송되었습니다.', fields: [
       { label: '기술명', field: 'target', type: 'plaintext', value: '' },
-      { label: '요청자', type: 'plaintext', value: '자동화기술팀 / 김의왕 매니저' },
+      { label: '요청자', type: 'personPick', mode: 'req' },
       { label: '문의/제안 내용', field: 'content', required: true, type: 'textarea', hint: '※ 검토 후 메일/팀즈로 안내드리겠습니다.' },
     ] },
     ifError: { title: 'I/F 오류 로그', confirm: '닫기', size: 640, fields: [
@@ -389,9 +389,23 @@
     ['전장생기실', '전장생기팀'], ['파워모듈생산개발실', '파워모듈개발팀'], ['파워모듈생산개발실', '파워모듈공정팀'],
   ].map(function (d) { return { room: d[0], team: d[1], key: d[0] + '|' + d[1] }; });
 
+  // ---- [공통] 요청자 / 담당자 검색 ----
+  // 근거: design-import/생기포털 v3.dc.html rqIsOpen 블록의 ALL 목록.
+  // SCR-009 Tech PR 등록의 "요청자", SCR-014 기술동향 등록의 "담당자"가 같은 팝업을 공유한다
+  // (제목·이름 라벨만 mode에 따라 바뀌고, 선택값은 화면별로 따로 저장된다).
+  // 실 연동 시 사번/조직 기준 임직원 조회 API 응답으로 교체됩니다.
+  var personDirectory = [
+    { name: '김*기', pos: '책임매니저', dept: 'SF기술개발팀' },
+    { name: '김*왕', pos: '매니저', dept: '자동화기술팀' },
+    { name: '박*수', pos: '수석매니저', dept: '자동화기술팀' },
+    { name: '이*영', pos: '책임매니저', dept: '요소기술팀' },
+    { name: '최*훈', pos: '매니저', dept: '지능화기술팀' },
+  ];
+
   global.PNDES = global.PNDES || {};
   global.PNDES.TECH_PR_TYPE = TECH_PR_TYPE;
   global.PNDES.data = {
+    personDirectory: personDirectory,
     scr001Filters: scr001Filters, scr001FilterPlaceholders: scr001FilterPlaceholders,
     scr001SummaryCols: scr001SummaryCols, scr001SummaryRows: scr001SummaryRows,
     scr001ProcessDetail: scr001ProcessDetail,

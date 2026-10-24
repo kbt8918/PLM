@@ -900,6 +900,12 @@ table.data-table.sticky-head thead tr:nth-child(2) th { position: sticky; top: 3
 .tpa-chip-draft { font-size: 12px; padding: 2px 8px; background: var(--color-accent-50); border-color: #93C5FD; color: var(--color-accent-700); font-weight: 600; }
 .tpa-chip button { border: none; background: none; padding: 0; cursor: pointer; color: var(--color-text-faint); font-size: 11px; }
 .tpa-chip button:hover { color: #EF4444; }
+/* v3: 신규등록 팝업 기술태그 라벨의 "+" 버튼 */
+.tpa-th-inline { display: inline-flex; align-items: center; gap: 6px; }
+.tpa-th-add { width: 16px; height: 16px; border: none; background: #2f6fd6; color: #fff; font-size: 11px; font-weight: 700; line-height: 1; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+.tpa-th-add:hover { background: #2559ad; }
+/* v3: 기술태그 추가 팝업 설명 글자수 카운터 */
+.tpa-tag-desc-count { margin-top: 6px; font-weight: 400; font-size: 11px; color: #b0452f; }
 .tpa-suggest { border: 1px solid var(--color-border-strong); background: #F9FAFB; border-radius: 4px; padding: 2px 8px; color: var(--color-text-sub); cursor: pointer; font-size: 12px; }
 .tpa-suggest:hover { background: var(--color-accent-50); border-color: #93C5FD; }
 .tpa-topbar { gap: 8px; }
@@ -907,6 +913,10 @@ table.data-table.sticky-head thead tr:nth-child(2) th { position: sticky; top: 3
 .tpa-form-table { margin-bottom: 0; border-top-width: 1px; border-bottom-width: 1px; border-color: var(--color-border-strong); }
 .tpa-form-table { table-layout: fixed; }
 .tpa-form-table th { white-space: nowrap; width: 120px; }
+/* 일정 칸은 우선순위/노출여부와 한 줄을 나눠 쓰므로 날짜 입력이 칸 폭에 맞춰 줄어들게 한다 */
+.tpa-form-table .rm-date-range { min-width: 0; }
+.tpa-form-table .rm-date-range input { width: auto; min-width: 0; flex: 1; }
+
 .tpa-form-table input[type="text"], .tpa-form-table select, .tpa-form-table textarea { width: 100%; border: 1px solid var(--color-border-strong); border-radius: 4px; padding: 4px 8px; font-family: inherit; font-size: 13px; background: #fff; }
 .tpa-block { display: flex; align-items: flex-start; gap: 8px; }
 .tpa-block .tpa-form-table { flex: 1; }
@@ -932,6 +942,8 @@ table.data-table.sticky-head thead tr:nth-child(2) th { position: sticky; top: 3
 .tpa-tag-input-row .btn-outline-sm { white-space: nowrap; padding: 5px 12px; }
 .tpa-radio-row { display: flex; align-items: center; gap: 16px; }
 .tpa-radio-row label { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+/* v3: 노출여부 칸(150px)은 '노출/비노출'이 한 줄에 들어가도록 간격을 좁힌다 */
+.tpa-form-table .tpa-radio-row { gap: 12px; }
 
 /* ==================================================================
    SCR-011 mTRM 협의체
@@ -1367,6 +1379,17 @@ button.cm-round-btn { cursor: pointer; }
 
 /* ---- [공통] 메일알림 대상 검색 팝업 ---- */
 .mt-box { display: flex; flex-direction: column; max-height: 86vh; }
+/* [공통] 요청자/담당자 검색 팝업 (SCR-009 요청자 / SCR-014 담당자) */
+.ps-search-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-bottom: 12px; }
+.ps-search-row label { display: flex; align-items: center; gap: 8px; }
+.ps-search-row label span { font-weight: 600; color: var(--color-text-muted); white-space: nowrap; }
+.ps-search-row input { width: 160px; }
+.ps-search-row > button { margin-left: auto; }
+.ps-table { text-align: center; }
+.ps-row { cursor: pointer; }
+.ps-row:hover { background: var(--color-accent-50); }
+.ps-row-on { background: var(--color-accent-50); }
+
 .mt-search { padding: 16px 20px 12px; border-bottom: 1px solid var(--color-border); }
 .mt-search-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
 .mt-search-row label { display: flex; align-items: center; gap: 8px; }
@@ -1400,6 +1423,8 @@ button.cm-round-btn { cursor: pointer; }
 .mm-updhist-modal { max-width: 1024px; }
 .mm-updhist-actions { display: flex; justify-content: flex-end; margin-bottom: 16px; }
 .mm-updhist-table { min-width: 760px; text-align: center; }
+/* v3: mTRM 업데이트 이력 — 구분 "취소" 행 강조 */
+.mm-updhist-table .mm-updhist-cancel { color: #dc2626; font-weight: 700; }
 .mm-unlink { margin-left: auto; flex-shrink: 0; background: none; border: 0; padding: 0 2px; color: var(--color-text-faint); cursor: pointer; line-height: 1; }
 .mm-unlink:hover { color: #dc2626; }
 
