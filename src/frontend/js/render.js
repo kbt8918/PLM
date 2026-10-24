@@ -1829,7 +1829,8 @@
       return '<button type="button" class="mp-tab' + (tab === t[0] ? ' is-active' : '') + '" data-action="pp-tab" data-tab="' + t[0] + '">' + esc(t[1]) + '</button>';
     }).join('');
     var pane;
-    if (tab === 'basic') {
+    // 서브탭 4종은 소스에서 STD 탭 안에 있다(ppIsStd 블록).
+    if (tab === 'std') {
       var subsHtml = PP.subs.map(function (t) {
         return '<button type="button" class="pp-sub' + (sub === t[0] ? ' is-active' : '') + '" data-action="pp-sub" data-sub="' + t[0] + '">' + esc(t[1]) + '</button>';
       }).join('');
@@ -1842,28 +1843,52 @@
               '<td class="mp-left">' + esc(r[2]) + '</td><td class="mp-left">' + esc(r[3]) + '</td></tr>';
           }).join('') + '</tbody></table>';
       } else {
+        // 나머지 서브탭은 소스에서도 "부품공정배치계획 탭과 연동" 안내문만 표시한다.
         var subName = '';
         PP.subs.forEach(function (t) { if (t[0] === sub) subName = t[1]; });
-        inner = '<div class="mp-pane-empty">' + esc(subName) + ' 영역은 상세 설계 확정 후 연결됩니다.</div>';
+        inner = '<p class="mp-pane-title">' + esc(subName) + '</p>' +
+          '<div class="mp-pane-empty">' + esc(subName) + ' 화면은 부품공정배치계획 탭에서 확인할 수 있는 내용과 연동되어 표시됩니다.</div>';
       }
       pane = '<div class="pp-subs">' + subsHtml + '</div>' + inner;
+    } else if (tab === 'out') {
+      // 산출물 — 근거: 소스 ppIsOut 블록
+      pane = '<p class="mp-pane-title">산출물</p>' +
+        '<table class="tpa-table mp-grid-table"><thead><tr>' +
+          '<th>순번</th><th>산출물명</th><th>등록자</th><th>등록일</th>' +
+        '</tr></thead><tbody><tr><td>1</td><td class="mp-left">부품공정배치계획서.xlsx</td>' +
+        '<td>이*영</td><td class="mp-nowrap">2026.09.01</td></tr></tbody></table>';
     } else {
-      var label = '';
-      PP.tabs.forEach(function (t) { if (t[0] === tab) label = t[1]; });
-      pane = '<div class="mp-pane-empty">' + esc(label) + ' 영역은 상세 설계 확정 후 연결됩니다.</div>';
+      // 기본운영방안 — 근거: 소스 ppIsBasic 블록
+      pane = '<p class="mp-pane-title">기본운영방안</p>' +
+        '<table class="tpa-table mp-info-table"><tbody>' +
+          '<tr><th>공장</th><td>' + esc(d.plant) + '</td><th>라인</th><td>' + esc(d.line) + '</td></tr>' +
+          '<tr><th>제품</th><td>' + esc(d.product) + '</td><th>자종연식</th><td>' + esc(d.car) + '</td></tr>' +
+          '<tr><th>C/T(초)</th><td>' + esc(d.ct) + '</td><th>직접인원(명)</th><td>' + esc(d.direct) + '</td></tr>' +
+          '<tr><th>비고</th><td colspan="3"><textarea class="mp-textarea" rows="2"></textarea></td></tr>' +
+        '</tbody></table>';
     }
     return (
       '<div class="rm-modal-overlay" data-action="pp-close">' +
         '<div class="rm-modal-box mp-modal">' +
+          '<div class="pp-lang-bar">' +
+            '<span class="pp-lang is-active">한국어</span><span class="pp-lang">영어</span>' +
+            '<span class="pp-lang">중국어</span><span class="pp-lang">스페인어</span>' +
+            '<span class="pp-lang-sep">언어번역</span>' +
+            '<span class="pp-lang-note">저장시 자동 번역이 실행됩니다.</span>' +
+            '<button type="button" class="btn-outline-sm" data-action="pp-toast" data-m="번역기를 실행합니다.">번역기</button>' +
+          '</div>' +
           '<div class="rm-modal-header-navy"><h3>' + esc(title) + '</h3>' +
             '<button type="button" class="rm-modal-close" data-action="pp-close"><i class="fas fa-times"></i></button></div>' +
           '<div class="rm-modal-body">' +
-            '<table class="tpa-table mp-info-table"><tbody>' +
-              '<tr><th>공장</th><td>' + esc(d.plant) + '</td><th>라인</th><td>' + esc(d.line) + '</td></tr>' +
-              '<tr><th>제품</th><td>' + esc(d.product) + '</td><th>자종연식</th><td>' + esc(d.car) + '</td></tr>' +
-              '<tr><th>C/T(초)</th><td>' + esc(d.ct) + '</td><th>Rev</th><td>' + esc(d.rev) + '</td></tr>' +
-            '</tbody></table>' +
-            '<div class="mp-tabs">' + tabsHtml + '</div>' + pane +
+            '<div class="pp-tabbar">' +
+              '<div class="mp-tabs">' + tabsHtml + '</div>' +
+              '<div class="mp-pane-acts">' +
+                '<button type="button" class="btn-navy tpa-btn-sm" data-action="pp-toast" data-m="상신되었습니다.">상신</button>' +
+                '<button type="button" class="btn-outline-sm" data-action="pp-toast" data-m="그룹관리 팝업을 엽니다.">그룹관리</button>' +
+                '<button type="button" class="btn-outline-sm" data-action="pp-toast" data-m="전체삭제할 항목이 없습니다.">전체삭제</button>' +
+                '<button type="button" class="btn-outline-sm" data-action="pp-close">닫기</button>' +
+              '</div>' +
+            '</div>' + pane +
           '</div>' +
         '</div>' +
       '</div>'

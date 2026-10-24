@@ -1652,3 +1652,17 @@ button.cm-round-btn { cursor: pointer; }
 .mp-hist-table { margin-top: 10px; }
 .mp-sum-row td { background: #f1f3f7; font-weight: 700; }
 .mp-modal-foot { display: flex; justify-content: center; gap: 8px; margin-top: 16px; }
+
+/* 부품공정배치 상세 팝업 — 근거: 생기포털 v3.dc.html ppModalOpen 블록 */
+.pp-lang-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 6px 16px; background: #f1f3f7; border-bottom: 1px solid var(--color-border); font-size: 11px; }
+.pp-lang { color: #666; white-space: nowrap; }
+.pp-lang.is-active { color: #2f5aa8; font-weight: 700; }
+.pp-lang-sep { margin-left: 8px; font-weight: 700; color: #333; white-space: nowrap; }
+.pp-lang-note { color: var(--color-text-faint); white-space: nowrap; }
+.pp-lang-bar .btn-outline-sm { margin-left: auto; }
+.pp-tabbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+.pp-tabbar .mp-tabs { margin-bottom: 0; }
+.pp-person { font-weight: 400; font-size: 11px; color: #2f5aa8; margin-left: 6px; }
+.pp-ct-table { max-width: 240px; margin-bottom: 8px; }
+.pp-pm { display: inline-flex; gap: 2px; }
+.pp-pm span { width: 14px; height: 14px; border: 1px solid #aeb5c1; background: #fff; font-size: 10px; line-height: 12px; text-align: center; color: #555; }
