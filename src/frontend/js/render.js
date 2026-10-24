@@ -2031,6 +2031,81 @@
     return list;
   }
 
+  // 기술과제 계획등록/수정 폼 — 근거: 소스 ttIsForm 블록.
+  function renderTtFormModal(state) {
+    var f = state.ttForm || {};
+    var req = ' <span class="mm-req">*</span>';
+    var sel = function (k, opts) {
+      return '<select data-ttform-field="' + k + '">' + opts.map(function (o) {
+        return '<option value="' + esc(o) + '"' + (o === f[k] ? ' selected' : '') + '>' + esc(o) + '</option>';
+      }).join('') + '</select>';
+    };
+    var txt = function (k) {
+      return '<input type="text" data-ttform-field="' + k + '" value="' + esc(f[k] || '') + '" />';
+    };
+    var dt = function (k) {
+      return '<input type="date" data-ttform-field="' + k + '" value="' + esc(f[k] || '') + '" />';
+    };
+    return (
+      '<div class="rm-modal-overlay" data-action="tt-close">' +
+        '<div class="rm-modal-box mp-modal">' +
+          '<div class="rm-modal-header-navy"><h3>' + (state.ttFormEdit ? '기술과제 계획수정' : '기술과제 계획등록') + '</h3>' +
+            '<button type="button" class="rm-modal-close" data-action="tt-close"><i class="fas fa-times"></i></button></div>' +
+          '<div class="rm-modal-body">' +
+            '<div class="mp-pane-acts tt-form-acts">' +
+              '<button type="button" class="btn-navy tpa-btn-sm" data-action="tt-form-save">저장</button>' +
+              '<button type="button" class="btn-outline-sm" data-action="tt-close">닫기</button>' +
+            '</div>' +
+            '<table class="tpa-table mp-info-table tt-form-table"><tbody>' +
+              '<tr><th>담 당 자' + req + '</th><td colspan="3"><div class="mp-cell-pair">' +
+                sel('dept', ['생기개발실', '렘프생기실', '금형개발실']) +
+                sel('team', ['SF기술개발팀', '금형기술팀']) +
+                sel('writer', ['이*영', '김*근', '박*필']) + '</div></td></tr>' +
+              '<tr><th>과 제 명' + req + '</th><td colspan="3">' + txt('name') + '</td></tr>' +
+              '<tr><th>과제 수행목적<br />(배경)' + req + '</th><td colspan="3">' +
+                '<textarea class="mp-textarea" rows="3" data-ttform-field="purpose">' + esc(f.purpose || '') + '</textarea></td></tr>' +
+              '<tr><th>과제 유형' + req + '</th><td>' + sel('type', ['mTRM연계', 'PTRM연계', '생산성개선']) + '</td>' +
+                '<th>추진범위' + req + '</th><td>' + sel('scope', ['선행개발', '양산적용']) + '</td></tr>' +
+              '<tr><th>양산목표</th><td colspan="3"><div class="mp-cell-pair tt-goal">' +
+                '<span>공장</span>' + sel('plant', ['', 'A공장', 'B공장']) +
+                '<span>라인</span>' + sel('line', ['', '1라인', '2라인']) +
+                '<span>자종</span>' + sel('car', ['', '공통', '전용']) +
+                '<span>SOP</span>' + dt('sop') + '</div></td></tr>' +
+              '<tr><th>대상 제품' + req + '</th><td colspan="3">' + sel('product', ['공통', '금형', '사출']) + '</td></tr>' +
+              '<tr><th>개발효과' + req + '</th><td colspan="3">' +
+                '<table class="tpa-table tt-eff-table"><tbody>' +
+                  '<tr><th>유형</th><td>' + sel('effType', ['생산성', '품질', '원가']) + '</td></tr>' +
+                  '<tr><th>정량 목표</th><td>' + txt('quant') + '</td></tr>' +
+                  '<tr><th>정성 목표</th><td>' + txt('qual') + '</td></tr>' +
+                '</tbody></table></td></tr>' +
+              '<tr><th>투 자 비(억원)</th><td colspan="3">' + txt('invest') + '</td></tr>' +
+              '<tr><th>투자코드(WBS 1Lv)</th><td colspan="3">' + txt('wbs') + '</td></tr>' +
+              '<tr><th>P/TRM 연계' + req + '</th><td colspan="3"><div class="mp-cell-pair">' +
+                sel('ptrmKind', ['연계', '자체']) + txt('ptrmCode') + '</div></td></tr>' +
+              '<tr><th>추진일정' + req + '</th><td colspan="3">' +
+                '<table class="tpa-table mp-grid-table"><thead><tr>' +
+                  '<th style="width:56px">선택</th><th>추진항목</th><th style="width:160px">계획일자</th>' +
+                '</tr></thead><tbody>' +
+                  '<tr><td>1</td><td class="mp-left">계획보고</td><td>' + dt('plan') + '</td></tr>' +
+                  '<tr><td>2</td><td class="mp-left">완료보고</td><td>' + dt('done') + '</td></tr>' +
+                '</tbody></table></td></tr>' +
+            '</tbody></table>' +
+            '<div class="tt-file-row">' +
+              '<div class="tt-file-label">과 제<br />정의서</div>' +
+              '<div class="tt-file-body">' +
+                '<span class="tpa-muted">[총 0개] KB / 100MB</span>' +
+                '<div class="mp-pane-acts">' +
+                  '<button type="button" class="btn-outline-sm" data-action="pm-toast" data-m="템플릿을 내려받습니다.">템플릿 다운로드</button>' +
+                  '<button type="button" class="btn-outline-sm" data-action="pm-toast" data-m="파일찾기 창을 엽니다.">파일찾기</button>' +
+                '</div>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>'
+    );
+  }
+
   function renderTtDetailModal(state) {
     var d = null;
     TTP.rows.forEach(function (r) { if (r.id === state.ttModalId) d = r; });
@@ -2051,20 +2126,29 @@
                 '<td class="mp-left">' + esc(a.who) + '</td><td class="mp-nowrap">' + esc(a.at) + '</td>' +
                 '<td class="mp-left">' + esc(a.memo) + '</td></tr>';
             }).join('')
-          : '<tr><td colspan="5" class="mm-empty">결재 이력이 없습니다.</td></tr>') +
+          : '<tr><td colspan="5" class="mm-empty">결재 이력이 없습니다. (작성중)</td></tr>') +
         '</tbody></table>';
     } else {
       var row = function (a, b, c, dd) {
         return '<tr><th>' + esc(a) + '</th><td>' + esc(b) + '</td><th>' + esc(c) + '</th><td>' + esc(dd) + '</td></tr>';
       };
+      // 근거: 소스 ttShowDetailTab — 필드 순서/라벨을 그대로 따르고 추진일정은 별도 표로 둔다.
       pane = '<table class="tpa-table mp-info-table tt-detail-table"><tbody>' +
-        row('REV', d.rev, '상태', d.status) +
-        row('담당자', (d.dept || '렘프생기실') + ' ' + d.team + ' ' + d.writer, '등록일', d.plan) +
+        row('Rev', d.rev, '상태', d.status) +
+        '<tr><th>담당자</th><td colspan="3" class="mp-left">' + esc((d.dept || '렘프생기실') + ' ' + d.team + ' ' + d.writer) + '</td></tr>' +
+        '<tr><th>등록일자</th><td colspan="3" class="mp-left">' + esc(d.plan) + '</td></tr>' +
         '<tr><th>과제명</th><td colspan="3" class="mp-left">' + esc(d.name) + '</td></tr>' +
-        row('과제 유형', d.type, '추진범위', d.scope) +
-        '<tr><th>수행목적</th><td colspan="3" class="mp-left">' + esc(d.purpose || d.name) + '</td></tr>' +
-        row('정량목표', d.quant || '-', 'P/TRM', d.ptrm) +
-        row('계획보고', d.plan, '완료보고', d.done) +
+        row('과제유형', d.type, '추진범위', d.scope) +
+        '<tr><th>과제 수행목적<br />(배경)</th><td colspan="3" class="mp-left">' + esc(d.purpose || d.name) + '</td></tr>' +
+        '<tr><th>정량 목표</th><td colspan="3" class="mp-left">' + esc(d.quant || '-') + '</td></tr>' +
+        row('P/TRM', d.ptrm, '투자비(억원)', d.invest || '') +
+      '</tbody></table>' +
+      '<p class="mp-pane-title tt-sched-title">추진일정</p>' +
+      '<table class="tpa-table mp-grid-table"><thead><tr>' +
+        '<th style="width:56px">No</th><th>추진항목</th><th style="width:140px">계획일자</th>' +
+      '</tr></thead><tbody>' +
+        '<tr><td>1</td><td class="mp-left">계획보고</td><td class="mp-nowrap">' + esc(d.plan) + '</td></tr>' +
+        '<tr><td>2</td><td class="mp-left">완료보고</td><td class="mp-nowrap">' + esc(d.done) + '</td></tr>' +
       '</tbody></table>';
     }
     return (
@@ -2073,7 +2157,13 @@
           '<div class="rm-modal-header-navy"><h3>기술과제 계획상세 (Rev:' + esc(d.rev) + ')</h3>' +
             '<button type="button" class="rm-modal-close" data-action="tt-close"><i class="fas fa-times"></i></button></div>' +
           '<div class="rm-modal-body">' +
-            '<div class="mp-tabs">' + tabsHtml + '</div>' + pane +
+            '<div class="pp-tabbar">' +
+              '<div class="mp-tabs">' + tabsHtml + '</div>' +
+              '<div class="mp-pane-acts">' +
+                '<button type="button" class="btn-navy tpa-btn-sm" data-action="pm-toast" data-m="수정 화면으로 전환합니다.">수정</button>' +
+                '<button type="button" class="btn-outline-sm" data-action="tt-close">닫기</button>' +
+              '</div>' +
+            '</div>' + pane +
           '</div>' +
         '</div>' +
       '</div>'
@@ -2157,6 +2247,7 @@
           '<button type="button" class="pp-pg" data-action="tt-page" data-page="' + (page + 1) + '">&rsaquo;</button>' +
           '<button type="button" class="pp-pg" data-action="tt-page" data-page="' + pages + '">&raquo;</button>' +
         '</div>' +
+        (state.ttFormOpen ? renderTtFormModal(state) : '') +
         (state.ttModalId ? renderTtDetailModal(state) : '') +
       '</div>'
     );

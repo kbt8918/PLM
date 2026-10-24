@@ -236,6 +236,9 @@
     ttSel: {}, // 행 체크 상태(v3 ttSel)
     ttModalId: null, // 상세 팝업 대상 행 id
     ttTab: 'detail', // 상세 팝업 탭(기술과제 상세 / 결재현황)
+    ttFormOpen: false, // 기술과제 계획등록/수정 폼(v3 ttIsForm)
+    ttFormEdit: false,
+    ttForm: $.extend({}, global.PNDES.mock.tt.FORM0),
     // 마스터 2종(표준공정/표준 작업명) 편집 상태 — F:필터입력, A:확정필터, extra:신규행,
     // del:삭제된 id, chk:체크, use:사용여부 덮어쓰기 (v3 state.sm)
     sm: {
@@ -993,8 +996,17 @@
           break;
         case 'tt-close':
           if ($el.hasClass('rm-modal-overlay') && e.target !== this) break;
-          setState({ ttModalId: null });
+          setState({ ttModalId: null, ttFormOpen: false });
           break;
+        case 'tt-form-save': {
+          // 소스 ttSave: 과제명/수행목적은 필수
+          var tf = state.ttForm || {};
+          if (!String(tf.name || '').trim()) { showToast('과제명을 입력하세요.'); break; }
+          if (!String(tf.purpose || '').trim()) { showToast('과제 수행목적(배경)을 입력하세요.'); break; }
+          setState({ ttFormOpen: false });
+          showToast('저장되었습니다.');
+          break;
+        }
         case 'tt-tab':
           setState({ ttTab: String($el.data('tab')) });
           break;
@@ -1020,7 +1032,10 @@
         case 'tt-act': {
           var ttLabel = String($el.data('label'));
           if (ttLabel === 'EXCEL') { showToast('조회 결과를 엑셀로 내려받습니다.'); break; }
-          if (ttLabel === '등록') { showToast('기술과제 계획등록 팝업을 엽니다.'); break; }
+          if (ttLabel === '등록') {
+            setState({ ttFormOpen: true, ttFormEdit: false, ttForm: $.extend({}, TTM.FORM0) });
+            break;
+          }
           var ttIds = Object.keys(state.ttSel).filter(function (k) { return state.ttSel[k]; });
           showToast(ttIds.length ? ttIds.length + '건을 ' + ttLabel + ' 처리했습니다.' : '대상 과제를 선택하세요.');
           break;
@@ -1647,6 +1662,13 @@
       var patch = {};
       patch[key] = $(this).val();
       state.smPopF = $.extend({}, state.smPopF, patch);
+    });
+
+    $(document).on('input change', '[data-ttform-field]', function () {
+      var key = $(this).data('ttformField');
+      var patch = {};
+      patch[key] = $(this).val();
+      state.ttForm = $.extend({}, state.ttForm, patch);
     });
 
     $(document).on('input change', '[data-tt-field]', function () {

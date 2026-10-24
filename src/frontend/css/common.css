@@ -1666,3 +1666,17 @@ button.cm-round-btn { cursor: pointer; }
 .pp-ct-table { max-width: 240px; margin-bottom: 8px; }
 .pp-pm { display: inline-flex; gap: 2px; }
 .pp-pm span { width: 14px; height: 14px; border: 1px solid #aeb5c1; background: #fff; font-size: 10px; line-height: 12px; text-align: center; color: #555; }
+.tt-sched-title { margin-top: 14px; }
+
+/* 기술과제 계획등록/수정 폼 — 근거: 생기포털 v3.dc.html ttIsForm */
+.tt-form-acts { justify-content: flex-end; margin-bottom: 10px; }
+.tt-form-table th { width: 140px; white-space: nowrap; }
+.tt-form-table input[type="text"], .tt-form-table select, .tt-form-table input[type="date"] { height: 24px; border: 1px solid #aeb5c1; font-size: 11px; padding: 0 6px; min-width: 0; }
+.tt-form-table > tbody > tr > td > input[type="text"] { width: 100%; }
+.tt-goal { align-items: center; flex-wrap: wrap; }
+.tt-goal span { white-space: nowrap; font-size: 11px; color: #555; }
+.tt-eff-table { max-width: 420px; }
+.tt-eff-table th { width: 90px; background: #f6f7f9; }
+.tt-file-row { display: flex; align-items: stretch; border: 1px solid var(--color-border); margin-top: 12px; }
+.tt-file-label { width: 140px; flex-shrink: 0; background: #eef0f4; border-right: 1px solid var(--color-border); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; text-align: center; padding: 8px; }
+.tt-file-body { flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 12px; flex-wrap: wrap; }
