@@ -1595,12 +1595,13 @@
         ['공수비교', '공수비교 팝업을 엽니다.', 'btn-navy tpa-btn-sm'],
         ['조공서 도면번호 입력', '도면번호 입력 팝업을 엽니다.', 'btn-navy tpa-btn-sm'],
         ['첨부파일', '첨부파일 팝업을 엽니다.', 'btn-navy tpa-btn-sm'],
+        ['전체삭제', '전체삭제할 항목이 없습니다.', 'btn-outline-sm'],
       ].map(function (a) {
         return '<button type="button" class="' + a[2] + '" data-action="mp-toast" data-m="' + esc(a[1]) + '">' + esc(a[0]) + '</button>';
       }).join('');
       paneHtml = '<div class="mp-pane-head"><p class="mp-pane-title">공정배치계획</p>' +
         '<div class="mp-pane-acts">' + layoutActs + '</div></div>' +
-        '<div class="mp-colchks">' + checks + '</div>' +
+        '<div class="mp-colchks"><span class="mp-colchks-label">열 보기</span>' + checks + '</div>' +
         '<div class="mp-scroll"><table class="tpa-table mp-grid-table"><thead><tr>' + heads + '</tr></thead>' +
         '<tbody>' + gridRows + '</tbody></table></div>';
     } else if (tab === 'basic') {
@@ -1836,12 +1837,27 @@
       }).join('');
       var inner;
       if (sub === 'plan') {
-        inner = '<table class="tpa-table mp-grid-table"><thead><tr>' +
-          '<th>공정</th><th>표준공정명</th><th>공정명</th><th>설비명</th></tr></thead><tbody>' +
-          PP.plan.map(function (r) {
-            return '<tr><td>' + esc(r[0]) + '</td><td class="mp-left">' + esc(r[1]) + '</td>' +
-              '<td class="mp-left">' + esc(r[2]) + '</td><td class="mp-left">' + esc(r[3]) + '</td></tr>';
-          }).join('') + '</tbody></table>';
+        // 부품공정배치계획 — 근거: 소스 ppIsPlan 블록(행 추가/삭제 토글 2열 + 10컬럼)
+        var pm2 = '<td><span class="pp-pm"><span>+</span><span>&minus;</span></span></td>';
+        inner = '<div class="mp-pane-head">' +
+            '<p class="mp-pane-title">부품공정배치계획 <span class="pp-person">1명</span></p>' +
+            '<div class="mp-pane-acts">' +
+              '<button type="button" class="btn-navy tpa-btn-sm" data-action="pp-toast" data-m="저장되었습니다.">저장</button>' +
+              '<button type="button" class="btn-excel" data-action="pp-toast" data-m="엑셀로 내려받습니다.">엑셀</button>' +
+              '<button type="button" class="btn-outline-sm" data-action="pp-toast" data-m="품번 포함 엑셀로 내려받습니다.">엑셀(품번포함)</button>' +
+            '</div>' +
+          '</div>' +
+          '<table class="tpa-table mp-info-table pp-ct-table"><tbody><tr><th>C/T</th><td>' + esc(d.ct) + '</td></tr></tbody></table>' +
+          '<div class="mp-scroll"><table class="tpa-table mp-grid-table"><thead><tr>' +
+            '<th></th><th>AMPS</th><th>그룹</th><th>공정</th><th>순서</th>' +
+            '<th>표준 공정명</th><th>공정명</th><th>설비명</th><th>작업번호</th><th>작업명</th>' +
+          '</tr></thead><tbody>' +
+          PP.plan.map(function (r, i) {
+            return '<tr>' + pm2 + pm2 +
+              '<td>' + (i + 1) + '</td><td>' + esc(r[0]) + '</td><td>' + (i + 1) + '</td>' +
+              '<td class="mp-left">' + esc(r[1]) + '</td><td class="mp-left">' + esc(r[2]) + '</td>' +
+              '<td class="mp-left">' + esc(r[3]) + '</td><td></td><td></td></tr>';
+          }).join('') + '</tbody></table></div>';
       } else {
         // 나머지 서브탭은 소스에서도 "부품공정배치계획 탭과 연동" 안내문만 표시한다.
         var subName = '';
@@ -2220,12 +2236,17 @@
           '<tr>' + th('과제 유형') + '<td>' + ttSel('type', F.type, ['mTRM연계', 'PTRM연계', '생산성개선']) + '</td>' +
             th('추진범위') + '<td>' + ttSel('scope', F.scope, ['선행개발', '양산적용']) + '</td>' +
             th('P/TRM') + '<td>' + ttSel('ptrm', F.ptrm, ['자체', '연계']) + '</td></tr>' +
-          '<tr>' + th('추진일정') + '<td colspan="3"><div class="mp-cell-pair">' +
+          '<tr>' + th('담당/작성') + '<td>' + ttSel('writer', F.writer, ['담당', '작성']) + '</td>' +
+            th('기간') + '<td colspan="3"><div class="mp-cell-pair">' +
+              '<select data-tt-field="period" class="mp-sel-sm">' +
+                ['전체', '계획보고', '완료보고'].map(function (o) {
+                  return '<option value="' + esc(o) + '"' + (o === F.period ? ' selected' : '') + '>' + esc(o) + '</option>';
+                }).join('') + '</select>' +
               '<input type="date" data-tt-field="from" value="' + esc(F.from) + '" />' +
               '<span class="tt-tilde">~</span>' +
               '<input type="date" data-tt-field="to" value="' + esc(F.to) + '" />' +
-            '</div></td>' +
-            th('과제명') + '<td><input type="text" data-tt-field="name" value="' + esc(F.name) + '" /></td></tr>' +
+            '</div></td></tr>' +
+          '<tr>' + th('과제명') + '<td colspan="5"><input type="text" data-tt-field="name" value="' + esc(F.name) + '" /></td></tr>' +
         '</table>' +
         '<div class="mp-filter-acts">' +
           '<button type="button" class="btn-dark tpa-btn-sm" data-action="tt-search"><i class="fas fa-search" style="font-size:10px"></i>조회</button>' +
