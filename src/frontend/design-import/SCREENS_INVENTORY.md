@@ -1,71 +1,94 @@
-# 생기포털 v3 화면·팝업 인벤토리
+# 생기포털 v3 화면·팝업 인벤토리 (최신)
 
 기준 파일: `생기포털 v3.dc.html` (소스 내 `<!-- VIEW: ... -->` 주석 기준). Claude Code는 이 목록을 체크리스트로 사용하세요.
+갱신일: 2026-10-24
 
-## 화면 (VIEW)
-| # | 화면 | 소스 상태값 |
-|---|---|---|
-| 1 | 메인 (포털 홈, My Job) | isTodoMain |
-| 2 | 생기포털 메인화면 (메뉴구조) | isPortalMain |
-| 3 | 생기/생산 부품·모듈 공정배치 관리 | isBpMgmt |
-| 4 | 제품별 표준공정 마스터 | isSmStd |
-| 5 | 표준 작업명 관리 마스터 | isSmWork |
-| 6 | 부품공정배치 관리 (생기/생산) | isPpList |
-| 7 | 모듈공정배치 관리 (생기/생산) | isMpList |
-| 8 | [모듈] 공장별 현황 비교 | isModCmp |
-| 9 | [부품] 공장별 현황 비교 | isPartCmp |
-| 10 | 부품 공정 자동화 현황 | isPartAuto |
-| 11 | 통합 로드맵 개요 (mTRM 통합로드맵) | isRoadmapOverview |
-| 12 | 상세과제 로드맵 관리 | isRoadmapMgmt |
-| 13 | 통합 로드맵 차트 | isRoadmapChart |
-| 14 | mTRM 협의체 | isMtrmCouncil |
-| 15 | mTRM 관리 | isMtrmMgmt |
-| 16 | 기술과제 계획관리 | isTtPlan |
-| 17 | 기술과제 관리 | isTechTask |
-| 18 | 기술동향 (목록 + 상세) | isTechTrend |
-| 19 | 생산기술 Tech PR 관리자 | isTechPrAdmin |
-| 20 | 생산기술 Tech PR | isTechPr |
-| 21 | 업무프로세스 가이드 | isGuide |
-| 22 | 화면 와이어프레임 | isWireframe |
-| 23 | 표준공정 마스터 관리 | isStdMaster |
-| 24 | 메인 대시보드 | isMainDash |
-| 25 | 모듈 공정 자동화 현황 | isModuleAuto |
-| 26 | 모듈 표준 작업명 관리 | isModuleTask |
-| 27 | I/F 실행결과 관리 | isIfResult |
-| 28 | 기타 메뉴 공통 안내(준비중) | isFallback |
+## 1. 상단 메뉴 (GNB) — 소스 상수 `GNB_MENUS`
+11개 메뉴, 클릭 시 하위 패널이 열립니다. `*` = 화면 연결됨, 나머지는 클릭 시 "준비중" 안내.
 
-## 팝업 / 모달
+| 메뉴 | 구조 |
+|---|---|
+| My Job | 메인화면으로 이동 |
+| 설비 통합 관리 / 기준정보 / 자동화 현황 / 생산제조기술 공유 | 하위 없음 (준비중) |
+| 공법 관리 | 탭: 조립공법시스템 / DEPS / DEPS 설계 → 7칼럼 (엔드아이템 / 조공서 / 모듈공정배치 / 부품공정배치 / 조공서 현황 / 모델 현황 / 부품 현황). 연결 화면: 생기·생산 모듈공정배치 관리*, 모듈 공장별 현황비교*, 생기·생산 부품공정배치 관리*, 부품 공장별 현황비교* |
+| 업무지표현황 | 수익성개선 / 기술과제 / 초기유동관리 → 각각 계획관리·실적관리. 연결 화면: 기술과제 > 계획관리* |
+| 생기표준 / 프로젝트 / 파이롯트 / 데이터맵 | 하위 없음 (준비중) |
+| mTRM | 로드맵: mTRM*(통합로드맵), mTRM 협의체*, mTRM 관리* / 생산기술 Tech PR*: 생산기술 Tech PR 관리* / 기술공유: 기술동향* |
+| 관리자 | 6칼럼: 시스템 관리 / 기초정보 관리 / 설비기초정보 / 공법기본관리 / 이벤트 관리 / 도장DB공통관리. 연결 화면: 공법기본관리 > 제품별 표준공정 마스터*, 표준 작업명 관리 마스터* |
+
+메인화면 바로가기 9개(설비 통합 관리, 기준정보, 공법 관리, 업무지표현황, 생기표준, 프로젝트, 파이로트, 데이터맵, 관리자)는 해당 GNB 메뉴를 펼칩니다.
+
+## 2. 화면 (VIEW) — 메뉴에서 열리는 화면
+| # | 화면 | 소스 상태값 | 진입 메뉴 |
+|---|---|---|---|
+| 1 | 메인 (포털 홈, My Job) | isTodoMain | My Job / 로고 |
+| 2 | 생기/생산 부품·모듈 공정배치 관리 | isBpMgmt | 공법 관리 |
+| 3 | 부품공정배치 관리 (생기/생산) | isPpList | 공법 관리 |
+| 4 | 모듈공정배치 관리 (생기/생산) | isMpList | 공법 관리 |
+| 5 | 모듈 공장별 현황 비교 | isModCmp | 공법 관리 |
+| 6 | 부품 공장별 현황 비교 | isPartCmp | 공법 관리 |
+| 7 | 제품별 표준공정 마스터 | isSmStd | 관리자 > 공법기본관리 |
+| 8 | 표준 작업명 관리 마스터 | isSmWork | 관리자 > 공법기본관리 |
+| 9 | 기술과제 계획관리 | isTtPlan | 업무지표현황 > 기술과제 |
+| 10 | 통합 로드맵 (mTRM) | isRoadmapOverview | mTRM > 로드맵 |
+| 11 | mTRM 협의체 | isMtrmCouncil | mTRM > 로드맵 |
+| 12 | mTRM 관리 | isMtrmMgmt | mTRM > 로드맵 |
+| 13 | 생산기술 Tech PR | isTechPr | mTRM > 생산기술 Tech PR |
+| 14 | 생산기술 Tech PR 관리자 | isTechPrAdmin | mTRM > 생산기술 Tech PR |
+| 15 | 기술동향 (목록 + 상세) | isTechTrend | mTRM > 기술공유 |
+| 16 | 기타 메뉴 공통 안내(준비중) | isFallback | 연결 안 된 모든 메뉴 |
+
+### 소스에는 있지만 현재 메뉴에서 열 수 없는 화면 (서비스 포함 여부 확인 필요)
+상세과제 로드맵 관리(isRoadmapMgmt), 통합 로드맵 차트(isRoadmapChart), 기술과제 관리(isTechTask), 생기포털 메인화면 메뉴구조(isPortalMain), 부품 공정 자동화 현황(isPartAuto), 표준공정 마스터 관리(isStdMaster), 메인 대시보드(isMainDash), 모듈 공정 자동화 현황(isModuleAuto), 모듈 표준 작업명 관리(isModuleTask), I/F 실행결과 관리(isIfResult), 업무프로세스 가이드(isGuide), 화면 와이어프레임(isWireframe)
+
+## 3. 팝업 / 모달
 | 소속 | 팝업 | 상태값 |
 |---|---|---|
-| 공통 | 메일알림 대상 검색 | mtIsOpen |
-| 공통 | 이메일 공유 | emailModalOpen |
-| 공통 | 동영상 팝업 | modalOpen |
-| 부품 공정 자동화 | 공정 등록 | regModalOpen |
 | 공정배치 | 공정배치 등록/상세 | bpModalOpen |
-| 표준공정 마스터 | 표준공정 등록 | smPopOpen |
-| 표준공정 마스터 관리 | 표준공정 등록/수정 | masterModalOpen |
 | 부품공정배치 | 작성 팝업 | ppModalOpen |
 | 모듈공정배치 | 상세 팝업 | mpModalOpen |
-| 통합 로드맵 | 로드맵 등록 | roadmapModalOpen |
-| 통합 로드맵 | 버전 변경 내용 | rmVerModalOpen |
-| 상세과제 로드맵 | 상세과제 등록/수정 | taskRoadmapModalOpen |
-| 로드맵 차트 | 과제 상세 / 과제 추가 | chartTaskDetail / chartAddModalOpen |
-| mTRM 협의체 | 협의체 등록 | mtrmModalOpen |
-| mTRM 관리 | mTRM 등록/수정, 기술태그 추가, 상세 과제, 업데이트 이력, 버전관리, 요약 | mtrmMgmtModalOpen / tagAddOpen / subTaskDetail / updHistOpen / versionMgmtOpen / mtrmSummaryOpen |
-| mTRM 관리 | mTRM 정보 상세 | mmInfoDetailOpen |
-| mTRM 관리 | 분과 신규등록/변경 | deptHeadOpen |
-| mTRM 관리 | 조회 선택(협의체/연계 mTRM) | pickerOpen |
+| 표준공정 마스터 | 표준공정 등록 | smPopOpen |
+| 표준 작업명 | 표준 작업명 등록 | taskModalOpen |
 | 기술과제 계획관리 | 계획 상세 / 등록·수정 | ttModalOpen |
-| 기술동향 | 등록 모달 | techTrendModalOpen |
+| 통합 로드맵 | 버전 변경 내용 (상세조회의 버전 셀렉트로 Ver. 0 선택 후 배너의 "변경 내용" 버튼으로 열림) | rmVerModalOpen |
+| 통합 로드맵 | **mTRM 업데이트 이력** (상단 업데이트일자 드롭다운의 날짜를 선택할 때 열림) | updHistOpen |
+| 통합 로드맵 | 로드맵 등록 | roadmapModalOpen |
+| mTRM 협의체 | **mTRM 협의체 신규등록** (전달/닫기, 사전안건 표, 첨부) | mtrmModalOpen |
+| mTRM 협의체 | mTRM 협의체 상세현황 | (협의체 목록 클릭) |
+| mTRM 관리 | mTRM 등록/수정 | mtrmMgmtModalOpen |
+| mTRM 관리 | **mTRM 정보 상세** | mmInfoDetailOpen |
+| mTRM 관리 | **분과 신규등록/변경** | deptHeadOpen |
+| mTRM 관리 | **기술태그 추가** | tagAddOpen |
+| mTRM 관리 | **상세 과제 로드맵** (이미지 영역, 현재 변경 이력, 첨부파일) | subTaskDetail |
+| mTRM 관리 | mTRM 업데이트 이력(버튼명 "버전관리")—통합 로드맵과 동일 팝업. 표에 "데이터가 없습니다." 안내 줄 + No 1 신규 한 줄 | updHistOpen |
+| mTRM 관리 | 버전관리 팝업 (열 수 있는 버튼 없음) | versionMgmtOpen |
+| mTRM 관리 | 요약 | mtrmSummaryOpen |
+| mTRM 관리 | **조회 선택** (결정 협의체 / 연계 mTRM 검색) | pickerOpen |
+| mTRM 관리 | **연관과제 검색** (담당자·과제명 선택, 조회, 선택/닫기) | (기술과제등록 목록 돋보기) |
+| 공통 | **요청자 검색 / 담당자 검색** (부서·이름 검색, 라디오 선택) | rqIsOpen |
+| 공통 | 메일알림 대상 검색 | mtIsOpen |
+| 기술동향 | 등록 모달 (담당자 돋보기 → 담당자 검색) | techTrendModalOpen |
+| 기술동향 | **신규기술 동향 알림메일** (저장 후 열림) | trendMailOpen |
+| 기술동향 | 카드 상세 | techTrendDetail |
+| Tech PR 관리자 | **Tech PR 신규등록** (연관과제 3블록, 기술태그, 표출 영상/이미지 1~3) | techPrAdminModalOpen |
+| Tech PR | Tech PR 상세 | techPrDetailOpen |
+| Tech PR | 연관과제 검색 | lkOpen |
+| Tech PR | **기술문의 / 제안** | techPrModalOpen |
 | 메인 대시보드 | 최근 기술동향 상세 | dashTechTrendDetailOpen |
-| Tech PR 관리자 | 자료 등록/수정 | techPrAdminModalOpen |
-| Tech PR | 상세 / 연관과제 검색 / 기술 문의·제안 | techPrDetailOpen / lkOpen / techPrModalOpen |
-| 모듈 표준 작업명 | 표준 작업명 등록 | taskModalOpen |
+| 기타 | 이메일 공유 / 공정 등록 / 동영상 팝업 | emailModalOpen / regModalOpen / modalOpen |
 
-## 상단 메뉴 (GNB)
-소스의 `GNB_MENUS` 상수와 `GNB_VIEW_OWNER` 매핑 참고. 화면이 연결되지 않은 메뉴는 클릭 시 "준비중" 안내가 뜹니다.
+굵게 표시한 팝업은 최근 사진 기준으로 다시 만든 것입니다. 해당 팝업의 필드·버튼·문구는 소스를 기준으로 구현하세요.
 
-## 주의
-- 28번 "화면 와이어프레임"과 21번 "업무프로세스 가이드"는 프로토타입용 참고 화면입니다. 서비스에 포함할지 확인이 필요합니다.
-- 3번 "버전관리 팝업"은 코드에 있지만 현재 열 수 있는 버튼이 없습니다.
-- 모든 목록·숫자는 샘플 데이터입니다.
+## 4. 이번 갱신에서 바뀐 주요 동작
+- Tech PR 관리자 목록: 분과/BU/적용공장에 값이 2개 이상이면 "AI외 N건"으로 표시하고 툴팁으로 전체 값 노출
+- 기술동향 등록 저장 → 알림메일 미리보기 팝업 열림
+- 상세 과제 로드맵 팝업: 동영상 영역 제거, 일정변경 이력 줄 제거, "현재 변경 이력"은 분과·담당자 변경 / mTRM 변경 2줄
+- 통합 로드맵 상단: "버전" 영역 삭제. "업데이트일자"는 커스텀 드롭다운 — 처음에 최근 일자(2021-10-19 15:30:25) 표시, 누르면 날짜 목록, **목록의 날짜를 선택할 때만** mTRM 업데이트 이력 팝업이 열리고 선택한 날짜가 칸에 표시됨
+- 통합 로드맵: 상세조회의 버전 셀렉트(Ver. 1/Ver. 0)는 유지. Ver. 0 선택 시 이전 버전 표시 + 노란 배너("변경 내용"/"현재 버전 보기") + 변경 바 점선 외곽선
+- mTRM 업데이트 이력 팝업: 안내 줄 "데이터가 없습니다." + No 1 신규 1줄(이전 취소·변경 예시 줄은 제거)
+- 요청자 검색 팝업을 담당자 검색(기술동향 등록)에도 재사용
+
+## 5. 주의
+- 모든 목록·숫자는 샘플 데이터입니다. API 연동 시 mock 파일로 분리하세요.
+- 위 "열 수 없는 화면" 12개와 버전관리 팝업은 서비스 포함 여부를 먼저 확인하세요.
+- 이미지/동영상 자리는 `image-slot` 컴포넌트입니다. 실제 서비스에서는 업로드 파일로 대체해야 합니다.
