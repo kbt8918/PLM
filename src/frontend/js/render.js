@@ -851,85 +851,125 @@
     return bar;
   }
 
-  function rmMilestoneHtml(label, done) {
+  // 막대 위치/겹침/진행단계 계산은 js/roadmap-layout.js(월 컬럼 기준 순수 함수)에 위임한다.
+  var RML = global.PNDES.rmLayout;
+  // 근거: v3.dc.html rmTodayStyle — 오늘선 위치는 2025-01 기준 22.75개월(소스 고정값)
+  var RM_TODAY_MONTHS = 22.75;
+  var RM_PHASE_TITLE = { P1: 'P1 · 계획 시작·완료일정 등록', P2: 'P2 · 실적(계획) 시작일정 등록', P3: 'P3 · 실적(완료) 일정 등록', P4: 'P4 · 양산 적용 계획 체크' };
+  var RM_TIP_PHASE_NAME = { P1: '계획 일정 등록', P2: '실적(계획) 시작일정 등록', P3: '실적(완료) 등록', P4: '양산 적용 체크' };
+
+  function rmDiamondHtml(label, done, title) {
     var cls = done ? 'rm-ms rm-ms-done' : 'rm-ms rm-ms-trail';
-    return '<span class="' + cls + '" title="' + esc(label) + '"><span class="rm-ms-diamond"></span><span class="rm-ms-label">' + esc(label) + '</span></span>';
+    return '<span class="' + cls + '" title="' + esc(title) + '"><span class="rm-ms-diamond"></span><span class="rm-ms-label">' + esc(label) + '</span></span>';
   }
 
-  function renderRmLaneBar(bar, laneLabel, laneIdx, barIdx, totalCols, state) {
-    var showPrev = state.rmVer === 0;
-    var b = rmResolveBar(bar, showPrev);
+  // 상세과제 막대 마우스 오버 — 계획일정/완료일정/등록일 + P1~P4 진행상태 표(v3.dc.html taskTip/tipPhases)
+  // 목업 단계: P2 시작일 = 막대 시작월, P3 완료일 = 막대 종료일(실 연동 시 P2/P3 일자 필드로 교체)
+  function renderRmTaskTip(b) {
+    var d = RML.barDates(b);
+    var done = RML.donePhases(b);
+    var phasesHtml = RML.phaseSeq(b).map(function (p) {
+      var ok = done.indexOf(p) !== -1;
+      var val = {
+        P1: d.periodLabel,
+        P2: ok ? '시작일 ' + d.startYm + '-01' : '미등록',
+        P3: ok ? '완료일 ' + d.planEnd : '미등록',
+        P4: ok ? '양산 적용 확인' : '체크 대기',
+      }[p];
+      return '<div class="rm-ttip-phase">' +
+        '<span class="rm-ttip-badge' + (ok ? ' is-done' : '') + '">' + p + '</span>' +
+        '<span class="rm-ttip-phase-name">' + esc(RM_TIP_PHASE_NAME[p]) + '</span>' +
+        '<span class="rm-ttip-phase-val' + (ok ? ' is-done' : '') + '">' + esc(val) + '</span>' +
+      '</div>';
+    }).join('');
+    return (
+      '<div class="rm-ttip">' +
+        '<p class="rm-ttip-title">' + esc(b.label) + '</p>' +
+        '<div class="rm-ttip-phases">' + phasesHtml + '</div>' +
+        '<p class="rm-ttip-desc-label">· 기술설명</p>' +
+        '<p class="rm-ttip-desc">' + esc(RM.taskTip.desc) + '</p>' +
+        '<div class="rm-ttip-dates">' +
+          '<span class="rm-ttip-chip">계획일정</span><span class="rm-ttip-date">' + d.planStart + '</span>' +
+          '<span class="rm-ttip-chip">완료일정</span><span class="rm-ttip-date">' + d.planEnd + '</span>' +
+          '<span class="rm-ttip-chip">등록일</span><span class="rm-ttip-date is-last">' + esc(RM.taskTip.reg) + '</span>' +
+        '</div>' +
+      '</div>'
+    );
+  }
+
+  function renderRmLaneBar(lane, laneIdx, barIdx, rowNo, range, state) {
+    var bar = lane.bars[barIdx];
+    var b = rmResolveBar(bar, state.rmVer === 0);
     var isRoadmap = b.kind === 'roadmap';
     var show = isRoadmap ? (state.rmShowMtrm !== false) : (state.rmShowTask !== false);
     if (!show) return '';
+    var pos = RML.placeInRange(b, range);
+    if (!pos.visible) return '';
 
+    var compact = !isRoadmap && RML.isCompact(lane.bars, barIdx);
+    var done = RML.donePhases(b);
+    var pending = RML.pendingPhases(b);
     var nodeId = laneIdx + '-' + barIdx;
-    var changedCls = b._changed ? ' rm-bar-changed' : '';
-    var barInnerStyle = 'grid-column:' + b.start + ' / span ' + b.span + ';';
-    var milestonesHtml = (b.milestones || []).map(function (m) { return rmMilestoneHtml(m, true); }).join('');
+    var barCls = 'rm-bar ' + (isRoadmap ? 'rm-bar-roadmap' : 'rm-bar-task') + (b._changed ? ' rm-bar-changed' : '');
     var linkArrowHtml = (bar.linkFrom && isRoadmap) ? '<span class="rm-link-arrow" title="연관 로드맵">&#8627;</span>' : '';
 
-    var barContentStyle, barCls;
-    if (isRoadmap) {
-      barCls = 'rm-bar rm-bar-roadmap' + changedCls;
-      barContentStyle = 'background:#45c4dd';
-    } else {
-      barCls = 'rm-bar rm-bar-task' + changedCls;
-      barContentStyle = 'background:' + esc(b.color || '#22a559');
-    }
+    // 완료 단계: 막대 왼쪽에 순서대로(아래 줄 표시일 때는 생략)
+    var headHtml = (!isRoadmap && !compact) ? done.map(function (m) { return rmDiamondHtml(m, true, RM_PHASE_TITLE[m] || m); }).join('') : '';
+    // 남은 단계: 막대 오른쪽 끝에 연결선 + 흰 마름모
+    var trailHtml = (!isRoadmap && !compact && pending.length)
+      ? '<div class="rm-trail" style="width:' + (pending.length * 44) + 'px">' +
+          '<div class="rm-trail-line"></div>' +
+          pending.map(function (m) { return rmDiamondHtml(m, false, (RM_PHASE_TITLE[m] || m) + ' (예정)') + '<span class="rm-trail-conn"></span>'; }).join('') +
+        '</div>'
+      : '';
+    // 기간 1분기 이하 또는 뒤따르는 과제와 겹침: 단계를 막대 바로 아래 줄에 P1-P2-P3(-P4) 순으로
+    var compactHtml = compact
+      ? '<div class="rm-compact-phases" title="기간 1분기 이하: 단계를 막대 아래에 표시">' +
+          RML.phaseSeq(b).map(function (p, pi) {
+            var ok = done.indexOf(p) !== -1;
+            return (pi ? '<span class="rm-compact-conn"></span>' : '') + rmDiamondHtml(p, ok, (RM_PHASE_TITLE[p] || p) + (ok ? '' : ' (예정)'));
+          }).join('') +
+        '</div>'
+      : '';
 
-    var trailHtml = '';
-    if (bar.trail) {
-      var trailColStart = b.start + b.span;
-      var trailMarks = bar.trail.marks.map(function (m) { return rmMilestoneHtml(m, false); }).join('');
-      trailHtml = '<div class="rm-trail" style="grid-column:' + trailColStart + ' / span ' + bar.trail.span + '">' +
-        '<div class="rm-trail-line"></div>' + trailMarks +
-      '</div>';
-    }
-
-    var titleAbove = !isRoadmap ? '<p class="rm-bar-title-above">' + esc(b.label) + '</p>' : '';
-    var barLabel = isRoadmap ? esc(b.label) : '';
+    var titleAbove = !isRoadmap ? '<p class="rm-bar-title-above' + (compact ? ' is-compact' : '') + '">' + esc(b.label) + '</p>' : '';
     var hoverAttrs = isRoadmap ? ' data-action="rm-bar-enter" data-lane="' + laneIdx + '" data-bar="' + barIdx + '"' : '';
     var clickAttrs = !isRoadmap ? ' data-action="rm-task-click" data-lane="' + laneIdx + '" data-bar="' + barIdx + '"' : '';
 
     return (
-      '<div class="rm-bar-row" style="grid-template-columns:repeat(' + totalCols + ',minmax(0,1fr))">' +
-        '<div class="rm-bar-cell" style="grid-column:' + b.start + ' / span ' + b.span + '"' + hoverAttrs + '>' +
-          titleAbove + linkArrowHtml +
-          '<div class="rm-bar-line">' +
-            milestonesHtml +
-            '<div class="' + barCls + '" style="' + barContentStyle + '"' + clickAttrs + ' data-rm-node="' + nodeId + '">' + barLabel + '</div>' +
-          '</div>' +
+      '<div class="rm-bar-cell' + (isRoadmap ? '' : ' rm-bar-cell-task') + '" style="grid-column:' + pos.colStart + ' / span ' + pos.colSpan + ';grid-row:' + rowNo + '"' + hoverAttrs + '>' +
+        titleAbove + linkArrowHtml +
+        '<div class="rm-bar-line">' +
+          headHtml +
+          '<div class="' + barCls + '"' + clickAttrs + ' data-rm-node="' + nodeId + '">' + (isRoadmap ? esc(b.label) : '') + '</div>' +
+          trailHtml +
         '</div>' +
-        trailHtml +
+        compactHtml +
+        (isRoadmap ? '' : renderRmTaskTip(b)) +
       '</div>'
     );
   }
 
-  function renderRmLane(lane, laneIdx, totalCols, state) {
+  function renderRmLane(lane, laneIdx, range, cells, state) {
+    var rows = RML.assignRows(lane.bars);
     var barsHtml = lane.bars.map(function (bar, barIdx) {
-      return renderRmLaneBar(bar, lane.label, laneIdx, barIdx, totalCols, state);
+      return renderRmLaneBar(lane, laneIdx, barIdx, rows[barIdx], range, state);
+    }).join('');
+    // 세로선은 조회 기간 안에만(기간 밖은 빈 공간)
+    var gridlinesHtml = cells.map(function (c) {
+      return '<div class="rm-gridline' + (c.yearEnd ? ' rm-gridline-year' : (c.quarterEnd ? '' : ' rm-gridline-month')) + '"></div>';
     }).join('');
     return (
       '<div class="rm-lane">' +
-        '<div class="rm-lane-label">' + esc(lane.label) + '</div>' +
-        '<div class="rm-lane-track" style="grid-template-columns:repeat(' + totalCols + ',minmax(0,1fr))">' +
-          '<div class="rm-lane-gridlines" style="grid-template-columns:repeat(' + totalCols + ',minmax(0,1fr))">' +
-            Array.apply(null, { length: totalCols }).map(function (_, i) {
-              return '<div class="rm-gridline' + ((i + 1) % 4 === 0 ? ' rm-gridline-year' : '') + '"></div>';
-            }).join('') +
-          '</div>' +
+        '<div class="rm-lane-label' + (lane.unmapped ? ' is-unmapped' : '') + '"><span>' + esc(lane.label) + '</span>' +
+          (lane.unmapped ? '<span class="rm-lane-label-sub">연계 분과 없음</span>' : '') +
+        '</div>' +
+        '<div class="rm-lane-track">' +
+          '<div class="rm-lane-gridlines" style="width:' + (range.N / RML.TOTAL_MONTHS * 100) + '%;grid-template-columns:repeat(' + cells.length + ',minmax(0,1fr))">' + gridlinesHtml + '</div>' +
           '<div class="rm-lane-bars">' + barsHtml + '</div>' +
         '</div>' +
       '</div>'
     );
-  }
-
-  // 근거: v3.dc.html rmTodayStyle — 오늘(2026-10-12)이 16분기(4년) 축에서 차지하는 비율로 좌측 위치 계산.
-  // '25.1Q 시작(분기 인덱스 1) 기준, 2026-10은 7번째 분기(26.4Q) 중간 지점.
-  function rmTodayPercent() {
-    var todayQuarterIndex = 6.6; // 26.4Q 진행률(10월 중순) — v3 고정값(0.6640625)과 동일한 산출 근거
-    return (todayQuarterIndex / 16) * 100;
   }
 
   // 근거: v3.dc.html rmPanelVals() — 로드맵 바 hover 시 연계과제 요약 카드(연계과제 N건, P1~P4 분포, 과제 리스트)
@@ -1063,7 +1103,8 @@
       '</div>';
     }).join('');
 
-    var yearHeaders = RM.years.map(function (y) { return '<span>' + esc(y) + '</span>'; }).join('');
+    // 버전 비교 팝업은 v3.dc.html rmVmYears와 같이 '25~'28 4년(16분기) 축을 유지한다(차트 6년 확장과 별개)
+    var yearHeaders = RM.years.slice(0, 4).map(function (y) { return '<span>' + esc(y) + '</span>'; }).join('');
 
     return (
       '<div class="rm-modal-overlay" data-action="rm-close-ver-modal">' +
@@ -1109,22 +1150,27 @@
 
   function renderSCR006(state) {
     var scale = state.rmScale || 'quarter';
-    var totalCols = scale === 'month' ? 48 : 16;
     var ver = state.rmVer === 0 ? 0 : 1;
     var isPrevVer = ver === 0;
     var diffCount = RM.lanes.reduce(function (a, l) { return a + l.bars.filter(function (b) { return b.prev; }).length; }, 0);
 
-    // 축 헤더: 연도(4등분) + 분기/월 서브헤더
-    var yearHeader = RM.years.map(function (y) {
+    // 조회 기간: "조회" 버튼으로 적용된 값(rmAppFrom/rmAppTo)만 차트에 반영. 입력값(rmFrom/rmTo)은 입력창 표시용
+    var range = RML.normalizeRange(state.rmAppFrom, state.rmAppTo);
+    var cells = RML.timeCells(scale, range);
+    var T = RML.TOTAL_MONTHS;
+
+    // 축 헤더: 격자는 항상 120px + 72개월 컬럼. 연도/분기·월 칸은 조회 기간 안에만, 기간 밖은 빈 공간
+    var yearHeader = RM.years.slice(range.from - RML.BASE_YEAR, range.to - RML.BASE_YEAR + 1).map(function (y) {
       return '<div class="rm-year-cell">' + esc(y) + '</div>';
     }).join('');
-    var subCells = Array.apply(null, { length: totalCols }).map(function (_, i) {
-      var yearEnd = scale === 'month' ? (i % 12 === 11) : (i % 4 === 3);
-      var label = scale === 'month' ? String((i % 12) + 1) : ((i % 4) + 1) + 'Q';
-      return '<div class="rm-sub-cell' + (yearEnd ? ' rm-sub-cell-yearend' : '') + '">' + label + '</div>';
+    var axisFill = range.N < T ? '<div class="rm-axis-fill" style="grid-column:' + (range.N + 2) + ' / span ' + (T - range.N) + '"></div>' : '';
+    var subCells = cells.map(function (c) {
+      return '<div class="rm-sub-cell' + (scale === 'month' ? ' is-month' : '') + (c.yearEnd ? ' rm-sub-cell-yearend' : '') + '">' + c.label + '</div>';
     }).join('');
+    var todayF = RML.todayFraction(RM_TODAY_MONTHS, range);
+    var todayLine = todayF == null ? '' : '<div class="rm-today-line" style="left:calc(120px + (100% - 120px) * ' + todayF.toFixed(4) + ')"></div>';
 
-    var lanesHtml = RM.lanes.map(function (lane, li) { return renderRmLane(lane, li, totalCols, state); }).join('');
+    var lanesHtml = RM.lanes.map(function (lane, li) { return renderRmLane(lane, li, range, cells, state); }).join('');
 
     var scaleTabs = [['quarter', '분기'], ['month', '월']].map(function (t) {
       return '<button type="button" class="rm-scale-tab' + (scale === t[0] ? ' active' : '') + '" data-action="rm-set-scale" data-scale="' + t[0] + '">' + t[1] + '</button>';
@@ -1171,25 +1217,30 @@
         '</div>' +
         verBanner +
         '<section class="rm-filter-bar">' +
-          '<div class="filter-field"><label>분과</label><select><option>전체</option><option>물류</option><option>차체</option><option>지게차</option></select></div>' +
-          '<div class="filter-field"><label>진행상태</label><select data-action="rm-filter-status"><option value="">전체</option>' + ['진행중', '계획', '반려', '보류'].map(function (st) { return '<option' + (state.rmFilterStatus === st ? ' selected' : '') + '>' + st + '</option>'; }).join('') + '</select></div>' +
-          '<div class="filter-field"><label>기간</label><div class="rm-date-range"><input type="date" /><span>-</span><input type="date" /></div></div>' +
-          '<label class="rm-checkbox"><input type="checkbox" data-action="rm-toggle-mtrm"' + (state.rmShowMtrm !== false ? ' checked' : '') + ' />mTRM</label>' +
-          '<label class="rm-checkbox"><input type="checkbox" data-action="rm-toggle-task"' + (state.rmShowTask !== false ? ' checked' : '') + ' />기술과제</label>' +
+          '<div class="rm-fgroup"><span class="rm-flabel">분과</span><span class="rm-fcontrol"><select class="rm-fselect"><option value="">전체</option><option value="물류">물류</option><option value="차체">차체</option><option value="지게차">지게차</option></select></span></div>' +
+          '<div class="rm-fgroup"><span class="rm-flabel">진행상태</span><span class="rm-fcontrol"><select class="rm-fselect" data-action="rm-filter-status"><option value="">전체</option>' + ['진행중', '계획', '반려', '보류'].map(function (st) { return '<option' + (state.rmFilterStatus === st ? ' selected' : '') + '>' + st + '</option>'; }).join('') + '</select></span></div>' +
+          '<div class="rm-fgroup"><span class="rm-flabel">기간</span><div class="rm-fcontrol rm-year-range">' +
+            '<input type="number" min="2025" max="2030" class="rm-year-input" data-action="rm-year-from" value="' + esc(state.rmFrom != null ? state.rmFrom : 2025) + '" />' +
+            '<span>~</span>' +
+            '<input type="number" min="2025" max="2030" class="rm-year-input" data-action="rm-year-to" value="' + esc(state.rmTo != null ? state.rmTo : 2030) + '" />' +
+          '</div></div>' +
+          '<div class="rm-fchecks">' +
+            '<label class="rm-checkbox"><input type="checkbox" data-action="rm-toggle-mtrm"' + (state.rmShowMtrm !== false ? ' checked' : '') + ' />mTRM</label>' +
+            '<label class="rm-checkbox"><input type="checkbox" data-action="rm-toggle-task"' + (state.rmShowTask !== false ? ' checked' : '') + ' />기술과제</label>' +
+          '</div>' +
           '<div class="rm-filter-right">' +
-            '<button type="button" class="rm-detail-toggle' + (state.rmDetailOpen ? ' active' : '') + '" data-action="rm-toggle-detail"><i class="fas fa-sliders"></i>상세조회</button>' +
-            '<button type="button" class="btn-dark" data-action="run-search"><i class="fas fa-search"></i>조회</button>' +
+            '<button type="button" class="rm-detail-toggle' + (state.rmDetailOpen ? ' active' : '') + '" data-action="rm-toggle-detail"><i class="fas fa-sliders"></i>상세검색</button>' +
+            '<button type="button" class="rm-search-btn" data-action="rm-search"><i class="fas fa-search"></i>조회</button>' +
           '</div>' +
           detailPanel +
         '</section>' +
 
         '<div class="rm-legend-row">' +
           '<div class="rm-legend">' +
-            '<span class="rm-legend-item"><span class="rm-legend-swatch" style="background:#45c4dd;border-radius:999px;height:10px"></span>mTRM 로드맵</span>' +
-            '<span class="rm-legend-item"><span class="rm-legend-swatch" style="background:#22a559;border-radius:999px;height:6px"></span>상세과제 · 완료보고 등록(완료)</span>' +
-            '<span class="rm-legend-item"><span class="rm-legend-swatch" style="background:#e8a33d;border-radius:999px;height:6px"></span>상세과제 · 계획대비 미완료</span>' +
-            '<span class="rm-legend-item"><span class="rm-ms rm-ms-done rm-ms-sm"><span class="rm-ms-diamond"></span></span>완료 단계</span>' +
-            '<span class="rm-legend-item"><span class="rm-ms rm-ms-trail rm-ms-sm"><span class="rm-ms-diamond"></span></span>예정 단계</span>' +
+            '<span class="rm-legend-item"><span class="rm-legend-swatch rm-legend-roadmap"></span>mTRM 로드맵</span>' +
+            '<span class="rm-legend-item"><span class="rm-legend-swatch rm-legend-task"></span>상세과제 기간</span>' +
+            '<span class="rm-legend-item"><span class="rm-legend-diamond is-done"></span>완료 단계</span>' +
+            '<span class="rm-legend-item"><span class="rm-legend-diamond"></span>예정 단계</span>' +
             '<span class="rm-legend-item"><span class="rm-legend-today-line"></span>오늘</span>' +
           '</div>' +
           '<div class="rm-scale-tabs">' + scaleTabs + '</div>' +
@@ -1197,17 +1248,14 @@
 
         '<section class="rm-gantt-panel">' +
           '<div class="rm-gantt-scroll">' +
-            '<div class="rm-gantt-inner" style="min-width:900px">' +
-              '<div class="rm-axis-row">' +
-                '<div class="rm-axis-spacer"></div>' +
-                '<div class="rm-axis-years" style="grid-template-columns:repeat(4,1fr)">' + yearHeader + '</div>' +
-              '</div>' +
-              '<div class="rm-axis-row rm-axis-sub">' +
-                '<div class="rm-axis-spacer"></div>' +
-                '<div class="rm-axis-sub-cells" style="grid-template-columns:repeat(' + totalCols + ',minmax(0,1fr))">' + subCells + '</div>' +
+            '<div class="rm-gantt-inner">' +
+              '<div class="rm-axis">' +
+                '<div class="rm-axis-corner"></div>' +
+                yearHeader + axisFill +
+                '<div class="rm-axis-sub-cells" style="grid-column:2 / span ' + range.N + ';grid-template-columns:repeat(' + cells.length + ',minmax(0,1fr))">' + subCells + '</div>' +
               '</div>' +
               '<div class="rm-gantt-body" data-rm-gantt="1">' +
-                '<div class="rm-today-line" style="left:calc(140px + (100% - 140px) * ' + (rmTodayPercent() / 100) + ')"></div>' +
+                todayLine +
                 renderRmLinksSvg(state) +
                 lanesHtml +
               '</div>' +

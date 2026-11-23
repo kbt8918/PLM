@@ -158,7 +158,9 @@
     rmVerModal: null, // 버전 비교 팝업: { from, to, viewOnly }
     rmShowMtrm: true, // mTRM 로드맵 바 표시 체크박스
     rmShowTask: true, // 기술과제 바 표시 체크박스
-    rmDetailOpen: false, // "상세조회" 패널(적용공장/담당팀/버전) 펼침 여부
+    rmDetailOpen: false, // "상세검색" 패널(적용공장/담당팀/버전) 펼침 여부
+    rmFrom: 2025, rmTo: 2030, // 기간(연도) 입력창 값 — 입력만으로는 차트에 적용되지 않음
+    rmAppFrom: 2025, rmAppTo: 2030, // "조회" 버튼으로 적용된 기간(차트 기준)
     rmHover: null, // 로드맵 바 hover 요약 팝오버: { li, bi, style }
     rmLinks: [], // 로드맵 간 SVG 연결선 좌표(measureRmLinks()가 DOM 실측 후 채움)
     subTaskDetail: null, // 상세과제 상세 팝업에 표시할 { name, status, period, dept, mtrm, owner, reg }
@@ -1266,6 +1268,13 @@
         case 'rm-set-scale':
           setState({ rmScale: $el.data('scale') });
           break;
+        case 'rm-search': {
+          // 근거: v3.dc.html onRoadmapSearch — 조회 버튼을 눌러야 기간 적용(2025~2030 보정, 시작>종료면 종료=시작)
+          var rmRg = global.PNDES.rmLayout.normalizeRange($('[data-action="rm-year-from"]').val(), $('[data-action="rm-year-to"]').val());
+          setState({ rmFrom: rmRg.from, rmTo: rmRg.to, rmAppFrom: rmRg.from, rmAppTo: rmRg.to, rmHover: null });
+          showToast('검색 기간 ' + rmRg.from + ' ~ ' + rmRg.to + '년이 적용되었습니다.');
+          break;
+        }
         case 'rm-toggle-mtrm':
           setState({ rmShowMtrm: $el.is(':checked') });
           break;
@@ -1632,6 +1641,11 @@
 
     $(document).on('change', '[data-action="rm-filter-status"]', function () {
       setState({ rmFilterStatus: $(this).val() });
+    });
+
+    // SCR-006 기간(연도) 입력: 입력값만 보관하고 재렌더하지 않는다(조회 버튼을 눌러야 차트에 적용)
+    $(document).on('input change', '[data-action="rm-year-from"], [data-action="rm-year-to"]', function () {
+      state[$(this).data('action') === 'rm-year-from' ? 'rmFrom' : 'rmTo'] = $(this).val();
     });
 
     $(document).on('change', '[data-action="techpr-filter"]', function () {
